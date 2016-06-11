@@ -16,20 +16,20 @@
 \newtheorem{definition}{Definition}
 
 \newcommand{\pe}{\psi}
-\def\d{\delta} 
-\def\ds{\displaystyle} 
-\def\e{{\epsilon}} 
-\def\eb{\bar{\eta}}  
-\def\enorm#1{\|#1\|_2} 
-\def\Fp{F^\prime}  
-\def\fishpack{{FISHPACK}} 
-\def\fortran{{FORTRAN}} 
-\def\gmres{{GMRES}} 
-\def\gmresm{{\rm GMRES($m$)}} 
-\def\Kc{{\cal K}} 
-\def\norm#1{\|#1\|} 
-\def\wb{{\bar w}} 
-\def\zb{{\bar z}} 
+\def\d{\delta}
+\def\ds{\displaystyle}
+\def\e{{\epsilon}}
+\def\eb{\bar{\eta}}
+\def\enorm#1{\|#1\|_2}
+\def\Fp{F^\prime}
+\def\fishpack{{FISHPACK}}
+\def\fortran{{FORTRAN}}
+\def\gmres{{GMRES}}
+\def\gmresm{{\textrm GMRES($m$)}}
+\def\Kc{{\cal K}}
+\def\norm#1{\|#1\|}
+\def\wb{{\bar w}}
+\def\zb{{\bar z}}
 \def\bfE{\mbox{\boldmath$E$}}
 \def\bfG{\mbox{\boldmath$G$}}
 
@@ -236,9 +236,9 @@ most $n$ over the real field. We call this polynomial the
 {\em indicator polynomial} of the matrix pair $(S,C)$
 because of the following proposition.
 
-\begin{theorem} 
-\label{th:prop} 
-The matrix pair $(S,C)$ is a {\rm SNS}-matrix pair if and
+\begin{theorem}
+\label{th:prop}
+The matrix pair $(S,C)$ is a {\textrm SNS}-matrix pair if and
 only if all the nonzero coefficients in its indicator
 polynomial have the same sign and there is at least one
 nonzero coefficient.
@@ -281,9 +281,9 @@ $T$ and the exact solution $\pe$ only such that for all $0 \leq t \leq T$,
 The function $B(T)$ can be chosen to be nondecreasing in time.
 \end{lemma}
 
-\begin{theorem} 
-\label{th:gibson} 
-The maximum number of nonzero entries in a {\rm SNS}-matrix
+\begin{theorem}
+\label{th:gibson}
+The maximum number of nonzero entries in a {\textrm SNS}-matrix
 $S$ of order $n$ equals \[\frac{n^{2}+3n-2}{2}\] with
 equality if and only if there exist permutation matrices
 such that $P|S|Q=T_{n}$ where
@@ -344,9 +344,9 @@ Applying integration by parts, we obtain
 \begin{corollary}\label{c4.1}
 Let $ \bfE $ satisfy $(5)$--$(6)$ and
 suppose $ \bfE^h $ satisfies $(7)$ and $(8)$
-with a general $ \bfG $.  Let $ \bfG= \nabla \times {\bf \Phi} + \nabla p,$
-$p \in H_0^1 (\Omega) $. Suppose that $\nabla p$ and $ \nabla \times 
-{\bf \Phi} $ satisfy all the assumptions of Theorems $4.1$ and  
+with a general $ \bfG $.  Let $ \bfG= \nabla \times {\mathbf \Phi} + \nabla p,$
+$p \in H_0^1 (\Omega) $. Suppose that $\nabla p$ and $ \nabla \times
+{\mathbf \Phi} $ satisfy all the assumptions of Theorems $4.1$ and
 $4.2$, respectively. In addition suppose all the regularity
 assumptions of Theorems $4.1$--$4.2$ are satisfied.  Then 
 for $ 0 \le t \le T $ and $ 0 < \epsilon \le \epsilon_0 $ there exists a 
@@ -378,31 +378,31 @@ that $x \cdot [0,T] \subset N_{1}$ and $x \cdot T \in N_{0}$.
 
 
 \begin{figure}
-\caption{{\rm Log}$_{10}$ of the residual norm versus the number of
-{\rm GMRES$(m)$} iterations for the finite difference methods.} 
-\label{diff} 
+\caption{{\textrm Log}$_{10}$ of the residual norm versus the number of
+{\textrm GMRES$(m)$} iterations for the finite difference methods.}
+\label{diff}
 \end{figure}
 
 
 \subsection{Numerical experiments}
-We conducted numerical experiments 
-in computing inexact Newton steps for discretizations of a  
-{\em modified Bratu problem}, given by  
-\begin{eqnarray} 
-{\ds \Delta w + c e^w + d{ \frac{\partial w}{\partial x} } } 
-&=&{\ds f \quad {\rm in}\ D, }\nonumber\\[-1.5ex]
+We conducted numerical experiments
+in computing inexact Newton steps for discretizations of a
+{\em modified Bratu problem}, given by
+\begin{eqnarray}
+{\ds \Delta w + c e^w + d{ \frac{\partial w}{\partial x} } }
+&=&{\ds f \quad {\textrm in}\ D, }\nonumber\\[-1.5ex]
 \label{bratu} \\[-1.5ex]
-{\ds w }&=&{\ds 0 \quad {\rm on}\ \partial D , } \nonumber
-\end{eqnarray} 
-where $c$ and $d$ are constants. The actual Bratu problem has $d=0$ and  
-$f \equiv0$. It provides a simplified model of nonlinear diffusion  
-phenomena, e.g., in combustion and semiconductors, and has been 
-considered by Glowinski, Keller, and Rheinhardt \cite{Paris-2008}, 
-as well as by a number of other investigators; see \cite{Brachmann.etal-2007} 
-and the references therein. See also problem 3 by Glowinski and  Keller  
-and problem 7 by Mittelmann in the collection of nonlinear model 
-problems assembled by Mor\'e \cite{Yang.etal-2007}. The modified problem  
-(\ref{bratu}) has been used as a test problem for inexact Newton 
+{\ds w }&=&{\ds 0 \quad {\textrm on}\ \partial D , } \nonumber
+\end{eqnarray}
+where $c$ and $d$ are constants. The actual Bratu problem has $d=0$ and
+$f \equiv0$. It provides a simplified model of nonlinear diffusion
+phenomena, e.g., in combustion and semiconductors, and has been
+considered by Glowinski, Keller, and Rheinhardt \cite{Paris-2008},
+as well as by a number of other investigators; see \cite{Brachmann.etal-2007}
+and the references therein. See also problem 3 by Glowinski and  Keller
+and problem 7 by Mittelmann in the collection of nonlinear model
+problems assembled by Mor\'e \cite{Yang.etal-2007}. The modified problem
+(\ref{bratu}) has been used as a test problem for inexact Newton
 methods by Brown and Saad \cite{Smith.etal-2008}.
 
 In our experiments, we took $D = [0,1]\times[0,1]$, $f \equiv0$, 
@@ -432,9 +432,9 @@ methods EHA6 and FD6. The bottom curve was produced by method A.
 
 
 \begin{table}
-\caption{Statistics over $20$ trials of {\rm GMRES$(m)$} iteration numbers,  
-$F$-evaluations, and run times required to reduce the residual norm by  
-a factor of $\e$. For each method, the number of {\rm GMRES$(m)$} iterations  
+\caption{Statistics over $20$ trials of {\textrm GMRES$(m)$} iteration numbers,
+$F$-evaluations, and run times required to reduce the residual norm by
+a factor of $\e$. For each method, the number of {\textrm GMRES$(m)$} iterations
 and $F$-evaluations was the same in every trial.}
 \footnotesize
 \centering

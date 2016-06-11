@@ -6,6 +6,11 @@
 % Configure Biblatex
 
 \usepackage[defernumbers=true,natbib=true,backend=bibtex,style=numeric]{biblatex}
+
+% bug workaround, see http://tex.stackexchange.com/questions/311426/bibliography-error-use-of-blxbblverbaddi-doesnt-match-its-definition-ve
+\makeatletter
+\def\blx@maxline{77}
+\makeatother
 \DeclareBibliographyCategory{cited}
 \DeclareBibliographyCategory{supplementary}
 \AtEveryCitekey{\addtocategory{cited}{\thefield{entrykey}}}
