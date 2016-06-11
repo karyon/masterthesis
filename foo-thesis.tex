@@ -1,0 +1,121 @@
+%\documentclass[ngerman,oneside]{cgsthesis}
+\documentclass[ngerman]{cgsthesis}
+
+\usepackage[utf8]{inputenc}
+
+% Configure Biblatex
+
+\usepackage[defernumbers=true,natbib=true,backend=bibtex,style=numeric]{biblatex}
+\DeclareBibliographyCategory{cited}
+\DeclareBibliographyCategory{supplementary}
+\AtEveryCitekey{\addtocategory{cited}{\thefield{entrykey}}}
+\newcommand{\citesupplementary}[1]{\nocite{#1}\addtocategory{supplementary}{#1}}
+\DefineBibliographyStrings{ngerman}{
+  andothers = {\emph{et~al.}}
+}
+\DefineBibliographyStrings{english}{
+  andothers = {\emph{et~al.}}
+}
+\addbibresource{foo-thesis.bib}
+
+% Code listings
+
+\usepackage{listings}
+\lstloadlanguages{C++}
+\usepackage{glsl}
+
+% Thesis development
+
+\usepackage{cgsnotes}
+\usepackage{cgsparagraphclassification}
+
+% Title page
+
+\logo{graphics/logo_black}
+
+\title{Titel der Arbeit} 
+%\subtitle{Untertitel} % z.B. englischer Titel bei Bachelorarbeit
+
+%\subject{%
+%    Bachelorarbeit\\
+%    zur Erlangung des akademischen Grades\\
+%    "Bachelor of Science"\\
+%    (B.Sc.)\\
+%    im Studiengang IT-Systems Engineering\\
+%    des	 Hasso-Plattner-Instituts an der\\
+%    Universit\"at Potsdam
+%    \vfill
+%    vorgelegt von}
+
+%\subject{%
+%    Masterarbeit\\
+%    zur Erlangung des akademischen Grades\\
+%    "Master of Science"\\
+%    (M.Sc.)\\
+%    im Studiengang IT-Systems Engineering\\
+%    des	 Hasso-Plattner-Instituts an der\\
+%    Universit\"at Potsdam
+%    \vfill
+%    vorgelegt von}
+
+\subject{%
+    Dissertation\\
+    zur Erlangung des akademischen Grades\\
+    "doctor rerum naturalium"\\
+    (Dr.\ rer.\ nat.)\\
+    in der Wissenschaftsdisziplin Informatik
+    \vfill
+    eingereicht an der\\
+    Mathematisch-Naturwissenschaftlichen Fakult\"at\\
+    der Universit\"at Potsdam\\
+    \vfill
+    von}
+
+\author{Foo Bar}
+
+%\publishers{%
+%    Aufgabenstellung und Anleitung:\\
+%    Prof.\ Dr.\ J\"urgen D\"ollner\\
+%    Max Mustermann}
+
+\place{Potsdam}
+\date{\today} 
+
+
+\begin{document}
+
+\frontmatter
+
+\maketitle
+
+\tableofcontents
+
+\include{preface}
+
+\mainmatter
+\include{chap1}
+\include{chap2}
+\include{chap3}
+
+\printbibliography[title={Literaturverzeichnis},category=cited,heading=bibintoc]
+
+% Further Reading
+\citesupplementary{Alvarez.etal-1992}
+\printbibliography[title={Weiterf{"u}hrende Literatur},category=supplementary,resetnumbers=true,heading=bibintoc]
+
+% Debug: uncited
+%\nocite{*}
+%\printbibliography[title={Unzitiert},notcategory=cited,resetnumbers=true,heading=bibintoc]
+
+\appendix
+\include{appn1}
+\include{appn2}
+
+\backmatter
+
+% List of ToDos
+\listoftodos
+
+\include{statutorydeclaration}
+
+\end{document}
