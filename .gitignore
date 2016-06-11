@@ -9,3 +9,6 @@
 *.pdf
 *.run.xml
 *.tdo
+*.fls
+*.fdb_latexmk
+.tags*
