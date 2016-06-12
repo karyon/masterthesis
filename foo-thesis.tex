@@ -1,5 +1,5 @@
 %\documentclass[ngerman,oneside]{cgsthesis}
-\documentclass[ngerman]{cgsthesis}
+\documentclass[english]{cgsthesis}
 
 \usepackage[utf8]{inputenc}
 
@@ -11,6 +11,7 @@
 \makeatletter
 \def\blx@maxline{77}
 \makeatother
+
 \DeclareBibliographyCategory{cited}
 \DeclareBibliographyCategory{supplementary}
 \AtEveryCitekey{\addtocategory{cited}{\thefield{entrykey}}}
@@ -52,31 +53,31 @@
 %    \vfill
 %    vorgelegt von}
 
-%\subject{%
-%    Masterarbeit\\
-%    zur Erlangung des akademischen Grades\\
-%    "Master of Science"\\
-%    (M.Sc.)\\
-%    im Studiengang IT-Systems Engineering\\
-%    des	 Hasso-Plattner-Instituts an der\\
-%    Universit\"at Potsdam
-%    \vfill
-%    vorgelegt von}
-
 \subject{%
-    Dissertation\\
-    zur Erlangung des akademischen Grades\\
-    "doctor rerum naturalium"\\
-    (Dr.\ rer.\ nat.)\\
-    in der Wissenschaftsdisziplin Informatik
-    \vfill
-    eingereicht an der\\
-    Mathematisch-Naturwissenschaftlichen Fakult\"at\\
-    der Universit\"at Potsdam\\
-    \vfill
-    von}
+   Masterarbeit\\
+   zur Erlangung des akademischen Grades\\
+   "Master of Science"\\
+   (M.Sc.)\\
+   im Studiengang IT-Systems Engineering\\
+   des	 Hasso-Plattner-Instituts an der\\
+   Universit\"at Potsdam
+   \vfill
+   vorgelegt von}
 
-\author{Foo Bar}
+% \subject{%
+%     Dissertation\\
+%     zur Erlangung des akademischen Grades\\
+%     "doctor rerum naturalium"\\
+%     (Dr.\ rer.\ nat.)\\
+%     in der Wissenschaftsdisziplin Informatik
+%     \vfill
+%     eingereicht an der\\
+%     Mathematisch-Naturwissenschaftlichen Fakult\"at\\
+%     der Universit\"at Potsdam\\
+%     \vfill
+%     von}
+
+\author{Johannes Linke}
 
 %\publishers{%
 %    Aufgabenstellung und Anleitung:\\
@@ -105,8 +106,8 @@
 \printbibliography[title={Literaturverzeichnis},category=cited,heading=bibintoc]
 
 % Further Reading
-\citesupplementary{Alvarez.etal-1992}
-\printbibliography[title={Weiterf{"u}hrende Literatur},category=supplementary,resetnumbers=true,heading=bibintoc]
+% \citesupplementary{Alvarez.etal-1992}
+% \printbibliography[title={Weiterf{"u}hrende Literatur},category=supplementary,resetnumbers=true,heading=bibintoc]
 
 % Debug: uncited
 %\nocite{*}
@@ -114,7 +115,6 @@
 
 \appendix
 \include{appn1}
-\include{appn2}
 
 \backmatter
 
