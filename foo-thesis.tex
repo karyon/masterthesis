@@ -5,7 +5,7 @@
 
 % Configure Biblatex
 
-\usepackage[defernumbers=true,natbib=true,backend=bibtex,style=numeric]{biblatex}
+\usepackage[defernumbers=true,natbib=true,backend=bibtex,maxbibnames=9,maxcitenames=1,style=authoryear,citestyle=authoryear]{biblatex}
 
 % bug workaround, see http://tex.stackexchange.com/questions/311426/bibliography-error-use-of-blxbblverbaddi-doesnt-match-its-definition-ve
 \makeatletter
@@ -79,10 +79,10 @@
 
 \author{Johannes Linke}
 
-%\publishers{%
-%    Aufgabenstellung und Anleitung:\\
-%    Prof.\ Dr.\ J\"urgen D\"ollner\\
-%    Max Mustermann}
+\publishers{%
+    Aufgabenstellung und Anleitung:\\
+    Prof.\ Dr.\ J\"urgen D\"ollner\\
+    Daniel Limberger}
 
 \place{Potsdam}
 \date{\today}
@@ -100,6 +100,7 @@
 
 \mainmatter
 \include{chap-introduction}
+\include{chap-relatedwork}
 \include{chap-pile}
 \include{chap-examples}
 \include{chap-moreexamples}
