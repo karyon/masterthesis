@@ -2,16 +2,19 @@
 
 \chapter{Concept}
 
-\section{VPL Sampling: RSMs}
+\section{Lighting Pipeline Overview}
+
+\section{Virtual Point Light Sampling with Reflective Shadow Maps}
+Use RSMs because fast rasterization.
 Regular sampling. Refer to \citep{hedman2016sequential} for something better.
 
-\section{Occlusion: ISMs}
-mainly ISMs \citep{ritschel2008ism} with tesselation \citep{barak2013temporally}
+\section{Solving Occlusion with Imperfect Shadow Maps}
+mainly ISMs \citep{ritschel2008ism} with tesselation \citep{barak2013temporally} because that requires no precomputation.
 
-\section{Shading}
+\section{Interleaved and Clustered Deferred Shading}
 Interleaved shading \citep{Keller:2001:Interleaved} (nothing about non-interleaved!) and clustered deferred shading \citep{olsson2012clustered}
 
-\section{Singularities}
+\section{Removing Lighting Singularities through Clamping}
 It's simple, we clamp the singularities.
 
 
@@ -24,6 +27,7 @@ It's simple, we clamp the singularities.
 Including G-Buffer generation and sRGB, HDR and all that
 
 \section{RSM Generation and VPL Sampling}
+VPL packing for ISM random access, two different buffers
 
 \section{ISM Rendering}
 
@@ -34,10 +38,10 @@ Including G-Buffer generation and sRGB, HDR and all that
 
 
 
-\chapter{Results}
+\chapter{Results and Discussion}
 
 PERFORMANCE PERFORMANCE PERFORMANCE
-und speicher natürlich
+and memory of course
 \section{Used Scenes and Settings}
 
 \section{RSM Generation and VPL Sampling}
