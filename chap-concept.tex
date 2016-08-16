@@ -10,8 +10,11 @@
     \label{fig:LightingPipelineConcept}
 \end{figure}
 
+\todo{bilateral blur into that diagram?}
+
+\todo{do the matrix the other way around?}
+
 \todo[color=orange]{Indirect shading? indirect illumination? just shading?}
-\todo[color=green]{Introduction to many-Light methods anywhere?}
 
 This chapter will detail the individual stages of the lighting pipeline presented in this thesis. Figure~\ref{fig:LightingPipelineConcept} provides an overview.
 Our G-buffer rendering does not differ from common deferred rendering pipelines and is not covered further.
@@ -53,20 +56,23 @@ We describe the point rendering process in the following section and subsequentl
 - render the scene
 - depending on the size of the triangle, set tessellation levels
 - of the resulting tessellated triangles, take the center, calculate approx world size of disk, take normal from buffer
+- while it might be faster to just use the vertices as points, we take the center of each triangle to be more accurate, otherwise the points on the edge of the triangle will enlarge the rendered area considerably.
 - pick a random VPL, perform culling, render splat
 - actually, we iterate over several VPLS, and collect some that pass the culling test, and render to those. more in implementation chapter
+- mention the two approaches? single pixel vs large splats?
+- also drop that it's a paraboloid projection
 
 \subsection{Pull-Push Postprocessing}
 
 - While \citep{ritschel2008ism} implement a simplified variant of \citet{Marroquim:2007:reconstruction} and only use depth information from the point rendering, this approach trades in accuracy for performance and simplicity. We follow \citet{Marroquim:2007:reconstruction} more closely and additionally use a size attribute (and normal) for each point.
 
-- rough overview: the algorithm is a \"pyramid-method\"? and uses miplevels.
+- rough overview: the algorithm is a ``pyramid-method''? and uses miplevels.
 - a pull phase aggregates the information from four pixels of a finer level to one pixel of a coarser level.
 - It only considers valid pixels, i.\,e. ???
 - the push phase aggregates four pixels of the coarser level for each pixel of the finer level.
 - Again only pixels that are valid, i.\,e. ???
 - we differ from the original implementation by...
-- mention the two approaches? single pixel vs large splats?
+\todo{expand on this}
 
 
 

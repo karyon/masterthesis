@@ -1,0 +1,89 @@
+%!TEX root = foo-thesis.tex
+
+
+\chapter{Implementation}
+
+\section{Used Libraries and the Framework gloperate}
+
+\todo[color=green]{software architecture?}
+
+- some architecture diagram of dependencies?
+- gloperate as framework
+    - uses qt
+- libzeug provides GUI elements
+- globjects as an object-oriented abstraction over OpenGL
+- glbinding provides OpenGL bindings, directly called sometimes
+- GLM provides math and easier interaction with the OpenGL API
+- no further relevance for this thesis:
+    - assimp for model loading
+    - glkernel provides kernels for our SSAO implementation
+    - cpplocate ???
+
+\section{Rendering Pipeline Overview}
+- would be much the same as the concept pipeline...
+- show what's compute shader and what not?
+- it's basically lighting plus
+    - g-buffer generation
+    - shadowmap which is part of the RSM,
+    - SSAO
+    - deferredshading
+    - srgb and HDR.
+    - all of this is not
+- model loading?
+- kernel generation?
+
+
+\section{RSM Generation and VPL Sampling}
+\label{sec:impl:rsmAndVplSampling}
+- use the exact same code for RSM generation as for G-Buffer generation
+- re-use RSM as shadowmap
+    - usually, one might want to decouple this since they likely need different resolutions/cascading schemes etc. One could also render the RSM with a less detailed version of the scene. Since we had no culling and LOD implemented, we were bottlenecked on geometry complexity and chose to do this in one pass.
+    - we use variance shadowmapping. so we add the variance buffer if we're rendering an RSM, and disable another buffer (non-face normals).
+
+- with a compute shader, we sample the RSM in a regular pattern and write VPLs into a buffer
+- VPLs are position, normal, color
+- we prepare a second buffer with a single vec4 with position in the first three values and normal packed into the last value.
+- we do that since the ISM rendering (Section~\ref{sec:impl:ismRendering}) and light list calculation (Section~\ref{sec:impl:clusteredShading}) do not need color and especially ISM rendering reads several VPLs per point, using a lot of bandwidth.
+- Because of the regular sampling, the noise produced during interleaved shading (Section~\ref{sec:impl:interleavedShading}) is more structured. To help with that, we permutate the VPL order with a random permutation computed on CPU
+
+\section{ISM Rendering}
+\label{sec:impl:ismRendering}
+- Our ISM rendering normally draws all the geometry in the scene.
+- In the tessellation control shader, the tesselation levels are determined depending on the triangle size.
+- The tessellation evaluation shader does nothing besides correctly interpolating the triangle's vertices.
+- The geometry shader, which now recieves a small (tesselated) triangle, computes the point data
+- i.e. position: center of triangle, radius: distance of center to farthest triangle vertex, normal: the face normal taken from the original, non-tessellated triangle.
+
+- the geometry shader then calculates a random VPL ID. We used the point's position to seed the random number generator. This makes the ISMs temporally unstable when the geometry moves, but we couldn't find a stable seed.
+
+\todo[color=blue]{implement randomness based on barycentric coordinates}
+
+- two approaches:
+
+- either the geometry shader itself reads the VPL with the index it determined, projects the point according to the VPL's data, sets gl\_PointSize to the projected size, and emits a vertex.
+- also, output mode is points.
+
+- \citet{Marroquim:2007:reconstruction} actually works with single-pixel ``splats''. since the rasterizer does not help here, this inspired the following approach:
+
+- instead of splatting, the geometry shader puts points into buffer
+- one buffer per VPL for stability
+- buffers index marks the first VPL to try
+- then, per point in each buffer, starting with the respective VPL, we test a fixed number of VPLs (e.\,g. 16) and collect up to 4 that pass culling tests.
+- specifically, backface culling and points that are located behind the VPL, i.\,e. not in the hemisphere pointing along the VPL's normal.
+- we then render the point as a single pixel into the 4 collected VPLs.
+
+\todo{part of this into concept}
+
+
+- hole mitigation
+- when splatting, the quality difference improvement achieved with an additional pull-push algorithm compared to slightly larger splats seemed not worth the performance impact, therefore we chose to simply enlarge all splats a bit.
+- when using compute shaders, we need pull-push by design.
+
+\todo{explain pullpush implementation}
+
+\section{Interleaved Shading with Compute Shaders}
+\label{sec:impl:interleavedShading}
+VPL shuffling helps a great deal!
+
+\section{Clustered Deferred Shading}
+\label{sec:impl:clusteredShading}
