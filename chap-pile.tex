@@ -1,23 +1,5 @@
 %!TEX root = foo-thesis.tex
 
-\chapter{Concept}
-
-\section{Lighting Pipeline Overview}
-
-\section{Virtual Point Light Sampling with Reflective Shadow Maps}
-Use RSMs because fast rasterization.
-Regular sampling. Refer to \citep{hedman2016sequential} for something better.
-
-\section{Solving Occlusion with Imperfect Shadow Maps}
-mainly ISMs \citep{ritschel2008ism} with tesselation \citep{barak2013temporally} because that requires no precomputation.
-
-\section{Interleaved and Clustered Deferred Shading}
-Interleaved shading \citep{Keller:2001:Interleaved} (nothing about non-interleaved!) and clustered deferred shading \citep{olsson2012clustered}
-
-\section{Removing Lighting Singularities through Clamping}
-It's simple, we clamp the singularities.
-
-
 
 \chapter{Implementation}
 
@@ -32,6 +14,7 @@ VPL packing for ISM random access, two different buffers
 \section{ISM Rendering}
 
 \section{Interleaved Shading with Compute Shaders}
+VPL shuffling helps a great deal!
 
 \section{Clustered Deferred Shading}
 
