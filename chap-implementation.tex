@@ -44,7 +44,7 @@
 - VPLs are position, normal, color
 - we prepare a second buffer with a single vec4 with position in the first three values and normal packed into the last value.
 - we do that since the ISM rendering (Section~\ref{sec:impl:ismRendering}) and light list calculation (Section~\ref{sec:impl:clusteredShading}) do not need color and especially ISM rendering reads several VPLs per point, using a lot of bandwidth.
-- Because of the regular sampling, the noise produced during interleaved shading (Section~\ref{sec:impl:interleavedShading}) is more structured. To help with that, we permutate the VPL order with a random permutation computed on CPU
+- Because of the regular sampling, the noise produced during interleaved shading (Section~\ref{sec:impl:interleavedShading} or only results? there was a paper that sorts VPLs to avoid the noise...) is more structured. To help with that, we permutate the VPL order with a random permutation computed on CPU
 
 \section{ISM Rendering}
 \label{sec:impl:ismRendering}
@@ -63,7 +63,7 @@
 - either the geometry shader itself reads the VPL with the index it determined, projects the point according to the VPL's data, sets gl\_PointSize to the projected size, and emits a vertex.
 - also, output mode is points.
 
-- \citet{Marroquim:2007:reconstruction} actually works with single-pixel ``splats''. since the rasterizer does not help here, this inspired the following approach:
+- \citet{Marroquim:2007:reconstruction} actually works with single-pixel ``splats''. since in this case we're not depending on the hardware rasterizer for good performance, this inspired the following approach:
 
 - instead of splatting, the geometry shader puts points into buffer
 - one buffer per VPL for stability
@@ -83,7 +83,15 @@
 
 \section{Interleaved Shading with Compute Shaders}
 \label{sec:impl:interleavedShading}
-VPL shuffling helps a great deal!
+- often, this technique is implemented by splitting the G-buffer into several smaller G-buffers, each containing all pixels with the same sample set \cite{segovia2006non}, a process called de-interleaving. Each G-buffer is processed with it's respective sample set, and then the buffers are re-interleaved into a large G-Buffer again.
+
+- instead we do something crappy and want to improve on it...
+- we chose 4x4
+\todo[color=blue]{implement no scattered reads. maybe packed G-buffers for that? maybe better normal packing for that?}
+
+- Since only a subset of all samples is processed per pixel and this subset repeats every four pixels, this process results in structured noise (see Figure \ref{fig:???})
+- therefore, geometry-aware blur similar to \citet{laine2007incremental}. doesn't smooth over edges. See code snippet \ref{listing:???}. every pixel has all the information now ideally.
+- VPL shuffling helps a great deal!
 
 \section{Clustered Deferred Shading}
 \label{sec:impl:clusteredShading}
