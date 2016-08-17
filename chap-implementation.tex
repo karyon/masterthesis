@@ -83,15 +83,42 @@
 
 \section{Interleaved Shading with Compute Shaders}
 \label{sec:impl:interleavedShading}
-- often, this technique is implemented by splitting the G-buffer into several smaller G-buffers, each containing all pixels with the same sample set \cite{segovia2006non}, a process called de-interleaving. Each G-buffer is processed with it's respective sample set, and then the buffers are re-interleaved into a large G-Buffer again.
+- often, de-interleaving is implemented by splitting the G-buffer into several smaller G-buffers, each containing all pixels with the same sample set \cite{segovia2006non}. Each G-buffer is processed with its respective sample set, and then the buffers are re-interleaved into a large G-Buffer again.
 
-- instead we do something crappy and want to improve on it...
-- we chose 4x4
-\todo[color=blue]{implement no scattered reads. maybe packed G-buffers for that? maybe better normal packing for that?}
 
-- Since only a subset of all samples is processed per pixel and this subset repeats every four pixels, this process results in structured noise (see Figure \ref{fig:???})
+- we do this in a single pass. Downside: scattered read. but: the shading pass is bottlenecked on lookups in the VPL buffer and the respective shadowmaps, as well as ALU operations. A one-time scattered read does not hurt.
+- in fact, any attempts to do coherent reads did not result in speedups.
+- diagram of the pixels. \ref{fig:impl:pixels} explain this. we still do coherent VPL processing.
+
+\todo[color=blue]{same set of lights per interleave pixel. right now, if adjacent pixels have different clusters, they might process the same lights.}
+
+- Since only a subset of all samples is processed per pixel and this subset repeats every four pixels, this process results in structured noise (see Figure \ref{fig:???} or this figure in concept?)
 - therefore, geometry-aware blur similar to \citet{laine2007incremental}. doesn't smooth over edges. See code snippet \ref{listing:???}. every pixel has all the information now ideally.
-- VPL shuffling helps a great deal!
+
+- VPL shuffling helps a great deal! See Figure \ref{fig:impl:shuffling}
 
 \section{Clustered Deferred Shading}
 \label{sec:impl:clusteredShading}
+
+- we use 128 pixels as screen-space tile width and 16 depth slices. We also use an optimization proposed by \citet{???practical} and use a larger near cluster for better depth slice utilization.
+- we do not use explicit bounds, since we expect only small gains by that. although it might result in larger gains, we have have not implemented using normals for clustering yet.
+- \citet{???practical} do culling on the CPU. they have small radii and can therefore quickly determine the clusters that are reached by a certain light.
+- we have infinite light radii and therefore lots of clusters per light. therefore, we can expect to cull maybe half the lights and not the majority.
+- therefore, we decided to iterate over all lights per used cluster, as opposed to iterate over reached clusters per light.
+- the more uniform control flow of this approach as also better suited to GPUs.
+
+- two passes:
+
+- as explained, we want to iterate over all lights per cluster. to do this efficiently, we need a list of used clusters.
+
+- first pass produces this list., one work group per screen-space tile. has one boolean for each depth slice indicating whether it's used. read all the pixels, determine depth slice and set its boolean to true.
+- then it adds the number of used depth slices to one global atomic counter. the glsl function to do this returns the value of the counter before the addition.
+this way, each workgroup ``allocates'' some space in the list of used clusters. it then writes an id for each cluster into that list.
+
+- second pass iterates over all lights per cluster, adding all lights that potentially illuminate the cluster to a list.
+- in order to do this, we determine the world positions of the eight corners of the cluster. if any of them lies inside the VPLs hemisphere, we add the light to the list.
+- show some code? but it's really ugly...
+
+- during shading, when processing a pixel, the pixel's cluster is first determined and only the lights of this cluster's light list are processed.
+
+- we use a very basic approach to combine this with interleaved shading: of all lights in the light list, each pixels gets an equally sized fraction. while this might lead to adjacent pixels processing overlapping sets of lights if they are in different clusters, they are either in clusters near to each other in which case the light lists are probably quite similar, or they are in clusters seperated from each other so the geometry-aware blur wouldn't consider them anyway.

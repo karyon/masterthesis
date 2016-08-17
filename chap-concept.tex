@@ -78,9 +78,12 @@ We describe the point rendering process in the following section and subsequentl
 
 \section{Interleaved and Clustered Deferred Shading}
 \label{sec:interleavedAndClusteredShading}
-\citep{Keller:2001:InterleavedSampling} is often used to vastly improve the performance impact of GI methods.
+\citep{Keller:2001:InterleavedSampling} is often used to vastly improve the performance impact of GI methods. 
 
 - general idea: given some amount of samples that, in a naïve implementation, would be performed per pixel, distribute those samples over a block of pixelssome samples per pixel in a 4x4 or 8x8 block
+- the naïve implementation hurts cache coherency, since adjacent pixels process different samples.
+- to this end, de-interleaving is often used to simultaneosly process those pixels that use the same sample set. see \ref{sec:impl:interleavedShading} for details.
+
 - results in structured noise and missing information as all pixels have only part of the samples
 - therefore, geometry-aware blur similar to \citet{laine2007incremental} to distribute the information
 
