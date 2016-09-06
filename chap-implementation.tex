@@ -85,10 +85,13 @@
 \label{sec:impl:interleavedShading}
 - often, de-interleaving is implemented by splitting the G-buffer into several smaller G-buffers, each containing all pixels with the same sample set \cite{segovia2006non}. Each G-buffer is processed with its respective sample set, and then the buffers are re-interleaved into a large G-Buffer again.
 
-
-- we do this in a single pass. Downside: scattered read. but: the shading pass is bottlenecked on lookups in the VPL buffer and the respective shadowmaps, as well as ALU operations. A one-time scattered read does not hurt.
-- in fact, any attempts to do coherent reads did not result in speedups.
+- instead, we do this in a single pass. compute shaders are launched so that each invocation processes one pixel, and invocations within a work group process the same VPL set.
+- \ref{lst:???}?
 - diagram of the pixels. \ref{fig:impl:pixels} explain this. we still do coherent VPL processing.
+- more explanation on id calculation
+- reasons for single pass? easier to implement. latency covering? less bandwidth? less memory. compared to interleaving via shared memory, occupancy and scales to 8x8.
+- potential downside is the scattered read compared to coherent read when doing the split. but, bottleneck is lookups in the VPL buffer and the respective shadowmaps in the main loop, as well as ALU operations, so this noe-time lookup doesn't have any impact. maybe completely latency covered or workgroups are distributed in a way that the reads are still cache-coherent.
+- in fact, any attempts to do coherent reads did not result in speedups.
 
 - Since only a subset of all samples is processed per pixel and this subset repeats every four pixels, this process results in structured noise (see Figure \ref{fig:???} or this figure in concept?)
 - therefore, geometry-aware blur similar to \citet{laine2007incremental}. doesn't smooth over edges. See code snippet \ref{listing:???}. every pixel has all the information now ideally.
@@ -98,25 +101,37 @@
 \section{Clustered Deferred Shading}
 \label{sec:impl:clusteredShading}
 
-- we use 128 pixels as screen-space tile width and 16 depth slices. We also use an optimization proposed by \citet{???practical} and use a larger near cluster for better depth slice utilization.
+
+- we use 128 pixels as screen-space tile width and 16 depth slices. We also use an optimization proposed by \citet{persson::2013::practical} and use a larger near cluster for better depth slice utilization.
+
 - we do not use explicit bounds, since we expect only small gains by that. although it might result in larger gains, we have have not implemented using normals for clustering yet.
 - \citet{???practical} do culling on the CPU. they have small radii and can therefore quickly determine the clusters that are reached by a certain light.
 - we have infinite light radii and therefore lots of clusters per light. therefore, we can expect to cull maybe half the lights and not the majority.
 - therefore, we decided to iterate over all lights per used cluster, as opposed to iterate over reached clusters per light.
 - the more uniform control flow of this approach as also better suited to GPUs.
 
-- two passes:
 
-- as explained, we want to iterate over all lights per cluster. to do this efficiently, we need a list of used clusters.
-
-- first pass produces this list., one work group per screen-space tile. has one boolean for each depth slice indicating whether it's used. read all the pixels, determine depth slice and set its boolean to true.
-- then it adds the number of used depth slices to one global atomic counter. the glsl function to do this returns the value of the counter before the addition.
-this way, each workgroup ``allocates'' some space in the list of used clusters. it then writes an id for each cluster into that list.
-
-- second pass iterates over all lights per cluster, adding all lights that potentially illuminate the cluster to a list.
-- in order to do this, we determine the world positions of the eight corners of the cluster. if any of them lies inside the VPLs hemisphere, we add the light to the list.
-- show some code? but it's really ugly...
-
-- during shading, when processing a pixel, the pixel's cluster is first determined and only the lights of this cluster's light list are processed.
-
-- we use a very basic approach to combine this with interleaved shading: of all lights in the light list, each pixels gets an equally sized fraction. while this might lead to adjacent pixels processing overlapping sets of lights if they are in different clusters, they are either in clusters near to each other in which case the light lists are probably quite similar, or they are in clusters seperated from each other so the geometry-aware blur wouldn't consider them anyway.
+- three phases, each corresponding to one dispatch compute call:
+    - clustering
+        - each work group processes one tile and has one 16 bool array which indicates which depth slices in that tile are used.
+        - for each fragment, set the corresponding bool to true. no synchronization needed.
+        - since the work group size is limited, we set it to 128 and let each invocation iterate through 128 pixels in the tile to cover all pixels.
+        - per work group, count the number of used slices
+            - we use the first 16 threads in the work group and atomic adds, but one could just as well let one thread do it serially, it doesn't matter.
+        - then it adds the number of used depth slices to one global atomic counter. the glsl function to do this returns the value of the counter before the addition.
+        - this way, each workgroup ``allocates'' some space in the list of used clusters. it then writes an id for each cluster into that list.
+    - calculating light lists
+        - one invocation per used cluster.
+        - calculate world-space corners of that cluster.
+        - show some code? but it's really ugly...
+        - for each light
+            - if any corner is inside the illuminated hemisphere, add the light to this cluster's light list.
+        - we simply allocate the maximum space for this.
+            - for full HD / 128px tiles = 135 tiles, * 16 depth slices = 2160 light lists, * 1024 vpls = 2160k indices, * 2 bytes per index makes 4mb.
+            - we thought it's unneccessary to cut that down.
+            - by a (conservative) estimate of four used depth slices per tile on average, (plus possibly runtime checks to allocate more space when running over that limit), on could reduce this to 1MB with little implementation effort.
+            - compacting the light lists themselves is probably not worth it due to implementation complexity and performance penalty
+            - since we expect to cull roughly half the lights, the potential saving by compacting the light lists is only 50\% anyways.
+    - shading
+        - during shading, when processing a pixel, the pixel's cluster is first determined and only the lights of this cluster's light list are processed.
+        - we use a very basic approach to combine this with interleaved shading: of all lights in the light list, each pixels gets an equally sized fraction. while this might lead to adjacent pixels processing overlapping sets of lights if they are in different clusters, they are either in clusters near to each other in which case the light lists are probably quite similar, or they are in clusters seperated from each other so the geometry-aware blur wouldn't consider them anyway.
