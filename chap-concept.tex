@@ -48,7 +48,9 @@ VPL sampling has not been the focus of this thesis, therefore we use a rather ba
 
 The original paper \citep{ritschel2008ism} converts the scene geometry to a point set in a preprocessing step and uses the points to efficiently render hundreds of shadow maps in parallel. They use splatting to render the points and fill the resulting holes in the shadowmaps with a pull-push algorithm inspired by \citep{Marroquim:2007:reconstruction}.
 
-\citet{ritschel2011ismsViewAdaptive} build on \citet{laine2007incremental} this by converting the scene to a triangle texture dynamically, and sampling the points from that texture. Instead of computing a triangle texture, \citet{barak2013temporally} use the tessellation units of recent GPUs to dynamically convert triangles into points. We follow this approach since it is relatively simple to implement and inherently dynamic, but have not implemented the adaptive sampling from \citet{ritschel2011ismsViewAdaptive} yet.
+\citet{ritschel2011ismsViewAdaptive} build on \citet{laine2007incremental} this by converting the scene to a triangle texture dynamically, and sampling the points from that texture. Instead of computing a triangle texture, \citet{barak2013temporally} use the tessellation units of recent GPUs to dynamically convert triangles into points.
+We follow this approach since it is relatively simple to implement and inherently dynamic, but have not implemented the adaptive sampling from \citet{ritschel2011ismsViewAdaptive} yet.
+\citep{ritschel2008ism} also present multi-bounce indirect illumination with their technique, which we have not implemented.
 We describe the point rendering process in the following section and subsequently detail the pull-push algorithm.
 
 \subsection{Point Rendering}
@@ -78,7 +80,7 @@ We describe the point rendering process in the following section and subsequentl
 
 \section{Interleaved and Clustered Deferred Shading}
 \label{sec:interleavedAndClusteredShading}
-\citep{Keller:2001:InterleavedSampling} is often used to vastly improve the performance impact of GI methods. 
+\citep{Keller:2001:InterleavedSampling} is often used to vastly improve the performance impact of GI methods.
 
 - general idea: given some amount of samples that, in a naïve implementation, would be performed per pixel, distribute those samples over a block of pixelssome samples per pixel in a 4x4 or 8x8 block
 - the naïve implementation hurts cache coherency, since adjacent pixels process different samples.

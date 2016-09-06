@@ -90,8 +90,6 @@
 - in fact, any attempts to do coherent reads did not result in speedups.
 - diagram of the pixels. \ref{fig:impl:pixels} explain this. we still do coherent VPL processing.
 
-\todo[color=blue]{same set of lights per interleave pixel. right now, if adjacent pixels have different clusters, they might process the same lights.}
-
 - Since only a subset of all samples is processed per pixel and this subset repeats every four pixels, this process results in structured noise (see Figure \ref{fig:???} or this figure in concept?)
 - therefore, geometry-aware blur similar to \citet{laine2007incremental}. doesn't smooth over edges. See code snippet \ref{listing:???}. every pixel has all the information now ideally.
 
