@@ -6,27 +6,29 @@
 PERFORMANCE PERFORMANCE PERFORMANCE
 and memory of course
 \section{Scenes, Settings and Testing System}
-- Crytek sponza and san miguel scene from \citep{McGuire2011Data}
-- FullHD
-- list other settings again? like 4x4 interleaving, 128px tiles / 16 depth slices, point duplication in ISM compute rendering, 1024 lights, 2k ISM texture
+\begin{outline}
+\1 Crytek sponza and san miguel scene from \citep{McGuire2011Data}
+\1 FullHD
+\1 list other settings again? like 4x4 interleaving, 128px tiles / 16 depth slices, point duplication in ISM compute rendering, 1024 lights, 2k ISM texture
     - go through GUI properties
-- Machine specs
+\1 Machine specs
+\end{outline}
 
 \section{RSM Generation and VPL Sampling}
-- not much in here...?
+\begin{outline}
+\1 RSM generation is the same as G-Buffer generation, possibly with a different resolution. as said earlier, depending on the specific use case, this rendering pass can also render the shadowmap. also, average color.
+\1 screenshot of RSM G-buffers
 
-- RSM generation is the same as G-Buffer generation, possibly with a different resolution. as said earlier, depending on the specific use case, this rendering pass can also render the shadowmap.
-- screenshot of RSM G-buffers
+\1 VPL sampling takes fractions of a millisecond and is negligible. bear in mind that in order to achieve high quality levels, a more elaborate sampling algorithms needs to be implemented, which can actually take most of the available time. See \citep{hedman2016sequential} for an advanced sampling algorithm.
+\1 screenshots of debug splotches visualized
 
-- VPL sampling takes fractions of a millisecond and is negligible. bear in mind that in order to achieve high quality levels, a more elaborate sampling algorithms needs to be implemented, which can actually take most of the available time. See \citep{hedman2016sequential} for an advanced sampling algorithm.
-- screenshots of debug splotches visualized
+\1 our sampling pays no attention to relevance to the current frame and wastes budget on lights contributing little or nothing
+\1 screenshot of VPLs on the roof
 
-- our sampling pays no attention to relevance to the current frame and wastes budget on lights contributing little or nothing
-- screenshot of VPLs on the roof
+\1 our sampling has the additional downside of poor temporal stability when the scene light moves. this is due to each VPL staying at the exact same position in the light's viewport, so it ``follows'' the light's movements in a certain way, jumping over depth discontinuities along the way.
 
-- our sampling has the additional downside of poor temporal stability when the scene light moves. this is due to each VPL staying at the exact same position in the light's viewport, so it ``follows'' the light's movements in a certain way, jumping over depth discontinuities along the way.
-
-- frame-to-frame coherency here? two screenshots with diff.
+\1 frame-to-frame coherency here? two screenshots with diff.
+\end{outline}
 
 \section{ISM Rendering}
 

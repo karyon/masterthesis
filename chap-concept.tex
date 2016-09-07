@@ -29,18 +29,20 @@ Finally, we use clamping to remove singularities, this is shortly presented in S
 
 VPL sampling has not been the focus of this thesis, therefore we use a rather basic approach by rendering a  reflective shadow map \parencite{Dachsbacher:2005:RSM} and regularly sampling it. \citet{hedman2016sequential} present a more advanced approach.
 
-- Often preferred due to the simplicity and speed because rasterization. but, first bounce only.
+\begin{outline}
+\1 Often preferred due to the simplicity and speed because rasterization. but, first bounce only.
 
-- Similar to regular G-Buffer rendering
+\1 Similar to regular G-Buffer rendering
 
-- Like shadowmaps, scene is rendered from the light's viewpoint
+\1 Like shadowmaps, scene is rendered from the light's viewpoint
 
-- Unlike shadowmaps, not only depth is rendered but additionally normal and (diffuse) surface color.
+\1 Unlike shadowmaps, not only depth is rendered but additionally normal and (diffuse) surface color.
 
-- The result can be sampled to create VPLs with a certain position reconstructed from the depth buffer, and normal and color taken from the additional buffers.
+\1 The result can be sampled to create VPLs with a certain position reconstructed from the depth buffer, and normal and color taken from the additional buffers.
 
-- In our case, we use regular sampling. Importance-based approaches are available, also the samples can be clustered \cite{} or chosen relative to their estimated contribution to the final output. \citet{hedman2016sequential} uses a different approach without RSMs.
+\1 In our case, we use regular sampling. Importance-based approaches are available, also the samples can be clustered \cite{} or chosen relative to their estimated contribution to the final output. \citet{hedman2016sequential} uses a different approach without RSMs.
 
+\end{outline}
 
 \section{Solving Occlusion with Imperfect Shadow Maps}
 \label{sec:ISM}
@@ -54,26 +56,29 @@ We follow this approach since it is relatively simple to implement and inherentl
 We describe the point rendering process in the following section and subsequently detail the pull-push algorithm.
 
 \subsection{Point Rendering}
-
-- render the scene
-- depending on the size of the triangle, set tessellation levels
-- of the resulting tessellated triangles, take the center, calculate approx world size of disk, take normal from buffer
-- while it might be faster to just use the vertices as points, we take the center of each triangle to be more accurate, otherwise the points on the edge of the triangle will enlarge the rendered area considerably.
-- pick a random VPL, perform culling, render splat
-- actually, we iterate over several VPLS, and collect some that pass the culling test, and render to those. more in implementation chapter
-- mention the two approaches? single pixel vs large splats?
-- also drop that it's a paraboloid projection
+\begin{outline}
+\1 render the scene
+\1 depending on the size of the triangle, set tessellation levels
+\1 of the resulting tessellated triangles, take the center, calculate approx world size of disk, take normal from buffer
+\1 while it might be faster to just use the vertices as points, we take the center of each triangle to be more accurate, otherwise the points on the edge of the triangle will enlarge the rendered area considerably.
+\1 pick a random VPL, perform culling, render splat
+\1 actually, we iterate over several VPLS, and collect some that pass the culling test, and render to those. more in implementation chapter
+\1 mention the two approaches? single pixel vs large splats?
+\1 also drop that it's a paraboloid projection
+\end{outline}
 
 \subsection{Pull-Push Postprocessing}
 
-- While \citep{ritschel2008ism} implement a simplified variant of \citet{Marroquim:2007:reconstruction} and only use depth information from the point rendering, this approach trades in accuracy for performance and simplicity. We follow \citet{Marroquim:2007:reconstruction} more closely and additionally use a size attribute (and normal) for each point.
+\begin{outline}
+\1 While \citep{ritschel2008ism} implement a simplified variant of \citet{Marroquim:2007:reconstruction} and only use depth information from the point rendering, this approach trades in accuracy for performance and simplicity. We follow \citet{Marroquim:2007:reconstruction} more closely and additionally use a size attribute (and normal) for each point.
 
-- rough overview: the algorithm is a ``pyramid-method''? and uses miplevels.
-- a pull phase aggregates the information from four pixels of a finer level to one pixel of a coarser level.
-- It only considers valid pixels, i.\,e. ???
-- the push phase aggregates four pixels of the coarser level for each pixel of the finer level.
-- Again only pixels that are valid, i.\,e. ???
-- we differ from the original implementation by...
+\1 rough overview: the algorithm is a ``pyramid-method''? and uses miplevels.
+\1 a pull phase aggregates the information from four pixels of a finer level to one pixel of a coarser level.
+\1 It only considers valid pixels, i.\,e. ???
+\1 the push phase aggregates four pixels of the coarser level for each pixel of the finer level.
+\1 Again only pixels that are valid, i.\,e. ???
+\1 we differ from the original implementation by...
+\end{outline}
 \todo{expand on this}
 
 
@@ -82,25 +87,28 @@ We describe the point rendering process in the following section and subsequentl
 \label{sec:interleavedAndClusteredShading}
 \citep{Keller:2001:InterleavedSampling} is often used to vastly improve the performance impact of GI methods.
 
-- general idea: given some amount of samples that, in a naïve implementation, would be performed per pixel, distribute those samples over a block of pixelssome samples per pixel in a 4x4 or 8x8 block
-- the naïve implementation hurts cache coherency, since adjacent pixels process different samples.
-- to this end, de-interleaving is often used to simultaneosly process those pixels that use the same sample set. see \ref{sec:impl:interleavedShading} for details.
+\begin{outline}
+\1 general idea: given some amount of samples that, in a naïve implementation, would be performed per pixel, distribute those samples over a block of pixelssome samples per pixel in a 4x4 or 8x8 block
+\1 the naïve implementation hurts cache coherency, since adjacent pixels process different samples.
+\1 to this end, de-interleaving is often used to simultaneosly process those pixels that use the same sample set. see \ref{sec:impl:interleavedShading} for details.
 
-- results in structured noise and missing information as all pixels have only part of the samples
-- therefore, geometry-aware blur similar to \citet{laine2007incremental} to distribute the information
+\1 results in structured noise and missing information as all pixels have only part of the samples
+\1 therefore, geometry-aware blur similar to \citet{laine2007incremental} to distribute the information
 
-- all this works because low-frequency effect
+\1 all this works because low-frequency effect
 
-- we use a 4x4 sampling pattern and laine's algorithm for blurring.
+\1 we use a 4x4 sampling pattern and laine's algorithm for blurring.
 
 
-- in addition to interleaved sampling, we also employ a technique taken from \citet{olsson2012clustered}
-- view frustum is divided into a fixed number of clusters
-- for each fragment, determine cluster. clusters with no fragments are ignored.
-- for each cluster, determine the VPLs that can reach that cluster, put into light list.
-- during shading, don't iterate over all VPLs but only those from the light list.
-- usually, large benefits due to limited radius. we have infinite radius, but at least we can discard half the lights because hemisphere.
-- ritschel's paper about clustering
+\1 in addition to interleaved sampling, we also employ a technique taken from \citet{olsson2012clustered}
+\1 view frustum is divided into a fixed number of clusters
+\1 for each fragment, determine cluster. clusters with no fragments are ignored.
+\1 for each cluster, determine the VPLs that can reach that cluster, put into light list.
+\1 during shading, don't iterate over all VPLs but only those from the light list.
+\1 usually, large benefits due to limited radius. we have infinite radius, but at least we can discard half the lights because hemisphere.
+\1 ritschel's paper about clustering
+
+\end{outline}
 
 \section{Removing Lighting Singularities through Clamping}
 \label{sec:clamping}

@@ -4,9 +4,77 @@
 
 
 
-\todo{introduction to the various scales of GI. include \citep{jimenez:2016:AO}}
+\section{A High-Level Overview of Lighting in Computer Graphics}
+\begin{outline}
 
-\todo{introduction to many-light methods}
+\1 basically, the physics and optics behind this don't know the following destinctions. there are photons, and atoms/matter, and photons are either reflected, refracted or absorbed (maybe watch that PBR talk again)
+\1 in practice, this level of accuracy is not feasible to compute except for the most accurate physics simulations.
+\1 in computer graphics, researchers and engineers have separated this ??? into several effects that can be simulated or approximated independently from each other.
 
+\1 surface interaction
+    \2 physically based rendering
+    \2 transparency
+    \2 subsurface scattering in the case of non-metals
+        \3 smaller than a pixel ignored, larger than than screen-space
+\1 light transport through the scene/empty space.
+    \2 direct light: shadowmapping
+    \2 indirect light
+        \3 traditionally ignored in real-time rendering, ambient term
+        \3 since crysis, SSAO for short-distance or local indirect light. or rather, indirect shadowing.
+        \3 SSDO is more like indirect lighting.
+        \3 \citep{jimenez:2016:AO} is physically based, basically solved now.
+        \3 for large-scale indirect lighting, people have used lightmaps. inherently static.
+        \3 for dynamic scenes, researches often separate into diffuse and specular, since diffuse is both easier to plausibly simulate and more important for visual quality.
+        \3 we use the term global illumination to describe large scale indirect lighting. In this thesis, we additionally focus only on the diffuse part.
+    \2 won't cover other effects like participating media
+
+\1 real-time vs interactive/offline rendering?
+\end{outline}
+
+
+\section{Introduction to Global Illumination}
+
+\todo{why is GI important apart from realism?}
+\todo[color=green]{GI math?}
+
+\begin{outline}
+
+
+\1 traditionally ignored, to avoid unlit areas: ambient term
+\1 lightmaps: high-quality, but preprocessing and thus static
+
+\1 roughly, three steps:
+    \2 light sources
+        \3 some techniques require to ``inject'' the light into e.g. special data structures, others don't require this
+    \2 light propagation
+        \3 starting from the light sources, light needs to be transported to the scene geometry it will interact with. this includes visibility testing. for more realistic results, this process is often done in an iterative or recursive fashion in order to simulate the light bouncing multiple times off different surfaces.
+    \2 final gathering
+        \3 when the light has been propagated through the scene, the image synthesis algorithm needs to gather the information in order to shade the individual pixels it is rendering. again this might involve visibility tests. This also includes the choice of receiving elements the light is gathered into. Besides directly using pixels, other choices are texels, voxels or caches placed in the scene, which are then interpolated between to shade the individual pixels.
+
+\end{outline}
+
+- survey of interactive methods: \cite{Ritschel:2012:SAI:2283296.2283310}
+
+
+\section{Introduction to Many-Light Methods}
+
+\begin{outline}
+\1 how it works in general
+\1 why many lights, advantages
+\1 scales of many-light methods: real-time to offline
+\1 refer to survey \cite{Dachsbacher:2014:ManyLightsSTAR}
+\todo[color=green]{many-light math?}
+
+\1 four major challenges:
+    \2 vpl sampling, mostly step 1 and in case of multi-bounce, step 2
+        \3 in theory, there is no light injection needed since this is an iterative process that starts with the scene lights and from there on, creates new lights whereever the current light set lits the scene. in practice, the first bounce is often handled separately.
+    \2 visibility testing
+        \3 Again, visibility testing for scene lights is often handled separately. The real challenge is to determine areas lit by each of the potentially thousands of VPLS.
+    \2 shading / final gathering
+        \3 Mainly two approaches: Splatting and gathering. Both are too slow to brute-force this pixel-perfectly, more optimizations are needed.
+    \2 mitigating singularities
+        \3 explain what those are and why
+
+\end{outline}
 
 \cleardoublepage
