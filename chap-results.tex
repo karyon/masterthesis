@@ -24,9 +24,7 @@ and memory of course
 - our sampling pays no attention to relevance to the current frame and wastes budget on lights contributing little or nothing
 - screenshot of VPLs on the roof
 
-- our sampling has the additional downside of poor temporal stability when the scene light moves. this is due to each VPL staying at the exact same position in the light's viewport, so it ``follows'' the light's movements in a certain way, jumping over depth discontinuities if there are any and changing color when the geometry the VPL is created on changes color.
-
-- implement average color?
+- our sampling has the additional downside of poor temporal stability when the scene light moves. this is due to each VPL staying at the exact same position in the light's viewport, so it ``follows'' the light's movements in a certain way, jumping over depth discontinuities along the way.
 
 - frame-to-frame coherency here? two screenshots with diff.
 
