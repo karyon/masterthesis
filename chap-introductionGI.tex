@@ -1,8 +1,8 @@
 %!TEX root = foo-thesis.tex
 
-\chapter{Introduction to Global Illumination and Many-Light Methods}
+\chapter{Introduction to Global Illumination and Previous Work}
 
-
+\todo[color=green]{what about this structure?}
 
 \section{A High-Level Overview of Lighting in Computer Graphics}
 \begin{outline}
@@ -19,12 +19,14 @@
 \1 light transport through the scene/empty space.
     \2 direct light: shadowmapping
     \2 indirect light
-        \3 traditionally ignored in real-time rendering, ambient term
+        \todo{here only distinction between large-scale and small-scale. drop SSAO, do large scale in the introduction below.}
+        \3 first there was the ambient term
+        \3 for large-scale indirect lighting, people have used lightmaps and/or per-vertex baked ambient occlusion. inherently static and large scale, because memory or tesselation levels, respectively.
         \3 since crysis, SSAO for short-distance or local indirect light. or rather, indirect shadowing.
-        \3 SSDO is more like indirect lighting.
+        \3 SSDO is more like indirect lighting, but also small-scale.
         \3 \citep{jimenez:2016:AO} is physically based, basically solved now.
-        \3 for large-scale indirect lighting, people have used lightmaps. inherently static.
-        \3 for dynamic scenes, researches often separate into diffuse and specular, since diffuse is both easier to plausibly simulate and more important for visual quality.
+        \3 large scale, dynamic indirect lighting hasn't reached mainstream yet.
+        \3 researches often separate into diffuse and specular, since diffuse is both easier to plausibly simulate and more important for visual quality.
         \3 we use the term global illumination to describe large scale indirect lighting. In this thesis, we additionally focus only on the diffuse part.
     \2 won't cover other effects like participating media
 
@@ -55,6 +57,52 @@
 
 - survey of interactive methods: \cite{Ritschel:2012:SAI:2283296.2283310}
 
+\section{Previous Work on Real-Time Global Illumination}
+
+\todo{moar text here}
+
+\subsection{Point-Based Approaches}
+
+Based on the work of \citet{Bunnell:2005:AO}, point-based global illumination has been used for offline rendering in the film industry \citep{christensen2008point}.
+Despite its name, the geometry representation used to approximate the scene geometry consists of disk-shaped surface elements (\emph{surfels}).
+These surfels are then organized into the leaves of a tree structure, while the higher-level nodes are aggregate representations of all nodes they contain.
+The tree structure is then used to compute visibility and radiance transfer between the surfels.
+While \citet{Bunnell:2005:AO} uses a rough approximation for computing visibility, \citet{christensen2008point} uses ray tracing or spherical harmonics based on the distance between surfels to compute an accurate simulation of global illumination.
+Due to the large amounts of surfels required and the necessary tree structure, this technique is best suited for static or very small scenes.
+
+\todo{micro-rendering?}
+
+
+\subsection{Light Propagation Volumes}
+
+Originally proposed by \citet{Kaplanyan:2010:LPV} and extended in \citep{Kaplanyan:2010:LPV2}, this technique reduces the scene's geometry to voxels and then injects light from primary light sources into the voxel grid. Starting from there, the light is iteratively propagated from each illuminated voxel to its neighboring voxels. However, since inaccuracies of the propagation process accumulate over the iterations, this approach is inaccurate when dealing with long distances between sender and receiver.
+
+
+\subsection{Voxel Cone Tracing}
+
+Similar to light propagation volumes, the scene is first reduced to voxels and light from primary sources is injected. However, instead of propagating the light through the grid, the light is collected starting at receiving elements, usually pixels in screen-space, by tracing cones through the grid.
+While the original proposal \citep{Crassin:2012:OctreeVCT} uses a sparse voxel octree to represent the scene, \citet{Panteleev:2015:VXGI} introduces clip-maps that use several levels of equally-sized voxel grids to represent the scene with varying resolution depending on the distance to the camera.
+Both approaches can simulate specular reflections for moderately glossy surfaces. While the voxel octree is expensive to update with dynamic objects, the clip-maps are faster in this regard, but still need relatively large amounts of VRAM for higher quality levels. Lower quality levels exhibit noticable voxelization artifacts.
+
+
+\subsection{Ray-Tracing}
+
+\citet{Thiedemann:2011:VGI} trace rays through a voxel grid, but have to limit the ray's maximum distance for performance reasons and, similar to voxel cone tracing, suffer from high memory requirements. \citet{Tokuyoshi:2012:pathtracingrasterization} trace rays using rasterization, but have a severe performance impact since they render the whole scene multiple times.
+\citet{Chen:2016:Compactvoxels} use one bit per voxel to indicate whether it is opaque or not, and look up lighting information directly in an RSM during the final gather phase.
+
+
+\subsection{Radiance Caching}
+
+Partly orthogonal to the previous sections, radiance caching places caches in world- or screen-space that capture the incoming radiance. During actual shading, the nearest caches are interpolated. The major advantage is that incoming light needs to be gathered for fewer receiving elements.
+The original proposal cached irradiance values \citep{Ward:1988:IrradianceCaching}. The resulting loss of detail during interpolation and inability to compute specular reflections was overcome by radiance caching \citep{Krivanek:2005:RadianceCaching} at a performance loss, which was regained by \citet{Scherzer:2012:PreconvolvedRadianceCaching}. Another improvement in efficiency was proposed by \citet{Rehfeld:2014:ClusteredPreconvolvedRadianceCaching}.
+Radiance caching is orthogonal to the other techniques in that visibility still needs to be solved by other means, and using it introduces new problems such as temporal stability of the cache placement.
+
+
+\subsection{Screen-Space Approaches}
+
+Screen-space approaches generally suffer from the lack of information about objects that are outside the view frustum or occluded. The latter is alleviated by deep g-buffers \citep{Mara:2014:DeepGBuffers, Mara:2016:DeepGBuffers2}, but working only within the frustum, even this approach is limited to small to medium-scale indirect illumination.
+
+
 
 \section{Introduction to Many-Light Methods}
 
@@ -76,5 +124,40 @@
         \3 explain what those are and why
 
 \end{outline}
+
+\section{Previous Work on Real-Time Many-Light Methods}
+
+Many-light methods originate in instant radiosity \citep{Keller:1997:InstantRadiosity}. In the original paper, photons are traced through the scene, similar to photon mapping \citep{Jensen:1996:PhotonMapping}. With each bounce, however, instead of storing the photon in a photon map, a new \emph{virtual point light} (VPL) is created. These point lights illuminate the scene and thus simulate light reflections. The principle is applicable from real-time applications with up to a few thousand lights to offline rendering with millions of lights. With enough lights, the concept is capable of accurately simulating advanced effects like subsurface scattering and participating media. See \citet{Dachsbacher:2014:ManyLightsSTAR} for a survey of the wide range of many-light methods.
+
+The following will concentrate on those that are applicable to real-time rendering. We divide the sections according to the different problems that need to be solved when applying many-light methods: VPL sampling, solving occlusion, final gathering and mitigating singularities.
+
+\subsection{Virtual Point Light Sampling}
+
+While \citet{Keller:1997:InstantRadiosity} use an approach similar to photon mapping to create VPLs, real-time applications are in need of something more efficient. A commonly used technique are \emph{reflective shadow maps} (RSMs) \citep{Dachsbacher:2005:RSM}, which use rasterization to create first-order VPLs. While in this paper, each pixel of the RSM is considered a VPL and during gathering, of all VPLs a random subset is sampled, beginning with \citet{dachsbacher2006splatting} most papers sample the RSM to create a fixed set of VPLs which is used during shading.
+
+\citet{georgiev2010simple, ritschel2011ismsViewAdaptive} sample the RSM to create a set of VPLs with (estimated) high contributions to the final image. \citet{dong2009real, prutkin2012reflective} cluster several samples to form \emph{virtual area lights} (VALs). They observe that far fewer VALs than VPLs are necessary to achieve the same quality at a minor performance expense.
+
+Most of these approaches suffer from poor temporal stability. To improve on that, \citet{laine2007incremental} update only a portion of the VPLs per frame but introduce latency to the indirect light, additionally dynamic objects can receive but not bounce light. \citet{barak2013temporally} provide temporally stable results with dynamic scene geometry, but not with moving light sources. \citet{hedman2016sequential} achieve near-optimal temporal stability even with moving light sources while maintaining high per-image accuracy at real-time framerates. They use one classic shadowmap per VPL though, which must be updated lazily to stay within real-time limits.
+
+
+\subsection{Solving Occlusion}
+
+Several approaches exist to calculate visibility between VPLs and the scene parts to shade. Classic shadow maps are a fairly exact solution, but cannot be updated every frame for the several hundreds or even thousands of VPLs.
+
+A popular approach are \emph{imperfect shadow maps} \citep[ISMs,][]{ritschel2008ism}, which use a precomputed set of points as scene representation to quickly render large amounts of shadow maps. \citet{ritschel2011ismsViewAdaptive} extend the approach to fully dynamic scenes among other improvements. \citet{barak2013temporally} use tesselation to compute the point set, eliminating the need to keep a separate point set updated, making it inherently dynamic and providing better performance for larger point sets.
+
+Ray-tracing has been proposed to compute visibility as well \citep[e.\,g.][]{segovia2006bidirectional}, but suffers from the usual drawbacks of ray-tracing in a real-time context. A voxel-based scene representation has also been used to perform occlusion queries for many-light techniques \citep{sun2015manylightsSVO}.
+
+
+\subsection{Final Gathering}
+
+Splatting techniques have been used to add a light's contribution to the rendered image \citep{dachsbacher2006splatting, Nichols:2009:splatting}, but do not utilize modern GPUs efficiently. Instead, gathering approaches are commonly used today, using interleaved sampling \citep{Keller:2001:InterleavedSampling} with an edge-aware blur similar to \citep{laine2007incremental} as gathering approaches do. \cite{segovia2006non} improve the cache efficiency of interleaved sampling.
+
+\todo{expand a bit on interleaved sampling}
+
+
+\subsection{Mitigating Singularities}
+ In naïve implementations of many-lights techniques, bright spots will appear near the VPL’s positions due to the light’s attenuation term approaching infinity. A common approach is to clamp the term. This introduces bias, which can be compensated e.g. in screen space \citep{novak2011screen}. Singularities can also be avoided through more advanced light representations \citep{tokuyoshi2015vsgl}.
+
 
 \cleardoublepage
