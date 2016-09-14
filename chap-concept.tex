@@ -10,17 +10,16 @@
     \label{fig:LightingPipelineConcept}
 \end{figure}
 
-\todo{bilateral blur into that diagram?}
 
 \todo{do the matrix the other way around?}
 
 \todo[color=orange]{Indirect shading? indirect illumination? just shading?}
 
 This chapter will detail the individual stages of the lighting pipeline presented in this thesis. Figure~\ref{fig:LightingPipelineConcept} provides an overview.
+The reflective shadow map and the subsequent VPL sampling (middle row in the diagram) will be covered in the following section.
+Section~\ref{sec:ISM} describes the rendering process for the imperfect shadow maps (lower row ) in detail.
+The shading (upper row), which uses the clustered deferred technique and interleaving, is explained in Section~\ref{sec:clusteredAndInterleavedShading}. Note that ``shading'' in this case refers to indirect lighting only. More precisely, it implements the final gathering step mentioned in the previous chapter.
 Our G-buffer rendering does not differ from common deferred rendering pipelines and is not covered further.
-The reflective shadow map and the subsequent VPL sampling will be covered in the following section.
-Section~\ref{sec:ISM} describes the rendering process for the imperfect shadow maps in detail.
-The shading, which uses interleaving and the clustered deferred technique, is explained in Section~\ref{sec:interleavedAndClusteredShading}.
 Finally, we use clamping to remove singularities, this is shortly presented in Section~\ref{sec:clamping}.
 
 
@@ -83,8 +82,9 @@ We describe the point rendering process in the following section and subsequentl
 
 
 
-\section{Interleaved and Clustered Deferred Shading}
-\label{sec:interleavedAndClusteredShading}
+\section{Clustered and Interleaved Deferred Shading}
+\label{sec:clusteredAndInterleavedShading}
+
 \citep{Keller:2001:InterleavedSampling} is often used to vastly improve the performance impact of GI methods.
 
 \begin{outline}
@@ -107,6 +107,8 @@ We describe the point rendering process in the following section and subsequentl
 \1 during shading, don't iterate over all VPLs but only those from the light list.
 \1 usually, large benefits due to limited radius. we have infinite radius, but at least we can discard half the lights because hemisphere.
 \1 ritschel's paper about clustering
+
+\todo{explain clustered first? it comes first in the pipeline, but interleaved is commonly done and clustered is new}
 
 \end{outline}
 
