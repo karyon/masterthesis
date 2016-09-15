@@ -9,6 +9,7 @@
 \section{A High-Level Overview of Lighting in Computer Graphics}
 \begin{outline}
 
+\todo[color=green]{get the title}
 
 \1 basically, the physics and optics behind this don't know the following destinctions. there are photons, and atoms/matter, and photons are either reflected, refracted or absorbed (maybe watch that PBR talk again)
 \1 in practice, this level of accuracy is not feasible to compute except for the most accurate physics simulations.
@@ -26,7 +27,7 @@
     \2 indirect light
         \3 often separated into short and large scale indirect light. Sometimes also medium scale \cite{reed:2012:mediumAO}.
         \3 since crysis, SSAO in real-time applications for small-scale indirect light. or rather, indirect shadowing.
-        \3 SSDO \cite{Ritschel:2009:SSDO} is more like indirect lighting, but also small-scale.
+        \3 SSDO \citep{Ritschel:2009:SSDO} is more like indirect lighting, but also small-scale.
         \3 \citep{jimenez:2016:AO} is physically based, basically solved now.
         \3 Ambient occlusion important for details in objects as well as the spatial relation of objects close to each other, while large-scale occlusion is important for the realistic lighting of entire scenes.
         \3 While it has been simulated for static scenes for a while in real-time applications, indirect lighting for fully dynamic scenes has yet to reach mainstream in real-time applications. More on this in the next section.
