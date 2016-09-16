@@ -3,7 +3,7 @@
 
 \chapter{Implementation}
 
-\section{Used Libraries and the Framework gloperate}
+\section{Used Framework and Libraries}
 
 \begin{figure}[htbp]
   \centering
@@ -56,8 +56,10 @@
 \1 Because of the regular sampling, the noise produced during interleaved shading (Section~\ref{sec:impl:interleavedShading} or only results? there was a paper that sorts VPLs to avoid the noise...) is more structured. To help with that, we permutate the VPL order with a random permutation computed on CPU
 \end{outline}
 
+
 \section{ISM Rendering}
 \label{sec:impl:ismRendering}
+
 \begin{outline}
 \1 Our ISM rendering normally draws all the geometry in the scene.
 \1 In the tessellation control shader, the tesselation levels are determined depending on the triangle size.
@@ -66,7 +68,9 @@
 \1 i.e. position: center of triangle, radius: distance of center to farthest triangle vertex, normal: the face normal taken from the original, non-tessellated triangle.
 
 \1 the geometry shader then calculates a random VPL ID. We used the point's barycentric coordinate inside its triangle and the triangle's primitive ID to seed the random number generator, as both values are readily available and coherent between frames.
+\end{outline}
 
+\subsection{Point Rendering with Splatting}
 \1 two approaches:
 
 \1 either the geometry shader itself reads the VPL with the index it determined, projects the point according to the VPL's data, sets gl\_PointSize to the projected size, and emits a vertex.
@@ -74,6 +78,7 @@
 
 \1 \citet{Marroquim:2007:reconstruction} actually works with single-pixel ``splats''. since in this case we're not depending on the hardware rasterizer for good performance, this inspired the following approach:
 
+\subsection{Point Rendering with Pull-Push Postprocessing}
 \1 instead of splatting, the geometry shader puts points into buffer
 \1 one buffer per VPL for stability
 \1 buffers index marks the first VPL to try
