@@ -657,12 +657,8 @@ pages = {223--233}
 @inbook{Crassin:2012:OctreeVCT,
 name = {Octree-Based Sparse Voxelization Using The GPU Hardware Rasterizer},
 author = {Crassin, Cyril and Green, Simon},
-url = {http://www.seas.upenn.edu/~pcozzi/OpenGLInsights/OpenGLInsights-SparseVoxelization.pdf, Chapter PDF
-http://blog.icare3d.org/2012/05/gtc-2012-talk-octree-based-sparse.html, GTC 2012 Talk
-http://www.gputechconf.com/gtcnew/on-demand-gtc.php?sessionTopic=&searchByKeyword=&submit=&select=+&sessionEvent=&sessionYear=&sessionFormat=#1465, GTC 2012 Talk Video
-http://www.icare3d.org/research/GTC2012_Voxelization_public.pdf, GTC 2012 Slides PDF
-http://www.icare3d.org/research/GTC2012_Voxelization_public.pptx, GTC 2012 Slides PPTX
-http://openglinsights.com/, OpenGL Insights Website},
+note = "URL: \url{http://www.seas.upenn.edu/~pcozzi/OpenGLInsights/OpenGLInsights-SparseVoxelization.pdf} (Chapter PDF),
+\url{http://blog.icare3d.org/2012/05/gtc-2012-talk-octree-based-sparse.html} (GTC 2012 Talk), \url{http://www.gputechconf.com/gtcnew/on-demand-gtc.php?sessionTopic=&searchByKeyword=&submit=&select=+&sessionEvent=&sessionYear=&sessionFormat=#1465} (GTC 2012 Talk Video), \url{http://www.icare3d.org/research/GTC2012_Voxelization_public.pdf} (GTC 2012 Slides PDF), \url{http://www.icare3d.org/research/GTC2012_Voxelization_public.pptx} (GTC 2012 Slides PPTX), \url{http://www.openglinsights.com/} (OpenGL Insights Website)",
 date = {2012-07-01},
 booktitle = {OpenGL Insights},
 publisher = {CRC Press, Patrick Cozzi and Christophe Riccio},
@@ -980,4 +976,33 @@ title = {Physics and Math of Shading},
 howpublished = {Presentation at SIGGRAPH 2015},
 year = {2015},
 url = {http://blog.selfshadow.com/publications/s2015-shading-course/hoffman/s2015_pbs_physics_math_slides.pdf}
+}
+
+@article{Tokuyoshi:2016:Stochastic,
+  author =		 {Yusuke Tokuyoshi and Takahiro Harada},
+  title =		 {Stochastic Light Culling},
+  year =		 2016,
+  month =		 {March},
+  day =			 29,
+  journal =		 {Journal of Computer Graphics Techniques (JCGT)},
+  volume =		 5,
+  number =		 1,
+  pages =		 {35--60},
+  url =			 {http://jcgt.org/published/0005/01/02/},
+  issn =		 {2331-7418}
+}
+
+
+@article{Olsson:2011:TiledShading,
+  author = {Olsson, Ola and Assarsson, Ulf},
+title = {Tiled Shading},
+journal = {Journal of Graphics, GPU, and Game Tools},
+volume = {15},
+number = {4},
+pages = {235-251},
+year = {2011},
+doi = {10.1080/2151237X.2011.621761},
+URL = {http://www.tandfonline.com/doi/abs/10.1080/2151237X.2011.621761},
+eprint = {http://www.tandfonline.com/doi/pdf/10.1080/2151237X.2011.621761},
+abstract = { Abstract In this article we describe and investigate tiled shading. The tiled techniques, though simple, enable substantial improvements to both deferred and forward shading. Tiled Shading has been previously discussed only in terms of deferred shading (tiled deferred shading). We contribute a more detailed description of the technique, introduce tiled forward shading (a generalization of tiled deferred shading to also apply to forward shading), and a thorough performance evaluation. Tiled Forward Shading has many of the advantages of deferred shading, for example, scene management and light management are decoupled. At the same time, unlike traditional deferred and tiled deferred shading, full screen antialiasing and transparency are trivially supported. We also present a thorough comparison of the performance of tiled deferred, tiled forward, and traditional deferred shading. Our evaluation shows that tiled deferred shading has the least variable worst-case performance, and scales the best with faster GPUs. Tiled deferred shading is especially suitable when there are many light sources. Tiled forward shading is shown to be competitive for scenes with fewer lights, and is much simpler than traditional forward shading techniques. Tiled shading also enables simple transitioning between deferred and forward shading. We demonstrate how this can be used to handle transparent geometry, frequently a problem when using deferred shading. Demo source code is available online at the address provided at the end of this paper. }
 }
