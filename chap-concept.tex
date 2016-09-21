@@ -81,7 +81,7 @@ We describe the point rendering process in the following section and subsequentl
         \3 A radius check: If the pixel's location is outside the point's extends described by the displacement vector and its radius, then the point is not considered either. This is done to limit a point's influence to its actual size.
     \2 The pixel of the finer level might already contain data computed during the pull phase. This data is overwritten if the aggregated data has a smaller depth, i.e. if the original data is considered to be occluded. Otherwise, the original point is left as it is.
     \2 The weights used for interpolation during the push phase are not uniform, see Figure~\ref{fig:???}.
-\1 \citet{Marroquim:2007:reconstruction} also use the point's normals to give them to correctly limit the point's size, and \citet{Marroquim:2008:reconstruction2} propose gaussian weights based on the pixel's distance to the point's location, instead constant weights solely based on pixel locations. Both of these additions we have not implemented yet.
+\1 \citet{Marroquim:2007:reconstruction} also use the point's normals to correctly limit the point's size, and \citet{Marroquim:2008:reconstruction2} propose gaussian weights based on the pixel's distance to the point's location, instead constant weights solely based on pixel locations. Both of these additions we have not implemented yet.
 \end{outline}
 
 
@@ -99,6 +99,8 @@ The integrated algorithm works as follows:
 \1 for each cluster, determine the VPLs that can reach that cluster, put into light list.
 \1 during shading, don't iterate over all VPLs but only those from the light list.
 \1 usually, large benefits due to limited radius. we have infinite radius, but at least we can discard half the lights because hemisphere.
+\1 As an extension, \citet{olsson2012clustered} propose to calculate explicit bounds for the cluster's fragments to enable more precise culling. we expected only moderate performance gains from that and have not implemented it.
+\1 Another extension is to use the surface normal's direction as fourth dimension after the three spatial dimensions for clustering, allowing for some sort of backface culling for even greater efficiency. While this seems more promising in terms of performance gains, we have not implemented it either (wir sind bisher nicht dazu gekommen).
 \end{outline}
 
 Clustered shading is an extension and improvement to \textit{tiled shading} \citep{Olsson:2011:TiledShading}, that uses screen-space tiles instead of view-space clusters. Tiled shading has previously combined with many-lights global illumination by \citet{Tokuyoshi:2016:Stochastic}. They use an order of magnitude more lights than we do, but stochastically limit them in range. As a result, the light culling is much more effective in their case.
@@ -116,6 +118,7 @@ Interleaved sampling \citep{Keller:2001:InterleavedSampling} is often used to va
 
 \1 results in structured noise and missing information as all pixels have only part of the samples
 \1 therefore, geometry-aware blur similar to \citet{laine2007incremental} to distribute the information
+\1 the blur is separated (although since it is a bilateral filter, this is mathematically not equivalent, but difference is not noticeable), linear filter, and uses world-space distance and dot product between the samples as weight
 
 \1 all this works because low-frequency effect
 

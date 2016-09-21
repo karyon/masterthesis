@@ -122,12 +122,16 @@
 \1 \ref{lst:???}?
 \1 diagram of the pixels. \ref{fig:impl:pixels} explain this. we still do coherent VPL processing.
 \1 more explanation on id calculation
-\1 reasons for single pass? easier to implement. latency covering? less bandwidth? less memory. compared to interleaving via shared memory, occupancy and scales to 8x8.
-\1 potential downside is the scattered read compared to coherent read when doing the split. but, bottleneck is lookups in the VPL buffer and the respective shadowmaps in the main loop, as well as ALU operations, so this noe-time lookup doesn't have any impact. maybe completely latency covered or workgroups are distributed in a way that the reads are still cache-coherent.
+\1 reasons for single pass? 1. Easier to implement. 2. Basically, we completely remove the separate interleaving and deinterleaving step and simply change the read and write patterns, saving on the absolute amount of memory read and written. 3. Less memory used since no additional buffers are needed. 4. scales better to 8x8 interleaving pattern, since 64 interleaving sections ??? might introduce significant overhead (interleaving through buffers: maximum render targets often 8 or 16, so now multiple passes needed, interleaving through shared memory: becomes impossible, too large work groups, too much shared memory needed)
+\1 potential downside is that we introduce one scattered read compared to several coherent reads in the buffer splitting method. but, bottleneck is lookups in the VPL buffer and the respective shadowmaps in the main loop, as well as ALU operations, so this one-time lookup doesn't have any impact. maybe completely latency covered or workgroups are distributed in a way that the reads are still cache-coherent.
 \1 in fact, any attempts to do coherent reads did not result in speedups.
 
+\todo[color=yellow]{implement 16 dispatches instead of 16 work groups in z dimension. benefit might be cache usage, since all work groups access the same VPLs and the same ISMs.}
+\todo[color=yellow]{investigate into interleaving via shared memory in 2x2 groups}
+\todo{write hedman, how did they do the 8x8 interleaving?}
+
 \1 Since only a subset of all samples is processed per pixel and this subset repeats every four pixels, this process results in structured noise (see Figure \ref{fig:???} or this figure in concept?)
-\1 therefore, geometry-aware blur similar to \citet{laine2007incremental}. doesn't smooth over edges. See code snippet \ref{listing:???}. every pixel has all the information now ideally.
+\1 therefore, geometry-aware blur similar to \citet{laine2007incremental}. doesn't smooth over edges. two passes for vertical and horizontal. See code snippet \ref{listing:???}.
 
 \1 VPL shuffling helps a great deal! See Figure \ref{fig:impl:shuffling}
 \end{outline}
@@ -138,8 +142,7 @@
 \begin{outline}
 \1 we use 128 pixels as screen-space tile width and 16 depth slices. We also use an optimization proposed by \citet{persson::2013::practical} and use a larger near cluster for better depth slice utilization.
 
-\1 we do not use explicit bounds, since we expect only small gains by that. although it might result in larger gains, we have have not implemented using normals for clustering yet.
-\1 \citet{???practical} do culling on the CPU. they have small radii and can therefore quickly determine the clusters that are reached by a certain light.
+\1 \citet{persson::2013::practical} do culling on the CPU. they have small radii and can therefore quickly determine the clusters that are reached by a certain light.
 \1 we have infinite light radii and therefore lots of clusters per light. therefore, we can expect to cull maybe half the lights and not the majority.
 \1 therefore, we decided to iterate over all lights per used cluster, as opposed to iterate over reached clusters per light.
 \1 the more uniform control flow of this approach as also better suited to GPUs.
@@ -170,4 +173,15 @@
     \2 during shading, when processing a pixel, the pixel's cluster is first determined and only the lights of this cluster's light list are processed.
     \2 we use a very basic approach to combine this with interleaved shading: of all lights in the light list, each pixels gets an equally sized fraction. while this might lead to adjacent pixels processing overlapping sets of lights if they are in different clusters, they are either in clusters near to each other in which case the light lists are probably quite similar, or they are in clusters seperated from each other so the geometry-aware blur wouldn't consider them anyway.
 
+\1 Tiled shading
+    \2 In addition to clustered deferred shading, we also implemented its predecessor tiled shading. Since it does not perform a clustering in the z-dimension and thus has only one cluster per tile, it allows for a simpler implementation.
+    \2 We integrated this directly into our final gathering shader. Since each work group processes all pixels that are in the same tile and use the same set of VPLs for lighting, we can easily do the following:
+        \3 each invocation reads one pixel. With six shared variables (minimum and maximum x, y and z values) and the atomicMin and atomicMax methods, create an exact bounding box in NDC
+        \3 now, each invocation takes one VPL and culls it against the bounding box. If it passes the culling test, it adds it to a list in shared memory, again using an atomic counter that describes the list's current size to not overwrite any VPL added by another invocation.
+        \3 perform the regular final gathering, using the list of VPLs in shared memory.
+
+\todo[color=green]{distinction between own work and previous work}
+
+\todo[color=yellow]{rename gi shader to final gathering. other renames?}
+\todo{what openGL version do i require? also, i should look up which dedicated GPUs support 4.5/4.4 and what Intels GPUs say. maybe point out the need for modern OpenGL more? also, how they make it easier to implement.}
 \end{outline}
