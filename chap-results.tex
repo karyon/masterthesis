@@ -16,7 +16,7 @@ and memory of course
 
 \section{RSM Generation and VPL Sampling}
 \begin{outline}
-\1 RSM generation is the same as G-Buffer generation, possibly with a different resolution. as said earlier, depending on the specific use case, this rendering pass can also render the shadowmap. also, average color.
+\1 RSM generation is the same as G-Buffer generation, possibly with a different resolution. as said earlier, depending on the specific use case, this rendering pass can also render the shadowmap.
 \1 screenshot of RSM G-buffers
 
 \1 VPL sampling takes fractions of a millisecond and is negligible. bear in mind that in order to achieve high quality levels, a more elaborate sampling algorithms needs to be implemented, which can actually take most of the available time. See \citep{hedman2016sequential} for an advanced sampling algorithm.
@@ -33,14 +33,64 @@ and memory of course
 
 \section{ISM Rendering}
 
+\begin{outline}
+\1 Point Rendering with Splatting
+    \2 parameters are: number of points or rather, tesselation level, and point size factor
+    \2 performance
+    \2 quality
+    \2 memory usage
+\1 Point Rendering with Pull-Push Postprocessing
+    \2 additional parameters: number of VPLs per point, and the point size does not have any impact anymore
+    \2 performance
+    \2 quality
+    \2 additional memory usage for point buffers
+    \2 performance and quality impact of packing?
+    \2 show this is bandwidth bound. calculation how much memory is read and written, vs bandwidth of GTX 980.
+    \2 maybe show one full-size shadowmap to show this *can* work
+\1 comparison of pull-push vs splatting
+\1 Discussion
+    \2 ISMs have several deficits, starting with reducing the scene's geometry to points. This is already a simplification that trades speed for accuracy.
+    \2 Second, because we use a sparse point set for each ISM, each point must be enlarged to accomodate for the missing points. For instance, if an area is represented by a thousand points and we now use one tenth of all points for an ISM, each remaining point's area must be enlarged by a factor of ten to result in an equally large area in the rendered output. Of course, this approach leads to deformed geometry since points at the edges of the area get enlarged as well, growing over the borders of the original geometry.
+    \2 Third, there are also numerical issues. For instance, both the splatting and postprocessing approaches ignore the distortion caused by the projection, and thus might render even simple surfaces incorrectly. This contributes to the necessity of using a relatively large shadow bias.
+    \2 A massive improvement would be to differentiate between large-scale scene geometry that is important for global illumination, and smaller geometry of lesser importance. While the latter can possibly be ignored altogether with only minor losses in quality, the shape of large-scale geometry is all the more important to preserve (relatively) precisely.
+    \2 The San Miguel scene is a good example for this: While the small detail work like dishes and small plants make up most of the geometry and thus most of the rendering time, they contribute only very little to global illumination. This is where our implementation suffers most from the lack of level-of-detail methods.
+\end{outline}
+
+
+
 \todo[color=blue]{ISM rendering results}
 
 
 \section{Interleaved Shading with Compute Shaders}
+
+\begin{outline}
+\1 performance
+\1 1x1 and 4x4, if i'm good also 2x2 and 8x8...
+\1 quality
+    \2 screenshots with and without, with details on e.g. foliage, diffimage? and shaded result
+\1 memory usage
+    \2 one additional buffer
+\1 discussion
+
+\end{outline}
 
 \todo[color=blue]{interleaved shading results}
 
 
 \section{Clustered Deferred Shading}
 
+
+\begin{outline}
+\1 parameters: cluster size
+\1 performance: time used by additional steps vs saved in GI step
+\1 quality: exactly the same
+\1 memory usage for the one intermediate result and the light lists buffer
+\1 performance of tiled shading. comparable, no memory usage, easier to implement, but less flexible.
+\1 discussion
+\end{outline}
+
+
 \todo[color=blue]{clustered deferred shading results}
+
+
+- one 4k test?
