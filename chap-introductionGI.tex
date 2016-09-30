@@ -59,6 +59,46 @@ Allowing changing geometry provides additional benefits: Games can create new ex
 
 \subsection{Theory}
 
+
+% based on https://github.com/naps62/msc-thesis/tree/ee10a36eecbb691ba1a67b4c5367967023d07440/doc/common/equations
+\newcommand{\dir}{\vec\omega} % directions are represented by greek omega character
+
+\newcommand{\outgoingDir}{ \dir_o}
+\newcommand{\incidenceDir}{\dir_i}
+
+\newcommand{\outgoingRadiance}{  L_o(x, \outgoingDir)}
+\newcommand{\emittedRadiance}{   L_e(x, \outgoingDir)}
+\newcommand{\reflectedRadiance}{ L_r(x, \outgoingDir)}
+\newcommand{\incidentRadiance}{  L_i(x, \incidenceDir)}
+
+\newcommand{\brdf}{f_r} % brdf function name
+
+\newcommand{\surfaceNormal}{\vec{n}}
+
+We will start with the most basic form of the rendering equation \citep{Kajiya:1986:RenderingEquation}:
+
+\begin{figure}[!htp]
+  \begin{equation}
+    \outgoingRadiance = \emittedRadiance + \reflectedRadiance
+  \label{eq:renderBasic}
+  \end{equation}
+\end{figure}
+\noindent
+This describes the outgoing radiance $L_o$ from a surface point $x$ in the direction $\outgoingDir$, which is equal to the emitted radiance $L_e$ plus the reflected radiance $L_r$.
+
+The reflected radiance can be defined as
+
+\begin{figure}[!htp]
+  \begin{equation}
+    \reflectedRadiance = \int\limits_{\Omega} \brdf(x, \incidenceDir, \outgoingDir)\incidentRadiance (\incidenceDir \cdot \surfaceNormal) d \omega_i
+  \label{eq:render}
+  \end{equation}
+\end{figure}
+\noindent
+where $\Omega$ is the upper hemisphere of point $x$, $\brdf$ is the BRDF of the surface, $L_i$ the incident radiance and $\surfaceNormal$ the surface normal at point $x$.
+
+When not simulating global illumination,
+
 \todo[color=blue]{GI theory}
 - part of this must be what makes this so computationally intensive
 
