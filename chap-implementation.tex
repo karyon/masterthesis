@@ -61,57 +61,75 @@
 \section{ISM Rendering}
 \label{sec:impl:ismRendering}
 
-\begin{outline}
-\1 Our ISM rendering normally draws all the geometry in the scene.
-\1 In the tessellation control shader, the tesselation levels are determined depending on the triangle size.
-\1 The tessellation evaluation shader does nothing besides correctly interpolating the triangle's vertices.
-\1 The geometry shader, which now recieves a small (tesselated) triangle, computes the point data
-\1 i.e. position: center of triangle, radius: distance of center to farthest triangle vertex, normal: the face normal taken from the original, non-tessellated triangle.
+Both the point splat renderer and the single-pixel point renderer share the first stages of their rendering pipelines, which are described here, before the following subsections describe the two renderers themselves and the pull-push postprocessing.
 
-\1 the geometry shader then calculates a random VPL ID. We used the point's barycentric coordinate inside its triangle and the triangle's primitive ID to seed the random number generator, as both values are readily available and coherent between frames.
+We make use of OpenGL's tessellation shader to subdivide triangles to make them meet a certain maximum size. The tessellation control shader determines the tessellation levels according to the triangle's size. The tessellation evaluation shader does nothing more than correctly interpolating the vertex positions.
 
-\1 the next step depends on whether point splatting or pull-push postprocessing is enabled.
-\end{outline}
+The geometry shader, which now recieves the smaller, tessellated triangles, converts the triangle to a point. The point's center equals the triangle's center, and the radius is chosen so the areas of the point and triangle match.
+
+\todo[color=yellow]{implement that area thing}
+
+While a random subset of all points needs to be chosen for each ISM, special care must be taken to make sure that the same subset of points is used for each ISM in each frame. Otherwise, the ISMs will be temporally incoherent and cause flickering in the final rendering. To this end, the point's barycentric coordinate inside its triangle and the triangle's primitive ID are passed to a fast hashing algorithm. The result is is used to determine an ISM ID (or, equivalently, a VPL ID) for use in the next step.
+
+Note that no translation or projection has been applied yet, this happens in a later stage. As a result, the vertex shader is a simple pass-through shader.
+
+The next step depends on whether point splatting or the single-pixel renderer is enabled.
+
+
 
 \subsection{Point Rendering with Splatting}
-\begin{outline}
-\1 in case of point splatting, the geometry shader itself reads the VPL with the index it determined, projects the point according to the VPL's data, performs culling (backface and hemisphere) sets gl\_PointSize to the projected size, and emits a vertex.
-\1 also, output mode is points. fragment shader empty.
-\1 to avoid holes, we simply enlarge all points by a certain percentage.
+
+In the case of point splatting, the geometry shader itself reads the VPL with the ID it determined, projects the point according to the VPL's data, performs culling (backface and hemisphere) sets \texttt{gl\_PointSize} to the projected size, and emits a vertex.
+
+The \texttt{output\_primitive} must be set to \texttt{points} in the geometry shader's \texttt{layout} definition. As explained previously, for point splatting all points are simply enlarged by a small constant factor in lieu of the pull-push postprocessing. Since only depth information are needed in this case, the fragment shader is empty.
 
 
 
-\subsection{Point Rendering with Pull-Push Postprocessing}
-\1 Since \citet{Marroquim:2007:reconstruction} works with single-pixel ``splats''. since in this case we're not depending on the hardware rasterizer for good performance, this allowed the following approach:
+\subsection{Single-Pixel Point Rendering with Compute Shaders}
 
-\1 instead of splatting, the geometry shader puts points into buffer
-\1 one buffer per VPL for stability
-\1 buffers index marks the first VPL to try
-\1 then, per point in each buffer, starting with the respective VPL, we test a fixed number of VPLs (e.\,g. 16) and collect up to 4 that pass culling tests (test itself is the same as above)
-\1 we then use imageStore to ``render'' the point as a single pixel into the 4 collected VPLs. we also use additional buffers as additional ``render targets'' and write the point's size in there.
+This approach was inspired by the fact that the surface reconstruction in \citet{Marroquim:2007:reconstruction} works with single-pixel ``splats''. Since in this case the hardware rasterizer is not required to achieve good performance, this allowed for more flexibility and new optimization opportunities.
 
-\1 doing this with the geometry shader (especially emitting more than one vertex) lead to bad performance, therefore we couldn't do this there. Reason: first, GS bad at outputting multiple vertices, second, fillrate bound. postprocessing approach does not have the fillrate problem.
+The general idea is to first let the geometry shader write the generated points into a buffer, which is then used by a separate compute shader pass to perform the actual rendering.
 
-\1 the race condition
-    \2 first, the order of writes to the depth buffer is undefined as the execution order of the different compute shaders is undefined in the OpenGL specification. Therefore, the classical z-fighting may occur if two points are rendered into the same pixel of the same shadowmap with the same depth value. The value that gets written into the second render target is undefined and may differ between subsequent frames. In practice, this happens very rarely and we chose to ignore this.
-    \2 However, a different race condition was frequently observable in our implementation:
-    \2 If if one thread does a successful write into the depth buffer, and a second thread that is executing simultaneously or shortly thereafter performs a write with an even lower value but is ordered by the atomic engine (?) after the first write, that write will succeed as well so the lowest value will (correctly) end up in memory. However, since both threads succeeded, both threads will attempt to write to the second buffer, creating another race condition since the here execution order is undefined again. We alleviate this problem by adding a synchronization point after the atomic write and then reading the memory location that just got written to. If it is equal to the written value, the write actually succeded and did not get overwritten by a second, simultaneous write. Only then we write to the second buffer.
-    \2 However, this solution fixes the race condition only inside one work group and not between work groups, for which no efficient synchronization primitives exist on the GPU. The problem occurred infrequently enough though to be negligible.
-    \2 A proper solution that would fix this problem completely, avoiding the synchronization overhead and open more optimization possibilities would involve a more advanced software renderer, e.g. following the approaches of \cite{foo} or \cite{bar}.
+In order to maintain temporal coherence, the points are not written into a single large buffer, as it would be hard to consistently determine a location for each point in that buffer. Instead, the buffer is divided into one section per VPL, and the points are written into the section corresponding to the ID calculated before. An atomic counter that indicates the first free index is used per section to sequentially fill these sections without overwriting any data. The order of the points within each section is undefined, but that does not change the output since they all are going to be rendered into the same ISM.
 
-\end{outline}
+Now a compute shader is used to render the points. For each VPL, one work group reads through the respective section of the point buffer and performs the transformation and culling against the VPL for each point. It then uses \texttt{imageAtomicMin} to ``render'' the point with correct depth testing as a single pixel into the respective ISM. Since atomic operations require using single channel integer textures, the ISM is actually implemented as 3D texture, using the second index in the third dimension as additional ``render target'' to hold the radius and normal. This alse requires the attributes to be packed into a 32-bit integer.
+
+As an optimization, the compute shader renders each point into several ISMs. To this end, each work group reads the data for a fixed number of VPLs (e.\,g.\ 16) into shared memory. Then, for each point culling is performed on all 16 VPLs, and those that pass the culling test are collected into a local array. Thereafter the point is transformed for each of the collected VPL and rendered into the respective ISM.
+
+% In practice it turned out to be more efficient to limit the number of slots in the local array to a constant maximum (e.\,g.\ 4), possibly because this ensures that the rendering loop is not diverging and enables compiler optimizations like loop unrolling.
+
+An attempt to do this optimization in the splat renderer by emitting multiple vertices in the geometry shader resulted in a significant performance hit, a problem not uncommon when using geometry shaders. While emitting additional vertices alone had a huge impact, the additional fillrate and overdraw became an issue when using too many points, a bottleneck that is unlikely to occur when using the single-pixel renderer.
 
 
-\begin{outline}
-\1 our implementation of the pull-push algorithm is relatively straightforward. For each miplevel to be calculated, one dispatchCompute is called. Since the first step of the pull phase has different inputs than the subsequent steps (it only has depth and size, not the displacement vector and depth interval), we use a slightly different shader there. Analogous the last step of the push phase outputs only depth, therefore we use a shader variant for that step, too.
-\1 in the pull phase, one compute shader invocation calculates one output pixel. it reads its four input pixels, determines which of them are valid, and uses the valid ones for interpolating.
-\1 the pull phase works analoguous. Each invocation reads four input pixels and computes one output pixel. Since we have non-uniform weights here anyway, it seemed simpler to set the weight of invalid pixels to zero instead of separately marking them as invalid.
-\1 note that this implementation is not optimized. for instance, in the pull phase, groups of four output pixels have the same four input pixels, so a straightforward optimization would be to read four pixels once and calculate all four output pixels that are derived from these four input pixels, saving three quarters of all texture or texture cache reads.
-\todo[color=yellow]{implement four input pixels = four output pixels}
-\1 More room for optimization does exist. Especially the pull phase is basically a parallel reduction which is well-researched and for which optimized algorithms on the GPU exist, see e.g. \citet{thatNVIDIAPresentation}. Several optimizations from that fields might be applicable here.
-\1 since this technique is heavily bandwidth-bound, we aggressively pack the data.
+\subsubsection{Race Conditions caused by second render target??}
+
+There are two race conditions that may influence the output.
+
+First, the order of writes to the ISM depth buffer is undefined as the execution order of the different compute shaders is undefined in the OpenGL specification. Therefore, the classical z-fighting may occur if two points are rendered into the same pixel of the same shadowmap with the same depth value. The attributes that end up written into the additional render target are undefined and may differ between subsequent frames. In practice, this happens very rarely and we chose to ignore this.
+
+However, a different race condition was frequently observable in our implementation:
+If two threads with differing depth values simultaneously write into the depth buffer, using \texttt{imageAtomicMin} guarantees the correct value will end up in the depth buffer. However, if the higher value got written first and gets overwritten by the second write, both writes have succeeded. This results in both threads attempting to write into the second buffer, creating another race condition since the here execution order is undefined again. THis problem can be alleviated by adding a synchronization point after the atomic write and then reading the memory location that just got written to. If it is equal to the written value, one can assume the write actually succeeded and did not get overwritten by a second, simultaneous write. Only then the write to the second buffer is performed.
+
+However, this solution fixes the race condition only inside one work group and not between work groups, for which no efficient synchronization primitives exist on the GPU. The problem occurred infrequently enough though to be negligible.
+
+A proper solution that would fix this problem completely, avoiding the synchronization overhead and open more optimization possibilities would involve a more advanced software renderer, e.\,g.\ following the approaches of \citet{Laine:2011:SoftwareRasterization}.
+
+
+\subsection{Pull-Push Postprocessing}
+
+Our implementation of the pull-push algorithm is relatively straightforward. For each miplevel to be calculated, one \texttt{dispatchCompute} is called. Since the first step of the pull phase has different inputs than the subsequent steps (it only has depth and size, not the displacement vector and depth interval), a slightly different shader is used there. Analogous the last step of the push phase outputs only depth, therefore a shader variant is used for that step as well.
+
+In the pull phase, one compute shader invocation calculates one output pixel. It reads its four input pixels, determines which of them are valid, and uses the valid ones for interpolating.
+
+
+During the push phase, groups of four output pixels share the same input pixels. This can be exploited by letting each shader invocation computing four output pixels while still reading only four input pixels. Naturally, the weights applied to the input pixels need to be adjusted per output pixel. For invalidating input pixels, their weights can simply be set to zero instead of separately marking them as invalid.
+
+%Since this technique is heavily bandwidth-bound, we aggressively pack the data.
 \todo[color=yellow]{actually pack this shit aggressively. 32bit depth and depth interval, 32bit displacement and radius and that's it. }
-\end{outline}
+
+Note that there is still lots of room for optimization. Especially the pull phase is basically a parallel reduction which is well-researched and for which optimized algorithms on the GPU exist, see e.\,g.\ \citet{Harris:2007:ParallelReduction}. Several optimizations from that field might be applicable here.
+
 
 
 \section{Interleaved Shading with Compute Shaders}
