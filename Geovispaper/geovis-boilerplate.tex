@@ -49,6 +49,7 @@
 
 
 \usepackage{epstopdf}
+\usepackage{outlines}
 
 \begin{document}
 
@@ -116,36 +117,9 @@ Johannes Linke\\
 }
 
 \maketitle
-\begin{abstract}
-TODO
-\end{abstract}
 
 
-
-\section{Introduction}
-For decades, computer graphics researchers have strived to achieve the faithful reproduction of reality in synthetic renderings. While photorealism has been achieved in offline rendering contexts, many optical effects occurring in physical environments are still not in use in interactive and real-time applications or implemented with severe limitations. Several lighting effects collectively referred to as ``global illumination'', such as caustics, subsurface scattering and diffuse and specular indirect light, fall into this category.
-
-In this paper, we develop a system that simulates diffuse indirect light in arbitrary and dynamic scenes using many-light techniques. We will trade in quality and instead focus on performance while maintaining scalability with the goal to achieve real-time performance on commodity hardware.
-
-
-
-
-\section{Related Work}
-
-Many-light methods for simulating global illumination effects are a well-researched topic. They are based on Instant Radiosity \cite{Keller:1997:InstantRadiosity}, in which photon mapping is used to create small lights, called Virtual Point Lights (VPLs) at every intersection of photons with the scene geometry.
-
-
-Most of the work on many-light methods can be categorized into the areas VPL placement, solving occlusion, gathering light into the framebuffer and mitigating singularities, an artifact that occurs near positions of VPLs.
-
-
-The foundation of many algorithms for VPL placment are Reflective Shadow Maps (RSMs) \cite{Dachsbacher:2005:RSM}, which are shadow maps with additional surface information. Using the additional data, VPLs are created per texel of the RSM. View-adaptive placement of VPLs greatly enhances performance and quality \cite{ritschel2011ismsViewAdaptive}. \cite{prutkin2012reflective} cluster RSM samples to virtual area lights, and \cite{hedman2016sequential} focuses on temporal coherence when placing VPLs to avoid flickering.
-
-A common approach for solving occlusion are Imperfect Sha\-dow Maps (ISMs) \cite{ritschel2008ism}, which use a point-based approximation of the scene to efficiently render a small, approximate shadow map for hundreds of VPLs simultaneously. ISMs have been used in production for rendering many spotlights with shadows \cite{evans2015dreams}, and several enhancements have been proposed \cite{ritschel2011ismsViewAdaptive, hollander2011manylods, barak2013temporally}. Using slim voxels \cite{sugihara2014layered, sun2015manylightsSVO, chen2016quantizing} for occlusion is another approach that needs only a single bit per voxel for visibility testing, thereby avoiding the usually high memory requirements of voxelization techniques.
-
-\cite{dachsbacher2006splatting, Nichols:2009:splatting} are using splatting techniques in favor of the more common gathering approach. \cite{sloan2007image, laine2007incremental} provide details on how to speed up the straight-forward approach of iterating over sets of VPLs per fragment.
-
-In na\"ive implementations of many-light methods, bright spots will appear near the VPL's positions due to the light's attenuation term approaching infinity. A common approach is to clamp the term. This introduces bias, which can be compensated e.g. in screen space \cite{novak2011screen}. Those singularities can also be avoided through more advanced light representations \cite{tokuyoshi2015vsgl}. \cite{olsson2012clustered}
-
+\input{geovis-content.tex}
 
 
 %
@@ -153,7 +127,7 @@ In na\"ive implementations of many-light methods, bright spots will appear near 
 % initial runs of your .tex file to
 % produce the bibliography for the citations in your paper.
 \bibliographystyle{abbrv}
-\bibliography{sigproc}  % sigproc.bib is the name of the Bibliography in this case
+\bibliography{../foo-thesis}  % sigproc.bib is the name of the Bibliography in this case
 % You must have a proper ".bib" file
 %  and remember to run:
 % latex bibtex latex latex
