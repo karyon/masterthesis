@@ -1,52 +1,61 @@
 %!TEX root = foo-thesis.tex
 
 \chapter{Introduction to Global Illumination and Previous Work}
+\label{chap:introductionGI}
+
+In this chapter we start by giving a rough overview of lighting in computer graphics and locate and distinguish global illumination in this vast research field.
+We then lay the groundwork for the following chapters by introducing the conceptual and theoretical foundations of global illumination in general and many-light methods in particular, combined with an overview of the related work in those topics.
 
 
 \section{A High-Level Overview of Lighting in Computer Graphics}
 
-\begin{outline}
-\1 basically, the physics and optics behind this don't know the following destinctions. there are photons, and atoms/matter, and photons are either reflected, refracted or absorbed (maybe watch that PBR talk again)
-\1 in practice, this level of accuracy is not feasible to compute except for the most accurate physics simulations.
-\1 in computer graphics, and especially in the real-time department, researchers and engineers have separated this ??? into several effects that can be simulated or approximated independently from each other.
+Before we start by examining the different lighting effects simulated in computer graphics, it is worth pointing out that real-world physics do not know most of the distinctions we will make. Many effects and phenomena in lighting can be reduced to a basic set of interactions of photons, which are emitted by light sources and then reflected, refracted or absorbed by matter.
 
-\1 surface interaction
-    \2 physically based rendering to make users recognize real-world materials in the virtual world
-    \2 transparency to be able to render certain materials like glass
-    \2 subsurface scattering in the case of non-metals
-        \3 smaller than a pixel ignored \citep{Hoffman:2015:PhysicsOfShading}, larger than that: screen-space
-        \3 especially important for skin
-\1 light transport through the scene/empty space.
-    \2 in order to see *something* at all, eyes are entirely dependent on incoming light. for depth perception, realism, ???
-    \2 direct light: for real-time applications: shadowmapping
-    \2 indirect light
-        \3 often separated into short and large scale indirect light. Sometimes also medium scale \cite{reed:2012:mediumAO}.
-        \3 since crysis, SSAO in real-time applications for small-scale indirect light. or rather, indirect shadowing.
-        \3 SSDO \citep{Ritschel:2009:SSDO} is more like indirect lighting, but also small-scale.
-        \3 \citep{jimenez:2016:AO} is physically based, basically solved now.
-        \3 Ambient occlusion important for details in objects as well as the spatial relation of objects close to each other, while large-scale occlusion is important for the realistic lighting of entire scenes.
-        \3 While it has been simulated for static scenes for a while in real-time applications, indirect lighting for fully dynamic scenes has yet to reach mainstream in real-time applications. More on this in the next section.
-    \2 won't cover other effects like participating media
-
-\1 The term ``global illumination'' has been used for varying sets of lighting effects. In this thesis, we use it to describe just large scale indirect lighting.
+In practice, simulating individual photons and atoms is obviously infeasible and unneccessary to simulate for most computer graphics applications. Instead, computer graphics researchers have examined the different real-world light phenomena and simulated them separately, using different approaches and approximations for each of them to stay within their respective performance budget.
 
 
-\end{outline}
+In the following we will try to give an rough (and non-comprehensive) overview over these lighting effects and locate global illumination within them. Our most top-level distinction is between the interaction of light with the scene's surfaces, and the transport of light through empty space in the scene.
+
+\paragraph{Light-Surface Interaction.}
+
+To determine how much and in what direction incoming light is reflected from surfaces, \textit{bi-directional reflectance distribution functions} (BRDFs) are used. While the recent shift to physically-based BRDFs has brought more unified models to real-time computer graphics, several materials such as transparent (e.\,g. glass) or highly translucent ones (e.\,g. skin) are still handled separately.
+
+
+\paragraph{Light Transport.}
+
+In order for light to interact with surfaces, it needs to be ``transported'' to them from light sources. The simplest case, light that hit only one surface before reaching the camera, is called direct light. To determine surfaces that are directly hit by a certain light source, shadow maps are commonly used in real-time computer graphics.
+
+Direct light it usually has a single point as origin in the case of point lights, or consists of entirely parallel light rays in the case of directional lights. This structuredness makes it comparatively easy to compute.
+
+Indirect light on the other hand is bounced off at least two surfaces before reaching the camera. Since each point that is directly lit now reflects light into arbitrary directions, this process is much less structured and thus harder to compute. To cope with this complexity, indirect light has been separated into small-scale and large-scale indirect light. An intermediate step for medium-scale indirect lighting has also been proposed \citep{reed:2012:mediumAO}.
+
+The simulation of small-scale indirect light has been made popular with \textit{screen-space ambient occlusion} (SSAO, \cite{Mittring:2007:Cryengine2}). While this should be more accurately described as small-scale indirect \textit{occlusion}, since it only darkens occluded areas, \textit{screen-space directional occlusion} (SSDO, \cite{Ritschel:2009:SSDO}) actually performs a form of indirect lighting, albeit a limited one. \citet{jimenez:2016:AO} have finally put this technique onto a physically based foundation.
+
+Small-scale indirect lighting techniques such as SSAO are important for accentuating small geometric details in objects and providing a sort of contact shadow as a visual cue for the proximity of objects to each other. In contrast, large scale indirect lighting provides more realistic lighting for entire scenes.
+
+While it has been simulated for static scenes for a while even in real-time applications, large-scale indirect lighting for fully dynamic scenes has yet to reach mainstream in real-time applications. More on this in the next section.
+\\
+\\
+The term \textit{global illumination} (GI) has been used for varying sets of lighting effects throughout the literature. In this thesis, we use it to describe the lastly discussed aspect, large-scale indirect lighting.
 
 
 
 \section{Introduction to Global Illumination}
 
-for another introduction into GI, see \citet{Ritschel:2012:GISTAR}.
+In this section we introduce global illumination by outlining its advantages and describing its theoretical foundations. Thereafter we prepare for the following section on related work by giving an overview of techniques used previously to simulate (non-dynamic) global illumination, and structure the process of computing global illumination by identifying individual building blocks.
+
+For another comprehensive introduction to global illumination, see \citet{Ritschel:2012:GISTAR}.
 
 \subsection{Motivation}
-\begin{outline}
-\1 GI in general: realistic lighting, providing greater immersion in movies and games and better assistance in tools like architectural and e-commerce visualization applications. e.g. in architectural visualization, the colors of the furniture etc. are influencing the overall tone of the scene by coloring the walls, leading to a better basis for real-world design decisions.
-\1 Real-time techniques that allow camera movements in a given scene and lighting setup on the one hand enable simulation of GI in applications that are inherently real-time, e.g. games.
-\1 On the other hand, even applications that don't require real-time framerates can benefit from such techniques. For instance, while the features that are covered in this thesis are basically solved for offline rendering, the film industry can benefit from real-time GI techniques during production through faster testing of e.g. different camera angles. Archvis applications can satisfy more use cases by implementing interactive walkthroughs.
-\1 Allowing changing geometry provides additional benefits: Games can create new experiences with changing level geometry e.g. through destruction, level designers and lighting artists can expect a more natural workflow without having to resort to workarounds like fake lights, artists in filmmaking benefit from shorter iteration cycles, and visualization tools provide immediate feedback to changes in e.g. interior decoration in the case of archvis.
-\end{outline}
+The single overarching advantage of simulating global illumination in graphics applications is the added realism which leads to a host of benefits. An obvious one is the greater immersion achieved in movies and video games, but also architectural and e-commerce visualization applications can provide better assistance to its users through more realistic renderings. For instance, in architectural visualization, the colors of the furniture, carpets etc. are influencing the overall tone of the scene e.\,g. by coloring the walls slightly, leading to a better basis for real-world design decisions.
 
+Real-time techniques that allow camera movements in a given scene and lighting setup on the one hand enable simulation of GI in applications that are inherentliy reat-time, e.\,g. video games.
+
+On the other hand, even applications that don't require real-time framerates can benefit from such techniques. For instance, while the features that are covered in this thesis are basically solved for offline rendering, the film industry can benefit from real-time GI techniques during production through faster testing of e.g. different camera angles. Archvis applications can satisfy more use cases by implementing interactive walkthroughs.
+
+Allowing changing geometry provides additional benefits: Games can create new experiences with changing level geometry e.\,g. through destruction, level designers and lighting artists can expect a more natural workflow without having to resort to workarounds like fake lights, artists in filmmaking benefit from shorter iteration cycles, and visualization tools provide immediate feedback to changes in e.g. interior decoration in the case of archvis.
+
+\todo[color=green]{formatting requirements? like that comma after e.g. weirdness}
 
 \subsection{Theory}
 
@@ -202,7 +211,7 @@ Most of these approaches suffer from poor temporal stability. To improve on that
 
 Several approaches exist to calculate visibility between VPLs and the scene parts to shade. Classic shadow maps are a fairly exact solution, but cannot be updated every frame for the several hundreds or even thousands of VPLs.
 
-A popular approach are \emph{imperfect shadow maps} \citep[ISMs,][]{ritschel2008ism}, which use a precomputed set of points as scene representation to quickly render large amounts of shadow maps. \citet{ritschel2011ismsViewAdaptive} extend the approach to fully dynamic scenes among other improvements. \citet{barak2013temporally} use tesselation to compute the point set, eliminating the need to keep a separate point set updated, making it inherently dynamic and providing better performance for larger point sets.
+A popular approach are \emph{imperfect shadow maps} \citep[ISMs,][]{ritschel2008ism}, which use a precomputed set of points as scene representation to quickly render large amounts of small and inaccurate shadow maps. \citet{ritschel2011ismsViewAdaptive} extend the approach to fully dynamic scenes among other improvements. \citet{barak2013temporally} use tesselation to compute the point set, eliminating the need to keep a separate point set updated, making it inherently dynamic and providing better performance for larger point sets. 
 
 Ray-tracing has been proposed to compute visibility as well \citep[e.\,g.][]{segovia2006bidirectional}, but suffers from the usual drawbacks of ray-tracing in a real-time context. A voxel-based scene representation has also been used to perform visibility queries for many-light techniques \citep{sun2015manylightsSVO}.
 
@@ -216,5 +225,7 @@ Splatting techniques have been used to add a light's contribution to the rendere
 \subsection{Mitigating Singularities}
  In naïve implementations of many-lights techniques, bright spots will appear near the VPL’s positions due to the light’s attenuation term approaching infinity. A common approach is to clamp the term. This introduces bias, which can be compensated e.g. in screen space \citep{novak2011screen}. Singularities can also be avoided through more advanced light representations \citep{tokuyoshi2015vsgl}.
 
+
+\todo[color=blue]{textify introductionGI}
 
 \cleardoublepage

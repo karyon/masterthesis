@@ -2,6 +2,7 @@
 
 
 \chapter{Implementation}
+\label{chap:implementation}
 
 \section{Used Framework and Libraries}
 
@@ -126,9 +127,8 @@
 \1 potential downside is that we introduce one scattered read compared to several coherent reads in the buffer splitting method. but, bottleneck is lookups in the VPL buffer and the respective shadowmaps in the main loop, as well as ALU operations, so this one-time lookup doesn't have any impact. maybe completely latency covered or workgroups are distributed in a way that the reads are still cache-coherent.
 \1 in fact, any attempts to do coherent reads did not result in speedups.
 
-\todo[color=yellow]{implement 16 dispatches instead of 16 work groups in z dimension. benefit might be cache usage, since all work groups access the same VPLs and the same ISMs.}
 \todo[color=yellow]{investigate into interleaving via shared memory in 2x2 groups}
-\todo{write hedman, how did they do the 8x8 interleaving?}
+\todo{write hedman, how did they do the 8x8 interleaving? or maybe check his master thesis first}
 
 \1 Since only a subset of all samples is processed per pixel and this subset repeats every four pixels, this process results in structured noise (see Figure \ref{fig:???} or this figure in concept?)
 \1 therefore, geometry-aware blur similar to \citet{laine2007incremental}. doesn't smooth over edges. two passes for vertical and horizontal. See code snippet \ref{listing:???}.
@@ -185,3 +185,5 @@
 \todo[color=yellow]{rename gi shader to final gathering. other renames?}
 \todo{what openGL version do i require? also, i should look up which dedicated GPUs support 4.5/4.4 and what Intels GPUs say. maybe point out the need for modern OpenGL more? also, how they make it easier to implement.}
 \end{outline}
+
+\todo[color=blue]{textify implementation}
