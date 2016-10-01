@@ -4,16 +4,32 @@
 \chapter{Results and Discussion}
 \label{chap:results}
 
-PERFORMANCE PERFORMANCE PERFORMANCE
-and memory of course
+This chapter details the performance and quality characteristics of the implemented techniques and  examines their memory usage. For each technique, it will subsequently discuss the up- and downsides and identify alternatives.
+
 \section{Scenes, Settings and Testing System}
+
+The implementation is tested in the Crytek Sponza and San Miguel scene, with 260k and 7.9M triangles respectively, both provided by \citet{McGuire2011Data}.
+
+Unless otherwise noted, the parameters used for the measurements and screenshots are:
 \begin{outline}
-\1 Crytek sponza and san miguel scene from \citep{McGuire2011Data}
-\1 FullHD
-\1 list other settings again? like 4x4 interleaving, 128px tiles / 16 depth slices, point duplication in ISM compute rendering, 1024 lights, 2k ISM texture
-    - go through GUI properties
-\1 Machine specs
+    \1 1920x1080px output resolution
+    \1 1024 VPLs
+    \1 2048px² ISM texture, i.\,e.\ 64px² per ISM
+    \1 Single-pixel point renderer enabled, 16 VPLs considered per point, up to 4 collected
+    \1 4x4 interleaving pattern
+    \1 Clustered shading: 128px² tile size, 16 depth slices
 \end{outline}
+
+\noindent
+The hardware specification of the testing system is as follows:
+\begin{outline}
+    \1 Intel Xeon dadada
+    \1 NVIDIA GeForce GTX 750 Ti, locked to xxx Mhz for reproducible results
+    \1 mainboard?
+    \1 other stuff?
+\end{outline}
+
+\todo{hardware specifications}
 
 \section{RSM Generation and VPL Sampling}
 \begin{outline}
@@ -34,27 +50,73 @@ and memory of course
 
 \section{ISM Rendering}
 
+\subsection{Point Rendering with Splatting}
+
+\Cref{fig:???} shows the Crytek Sponza scene rendered using ISMs created by the splat renderer (a) and the single-pixel renderer (b). A section of the ISM texture is shown for each renderer in the lower row.
+
+
+\subsubsection{Quality}
+
+What becomes apparent is that renderer x does z while renderer y preserves w. Also note the darkening by renderer x, y does not do that.
+
+Screenshots when enlarging the points / making them smaller. Discuss.
+
+Screenshots when doing more points. either by tessellation or by collecting more. Discuss.
+
+\todo[color=yellow]{count point for splat renderer and output them somehow.}
+
+Compare to max quality
+
+\todo[color=yellow]{implement max quality. every point into every ISM. likely render everything once for each ISM. a checkbox: when checked, compute high-quality once and don't change. back to normal when unchecked.}
+
+for single-pixel-renderer: maybe show one full-size shadowmap to show this *can* work
+
+
+\subsubsection{Performance}
+
+In the screenshots above, x needs z ms, while y needs w ms. Since the technique implements no adaptivity, these numbers are independent from the viewport and (largely) from the VPL placement.
+
+Numbers when the VPLs are somewhere else. but, should not happen with more intelligent VPL sampling.
+
+Numbers when enlarging the points / making them smaller. Discuss. Note how the single-pixel renderer is (hopefully) not affected by point size.
+
+Numbers when doing more points. either by tessellation or by collecting more. Discuss.
+
+
+\subsubsection{Detailed Performance Measurements for the Single-Pixel Point Renderer}
+
+Split time into point collection, point rendering, postprocessing
+
+Impact of packing
+
+show this is bandwidth bound. calculation how much memory is read and written, vs bandwidth of GTX 980.
+
+
+\subsubsection{Memory Usage}
+
+Point splat renderer uses just the ISM.
+
+Single-pixel renderer uses point buffer, mipmaps, additional render targets.
+
+
+\subsubsection{Problems with High Geometric Density}
+
+As a more demanding test case the San Miguel scene with 7.9M triangles. The most apparent problem of the presented implementation is the lack of adaptivity to the current viewport and VPL positions in addition to the lack of LOD methods. As a result, all 7.9M triangles are used every frame to render the ISMs, with corresponding performance results.
+
+Screenshots with the San Miguel scene
+
+Quality also suffers. Not tuned to such small triangles.
+
+Numbers
+
+\subsection{Comparison and Discussion}
 \begin{outline}
-\1 Point Rendering with Splatting
-    \2 parameters are: number of points or rather, tesselation level, and point size factor
-    \2 performance
-    \2 quality
-    \2 memory usage
-\1 Point Rendering with Pull-Push Postprocessing
-    \2 additional parameters: number of VPLs per point, and the point size does not have any impact anymore
-    \2 performance
-    \2 quality
-    \2 additional memory usage for point buffers
-    \2 performance and quality impact of packing?
-    \2 show this is bandwidth bound. calculation how much memory is read and written, vs bandwidth of GTX 980.
-    \2 maybe show one full-size shadowmap to show this *can* work
-\1 comparison of pull-push vs splatting
-\1 Discussion
-    \2 ISMs have several deficits, starting with reducing the scene's geometry to points. This is already a simplification that trades speed for accuracy.
-    \2 Second, because we use a sparse point set for each ISM, each point must be enlarged to accomodate for the missing points. For instance, if an area is represented by a thousand points and we now use one tenth of all points for an ISM, each remaining point's area must be enlarged by a factor of ten to result in an equally large area in the rendered output. Of course, this approach leads to deformed geometry since points at the edges of the area get enlarged as well, growing over the borders of the original geometry.
-    \2 Third, there are also numerical issues. For instance, both the splatting and postprocessing approaches ignore the distortion caused by the projection, and thus might render even simple surfaces incorrectly. This contributes to the necessity of using a relatively large shadow bias.
-    \2 A massive improvement would be to differentiate between large-scale scene geometry that is important for global illumination, and smaller geometry of lesser importance. While the latter can possibly be ignored altogether with only minor losses in quality, the shape of large-scale geometry is all the more important to preserve (relatively) precisely.
-    \2 The San Miguel scene is a good example for this: While the small detail work like dishes and small plants make up most of the geometry and thus most of the rendering time, they contribute only very little to global illumination. This is where our implementation suffers most from the lack of level-of-detail methods.
+    \1 comparison of pull-push vs splatting
+    \1 ISMs have several deficits, starting with reducing the scene's geometry to points. This is already a simplification that trades speed for accuracy.
+    \1 Second, because we use a sparse point set for each ISM, each point must be enlarged to accomodate for the missing points. For instance, if an area is represented by a thousand points and we now use one tenth of all points for an ISM, each remaining point's area must be enlarged by a factor of ten to result in an equally large area in the rendered output. Of course, this approach leads to deformed geometry since points at the edges of the area get enlarged as well, growing over the borders of the original geometry.
+    \1 Third, there are also numerical issues. For instance, both the splatting and postprocessing approaches ignore the distortion caused by the projection, and thus might render even simple surfaces incorrectly. This contributes to the necessity of using a relatively large shadow bias.
+    \1 A massive improvement would be to differentiate between large-scale scene geometry that is important for global illumination, and smaller geometry of lesser importance. While the latter can possibly be ignored altogether with only minor losses in quality, the shape of large-scale geometry is all the more important to preserve (relatively) precisely.
+    \1 The San Miguel scene is a good example for this: While the small detail work like dishes and small plants make up most of the geometry and thus most of the rendering time, they contribute only very little to global illumination. This is where our implementation suffers most from the lack of level-of-detail methods.
 \end{outline}
 
 
