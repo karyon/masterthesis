@@ -93,7 +93,7 @@ The general idea is to first let the geometry shader write the generated points 
 
 In order to maintain temporal coherence, the points are not written into a single large buffer, as it would be hard to consistently determine a location for each point in that buffer. Instead, the buffer is divided into one section per VPL, and the points are written into the section corresponding to the ID calculated before. An atomic counter that indicates the first free index is used per section to sequentially fill these sections without overwriting any data. The order of the points within each section is undefined, but that does not change the output since they all are going to be rendered into the same ISM.
 
-Now a compute shader is used to render the points. For each VPL, one work group reads through the respective section of the point buffer and performs the transformation and culling against the VPL for each point. It then uses \texttt{imageAtomicMin} to ``render'' the point with correct depth testing as a single pixel into the respective ISM. Since atomic operations require using single channel integer textures, the ISM is actually implemented as 3D texture, using the second index in the third dimension as additional ``render target'' to hold the radius and normal. This alse requires the attributes to be packed into a 32-bit integer.
+Now a compute shader is used to render the points. For each VPL, one work group reads through the respective section of the point buffer and performs the transformation and culling against the VPL for each point. It then uses \texttt{imageAtomicMin} to ``render'' the point with correct depth testing as a single pixel into the respective ISM. Since atomic operations require using single channel integer textures, it is not possible to use a second or third channel for additional attributes. Instead, the ISM is actually implemented as 3D texture, using the second index in the third dimension as additional ``render target'' to hold the radius and normal. This alse requires the attributes to be packed into a 32-bit integer.
 
 As an optimization, the compute shader renders each point into several ISMs. To this end, each work group reads the data for a fixed number of VPLs (e.\,g.\ 16) into shared memory. Then, for each point culling is performed on all 16 VPLs, and those that pass the culling test are collected into a local array. Thereafter the point is transformed for each of the collected VPL and rendered into the respective ISM.
 
@@ -118,7 +118,9 @@ A proper solution that would fix this problem completely, avoiding the synchroni
 
 \subsection{Pull-Push Postprocessing}
 
-Our implementation of the pull-push algorithm is relatively straightforward. For each miplevel to be calculated, one \texttt{dispatchCompute} is called. Since the first step of the pull phase has different inputs than the subsequent steps (it only has depth and size, not the displacement vector and depth interval), a slightly different shader is used there. Analogous the last step of the push phase outputs only depth, therefore a shader variant is used for that step as well.
+Our implementation of the pull-push algorithm is relatively straightforward. For each miplevel to be calculated, one \texttt{dispatchCompute} is called. Since the first step of the pull phase has different inputs than the subsequent steps (it only has depth and size, not the displacement vector and depth interval), a slightly different shader is used there. Analogous the last step of the push phase outputs only depth, therefore a shader variant is used for that step as well. For the same reason, the input texture (the ``render target'' used by the single-pixel renderer) and output texture (the final ISM used later for shadowing) have different formats than the mipmap levels used by the pull-push algorithm.
+
+
 
 In the pull phase, one compute shader invocation calculates one output pixel. It reads its four input pixels, determines which of them are valid, and uses the valid ones for interpolating.
 
@@ -182,8 +184,8 @@ Note that there is still lots of room for optimization. Especially the pull phas
     \2 for each light
         \3 if any corner is inside the illuminated hemisphere, add the light to this cluster's light list.
     \2 we simply allocate the maximum space for this.
-        \3 for full HD / 128px tiles = 135 tiles, * 16 depth slices = 2160 light lists, * 1024 vpls = 2160k indices, * 2 bytes per index makes 4mb.
-        \3 we thought it's unneccessary to cut that down.
+        \3 for full HD / 128\,px tiles = 135 tiles, * 16 depth slices = 2160 light lists, * 1024 vpls = 2160k indices, * 2 bytes per index makes 4mb.
+        \3 we thought it's unnecessary to cut that down.
         \3 by a (conservative) estimate of four used depth slices per tile on average, (plus possibly runtime checks to allocate more space when running over that limit), on could reduce this to 1MB with little implementation effort.
         \3 compacting the light lists themselves is probably not worth it due to implementation complexity and performance penalty
         \3 since we expect to cull roughly half the lights, the potential saving by compacting the light lists is only 50\% anyways.
@@ -198,7 +200,7 @@ Note that there is still lots of room for optimization. Especially the pull phas
         \3 now, each invocation takes one VPL and culls it against the bounding box. If it passes the culling test, it adds it to a list in shared memory, again using an atomic counter that describes the list's current size to not overwrite any VPL added by another invocation.
         \3 perform the regular final gathering, using the list of VPLs in shared memory.
 
-\todo[color=green]{distinction between own work and previous work}
+\todo[]{remove all we}
 
 \todo[color=yellow]{rename gi shader to final gathering. other renames?}
 \todo{what openGL version do i require? also, i should look up which dedicated GPUs support 4.5/4.4 and what Intels GPUs say. maybe point out the need for modern OpenGL more? also, how they make it easier to implement.}

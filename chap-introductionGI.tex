@@ -11,7 +11,7 @@ We then lay the groundwork for the following chapters by introducing the concept
 
 Before we start by examining the different lighting effects simulated in computer graphics, it is worth pointing out that real-world physics do not know most of the distinctions we will make. Many effects and phenomena in lighting can be reduced to a basic set of interactions of photons, which are emitted by light sources and then reflected, refracted or absorbed by matter.
 
-In practice, simulating individual photons and atoms is obviously infeasible and unneccessary to simulate for most computer graphics applications. Instead, computer graphics researchers have examined the different real-world light phenomena and simulated them separately, using different approaches and approximations for each of them to stay within their respective performance budget.
+In practice, simulating individual photons and atoms is obviously infeasible and unnecessary to simulate for most computer graphics applications. Instead, computer graphics researchers have examined the different real-world light phenomena and simulated them separately, using different approaches and approximations for each of them to stay within their respective performance budget.
 
 
 In the following we will try to give an rough (and non-comprehensive) overview over these lighting effects and locate global illumination within them. Our most top-level distinction is between the interaction of light with the scene's surfaces, and the transport of light through empty space in the scene.
@@ -251,7 +251,7 @@ Most of these approaches suffer from poor temporal stability. To improve on that
 
 Several approaches exist to calculate visibility between VPLs and the scene parts to shade. Classic shadow maps are a fairly exact solution, but cannot be updated every frame for the several hundreds or even thousands of VPLs.
 
-A popular approach are \emph{imperfect shadow maps} \citep[ISMs,][]{ritschel2008ism}, which use a precomputed set of points as scene representation to quickly render large amounts of small and inaccurate shadow maps. \citet{ritschel2011ismsViewAdaptive} extend the approach to fully dynamic scenes among other improvements. \citet{barak2013temporally} use tesselation to compute the point set, eliminating the need to keep a separate point set updated, making it inherently dynamic and providing better performance for larger point sets. 
+A popular approach are \emph{imperfect shadow maps} \citep[ISMs,][]{ritschel2008ism}, which use a precomputed set of points as scene representation to quickly render large amounts of small and inaccurate shadow maps. \citet{ritschel2011ismsViewAdaptive} extend the approach to fully dynamic scenes among other improvements. \citet{barak2013temporally} use tesselation to compute the point set, eliminating the need to keep a separate point set updated, making it inherently dynamic and providing better performance for larger point sets.
 
 Ray-tracing has been proposed to compute visibility as well \citep[e.\,g.][]{segovia2006bidirectional}, but suffers from the usual drawbacks of ray-tracing in a real-time context. A voxel-based scene representation has also been used to perform visibility queries for many-light techniques \citep{sun2015manylightsSVO}.
 
