@@ -93,7 +93,9 @@ The general idea is to first let the geometry shader write the generated points 
 
 In order to maintain temporal coherence, the points are not written into a single large buffer, as it would be hard to consistently determine a location for each point in that buffer. Instead, the buffer is divided into one section per VPL, and the points are written into the section corresponding to the ID calculated before. An atomic counter that indicates the first free index is used per section to sequentially fill these sections without overwriting any data. The order of the points within each section is undefined, but that does not change the output since they all are going to be rendered into the same ISM.
 
-Now a compute shader is used to render the points. For each VPL, one work group reads through the respective section of the point buffer and performs the transformation and culling against the VPL for each point. It then uses \texttt{imageAtomicMin} to ``render'' the point with correct depth testing as a single pixel into the respective ISM. Since atomic operations require using single channel integer textures, it is not possible to use a second or third channel for additional attributes. Instead, the ISM is actually implemented as 3D texture, using the second index in the third dimension as additional ``render target'' to hold the radius and normal. This alse requires the attributes to be packed into a 32-bit integer.
+Now a compute shader is used to render the points. For each VPL, one work group reads through the respective section of the point buffer and performs the transformation and culling against the VPL for each point. It then uses \texttt{imageAtomicMin} to ``render'' the point with correct depth testing as a single pixel into the respective ISM. Since atomic operations require using single channel integer textures, it is not possible to use a second or third channel for additional attributes. Instead, the ISM is actually implemented as 3D texture, using the second index in the third dimension as additional ``render target'' to hold the radius and normal. However, this approach requires the use of 32 bit for storing the depth even if a lower precision would suffice, and the attributes need to be packed into 32-bit integers.
+
+\todo[color=yellow]{put radius into 8 lower bits of depth channel, remove normal from softrenderbuffer and pullpush}
 
 As an optimization, the compute shader renders each point into several ISMs. To this end, each work group reads the data for a fixed number of VPLs (e.\,g.\ 16) into shared memory. Then, for each point culling is performed on all 16 VPLs, and those that pass the culling test are collected into a local array. Thereafter the point is transformed for each of the collected VPL and rendered into the respective ISM.
 
@@ -117,6 +119,7 @@ A proper solution that would fix this problem completely, avoiding the synchroni
 
 
 \subsection{Pull-Push Postprocessing}
+\label{sec:impl:pullPushPostprocessing}
 
 Our implementation of the pull-push algorithm is relatively straightforward. For each miplevel to be calculated, one \texttt{dispatchCompute} is called. Since the first step of the pull phase has different inputs than the subsequent steps (it only has depth and size, not the displacement vector and depth interval), a slightly different shader is used there. Analogous the last step of the push phase outputs only depth, therefore a shader variant is used for that step as well. For the same reason, the input texture (the ``render target'' used by the single-pixel renderer) and output texture (the final ISM used later for shadowing) have different formats than the mipmap levels used by the pull-push algorithm.
 

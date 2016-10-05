@@ -80,7 +80,7 @@ The hardware specification of the testing system is as follows:
     \includegraphics[width=.48\textwidth]{screenshots/darkening_splat} &
     \includegraphics[width=.48\textwidth]{screenshots/darkening_single_pixel}
   \end{tabular}
-  \caption{A view of the Crytek Sponza scene using ISMs rendered with the splat renderer (left) and single-pixel renderer (right). Note the severe darkening of the splat renderer. Also note that there is no skylight rendered, which leads to an unnaturally dark upper part in the image even for the single-pixel renderer.}
+  \caption{Darkening caused by the splat renderer (left) compared to the single-pixel renderer (right). Note that there is no skylight rendered, which leads to an unnaturally dark upper part in the image even for the single-pixel renderer.}
   \label{fig:results:ismDarkening}
 \end{figure}
 
@@ -88,21 +88,50 @@ Comparing the screenshots in \cref{fig:results:ismDarkening}, it becomes apparen
 
 As the single-pixel renderer does not use splats, it does not have this problem. One could say it performs the per-fragment depth calculation implicitly during interpolation in the postprocessing phase.
 
-Screenshots when enlarging the points / making them smaller. Discuss.
 
-Screenshots when doing more points. either by tessellation or by collecting more. Discuss.
+\begin{figure}[]
+\centering
+  \begin{tabular}{@{}cc@{}}
+    \includegraphics[width=.48\textwidth]{screenshots/leaks_splat} &
+    \includegraphics[width=.48\textwidth]{screenshots/leaks_single_pixel}\\
+    \includegraphics[width=.48\textwidth]{screenshots/leaks_splat_exposure} &
+    \includegraphics[width=.48\textwidth]{screenshots/leaks_single_pixel_exposure}
+  \end{tabular}
+  \caption{Light leaks caused by the imperfect shadow maps rendered with the splat renderer (left) and single-pixel renderer (right). VPLs from beneath the curtains leak light onto the wall and ceiling, while VPLs on the pillars and curtains light the floor. The renderings in the bottom row use a higher exposure for illustration. }
+  \label{fig:results:leaks}
+\end{figure}
 
-Screenshots of failure case, behind the right curtains
 
-Screenshot of shadow bias behind left curtains
+\Cref{fig:results:leaks} shows a case the ISM technique has difficulties with. The image should be mostly dark or at least uniformly lit through the small gap below the curtains, but  since The root cause for the light problem is that the VPLs are placed right behind the curtains, so the occluding geometry, i.\,e.\ the curtain, is very near to the light source. Due to the randomness involved when selecting the point set for rendering the ISM, it often happens that the points near to the light source are rendered into other ISMs, leaving a large hole behind. The single-pixel renderer copes a bit better than the splat renderer since it uses more points, but does not provide a satisfactory result either.
+
+
+
+\begin{figure}[]
+\centering
+  \begin{tabular}{@{}cc@{}}
+    \includegraphics[width=.48\textwidth]{screenshots/bias_splat} &
+    \includegraphics[width=.48\textwidth]{screenshots/bias_single_pixel}\\
+      \includegraphics[width=.48\textwidth]{screenshots/bias_splat_exposure} &
+      \includegraphics[width=.48\textwidth]{screenshots/bias_single_pixel_exposure}
+  \end{tabular}
+  \caption{Light leaks caused by using a relatively large shadow bias with the purpose to hide artifacts of the ISMs. The screenshots to the left use the splat renderer, the right ones the single-pixel renderer. Bottom row uses a higher exposure.}
+  \label{fig:results:bias}
+\end{figure}
+
+Our implementation hides some of the inaccuracies of the ISMs by using a relatively large shadow bias. The resulting light leaks are shown in \Cref{fig:results:bias}. While the splat renderer fares better here, it does so mainly by darkening the whole image since it uses rather large points. The single-pixel renderer on the other hand correctly lets light shine through the columns, but shows a very noisy result on the left wall.
+
+
+\todo{Screenshots when enlarging the points / making them smaller. Discuss.}
+
+\todo{Screenshots when doing more points. either by tessellation or by collecting more. Discuss.}
 
 \todo[color=yellow]{count point for splat renderer and output them somehow.}
 
-Compare to max quality
+\todo{Compare to max quality}
 
 \todo[color=yellow]{implement max quality. every point into every ISM. likely render everything once for each ISM. a checkbox: when checked, compute high-quality once and don't change. back to normal when unchecked.}
 
-for single-pixel-renderer: maybe show one full-size shadowmap to show this *can* work
+\todo{for single-pixel-renderer: maybe show one full-size shadowmap to show this *can* work}
 
 
 \subsubsection{Performance}
@@ -112,7 +141,7 @@ for single-pixel-renderer: maybe show one full-size shadowmap to show this *can*
     \begin{tabulary}{0.98\textwidth}{| L | L | L | L |}
         \hline
         Splat Default Settings & Single-Pixel Default Settings & Splat with Single-Pixel Settings & Single-Pixel with Splat Settings \\ \hline
-        3.4\,ms & 7.5\,ms & 38\,ms & 5.2\,ms \\
+        3.4\,ms & 8.5\,ms & 38\,ms & 6.2\,ms \\
         \hline
     \end{tabulary}
     \caption{Timings of the ISM renderers with different settings.}
@@ -128,9 +157,9 @@ Conversely, if the single-pixel renderer does not perform clamping, the push pha
 
 Since the technique implements no adaptivity, these numbers are independent from the viewport. They are however slightly affected by VPL placement, since it influences culling. In a second scenario, where the sunlight shines directly from above, all VPLs are placed on the floor facing up. As a result, much fewer points are culled during ISM rendering, resulting in slightly higher timings. The splat renderer needed an additional 0.7\,ms, whereas the single-pixel renderer needed only 0.2\,ms more.
 
-Numbers when enlarging the points / making them smaller. Discuss. Note how the single-pixel renderer is (hopefully) not affected by point size.
+\todo{Numbers when enlarging the points / making them smaller. Discuss. Note how the single-pixel renderer is (hopefully) not affected by point size.}
 
-Numbers when doing more points. either by tessellation or by collecting more. Discuss.
+\todo{Numbers when doing more points. either by tessellation or by collecting more. Discuss.}
 
 
 \subsubsection{Detailed Performance Measurements for the Single-Pixel Point Renderer}
@@ -141,7 +170,7 @@ Numbers when doing more points. either by tessellation or by collecting more. Di
     \begin{tabulary}{0.98\textwidth}{| L | L | L | L || L |}
         \hline
         Point Collection & Point Rendering & Pull Phase & Push Phase & Total\\ \hline
-        2.1\,ms & 3.0\,ms & 1.0\,ms & 2.4\,ms & 7.5\,ms\\
+        2.1\,ms & 3.0\,ms & 1.0\,ms & 2.4\,ms & 8.5\,ms\\
         \hline
     \end{tabulary}
     \caption{Timing breakdown of the single-pixel point renderer.}
@@ -149,25 +178,38 @@ Numbers when doing more points. either by tessellation or by collecting more. Di
 \end{center}
 \end{table}
 
-\Cref{tab:results:timing_breakdown_single_pixel} gives more detailed performance measurements of the single-pixel renderer.
+\begin{table}[h]
+\begin{center}
+    \begin{tabulary}{0.98\textwidth}{| L | L | L | L | L | L | L | L || L | L || L |}
+        \hline
+        PL 1 & PL 2 & PL 3 & PL > 3 & PS > 2 & PS 2 & PS 1 & PS 0 & PL Total & PS Total & Total \\ \hline
+        0.57 & 0.34 & 0.10 & 0.04 & 0.09 & 0.19 & 0.71 & 1.47 & 1.05 & 2.46 & 3.5\\
+        \hline
+    \end{tabulary}
+    \caption{Timing breakdown of the pull (PL) and push (PS) phase. The numbers of the individual steps indicate to which mipmap level they write, which is why the pull phase starts with 1 and the push phase has descending numbers. All timings are in milliseconds.}
+    \label{tab:results:timing_breakdown_pull_push}
+\end{center}
+\end{table}
 
-Impact of packing
 
-more details on the individual phases?
+\Cref{tab:results:timing_breakdown_single_pixel} gives more detailed performance measurements of the single-pixel renderer, while \cref{tab:results:timing_breakdown_pull_push} further breaks down the individual steps of the pull and push phase. Note how the timings scale roughly as expected (PL 3 and PS 2 are taking roughly 4 times longer than PL 2 and PS 1, respectively), but not so the first and last step. This is due to the reduced input data size (or output size, respectively), as explained in \cref{sec:impl:pullPushPostprocessing}. Also note how the push phase does take roughly the time of the pull phase if it were not for the last phase, where it writes to the full 2048\,px² of miplevel zero, whereas the first pull phase only writes to the miplevel one with 1024\,px².
 
-show this is bandwidth bound. calculation how much memory is read and written, vs bandwidth of GTX 980.
-    - roughly 110MB read and written, that's 1.2ms.
-    - 16MB of that unnecessarily because of the 2nd layer of input texture
-    - By parallel reduction juju reduced by 22MB or 0.2ms.
-    - with more juju, maybe brought down to actually that time, except for the arithmetic stuff of course...
+\todo{Impact of packing?}
+
+% show this is bandwidth bound. calculation how much memory is read and written, vs bandwidth of GTX 980.
+%     - roughly 110MB read and written, that's 1.2ms.
+%     - 16MB of that unnecessarily because of the 2nd layer of input texture
+%     - By parallel reduction juju reduced by 22MB or 0.2ms.
+%     - with more juju, maybe brought down to actually that time, except for the arithmetic stuff of course...
 
 
 \subsubsection{Memory Usage}
 
-The point splat renderer uses no more memory than the ISM itself requires, which is 8\,MB for a 2048\,px² 16-bit depth buffer.
+The point splat renderer uses no more memory than the ISM texture itself requires, which is 8\,MB for a 2048\,px² 16-bit depth buffer.
 
 The single-pixel renderer uses additional memory. First, it uses a buffer for storing the points. This is implemented as four-channel 32-bit float texture, with the first three channels containing the position, and the last channel the radius (8 bit) and normal (24 bit, see \cite{Cigolle:2014:NormalPacking}). With a maximum point count of 2048 per ISM (keep in mind they are rendered into multiple ISMs later), this buffer uses 32\,MB.
 The additional textures used are the render target of the single-pixel renderer (single-channel 2048x2048x2\,px, 32-bit integer, uses 32\,MB), the mipmap levels used by the pull-push algorithm (two channels, 32-bit, use approx. 11\,MB) and the final ISM (same as used by the splat renderer, uses 8MB).
+
 Added together, the single-pixel renderer uses a total of 83\,MB, likely with room for optimization left.
 
 
@@ -181,19 +223,45 @@ Quality also suffers. Not tuned to such small triangles.
 
 Numbers
 
+
+\subsection {Comparison of the Splat and Single-Pixel Renderer}
+
+The single-pixel renderer provides numerous advantages over the splat renderer.
+
+Using a compute shader to render the points lifts the restrictions of the fixed-function pipeline and e.\,g.\ enabled rendering each point into multiple ISMs without large performance losses.
+
+Quality-wise, it can reproduce surfaces more accurately by correctly interpolating between points.
+
+Obviously, the algorithm needs more rendering time and memory.
+
+\todo{Add notes about scaling when i have point counts}
+
+Another drawback is the added complexity. Specifically, we found it hard to fine-tune the pull-push algorithm to give us satisfactory results, especially in the face of the low resolutions of ISMs and the limited data available for reconstruction after selecting a random and sparse set of points.
+
+flexibility, interpolation, no fillrate problem
+
+but hard to fine-tune
+
+\todo{comparison of pull-push vs splatting}
+
 \subsection{Comparison and Discussion}
-\begin{outline}
-    \1 comparison of pull-push vs splatting
-    \1 ISMs have several deficits, starting with reducing the scene's geometry to points. This is already a simplification that trades speed for accuracy.
-    \1 Second, because we use a sparse point set for each ISM, each point must be enlarged to accomodate for the missing points. For instance, if an area is represented by a thousand points and we now use one tenth of all points for an ISM, each remaining point's area must be enlarged by a factor of ten to result in an equally large area in the rendered output. Of course, this approach leads to deformed geometry since points at the edges of the area get enlarged as well, growing over the borders of the original geometry.
-    \1 Third, there are also numerical issues. For instance, both the splatting and postprocessing approaches ignore the distortion caused by the projection, and thus might render even simple surfaces incorrectly. This contributes to the necessity of using a relatively large shadow bias.
-    \1 A massive improvement would be to differentiate between large-scale scene geometry that is important for global illumination, and smaller geometry of lesser importance. While the latter can possibly be ignored altogether with only minor losses in quality, the shape of large-scale geometry is all the more important to preserve (relatively) precisely.
-    \1 The San Miguel scene is a good example for this: While the small detail work like dishes and small plants make up most of the geometry and thus most of the rendering time, they contribute only very little to global illumination. This is where our implementation suffers most from the lack of level-of-detail methods.
-\end{outline}
 
 
+Imperfect shadow maps have several deficits, some of which are inherent to the technique and difficult to solve, others are specific to the implementation choices and tradeoffs in our implementation and might be easier to overcome.
 
-\todo[color=blue]{ISM rendering results}
+First, ISMs reduce the scene's geometry to points. At the resolution that is achievable in a real-time budget, this is already a stark approximation that loses a lot of accuracy.
+
+Second, because a sparse set of points is used for each ISM, each point must be enlarged to accomodate for the neighboring points that are likely missing in the chosen ISM. For instance, if an area is represented by a thousand points and we now use one tenth of all points for an ISM, each remaining point's area must be enlarged by a factor of ten to result in an equally large area in the rendered output. Of course, this approach leads to deformed geometry since points at the edges of the area get enlarged as well, growing over the borders of the original geometry.
+
+Third, there are also numerical issues. For instance, both the splatting and postprocessing approaches ignore the distortion caused by the projection, and thus might render even simple surfaces incorrectly. This contributes to the necessity of using a relatively large shadow bias. This can likely be solved however, albeit at the cost of additional complexity.
+
+Fourth, and this is in our view the most important shortcoming, ISMs handle geometry in the vicinity to VPLs badly as can be seen in \cref{fig:results:leaks}. To sufficiently approximate such surfaces when rendering ISMs, one would need to greatly increase the number of points created near VPLs, possibly in addition to stepping away from using a fully random approach for point selection and select a specific point set for each ISM depending on the VPLs location.
+
+As for most global illumination algorithms, a massive improvement would be to differentiate between large-scale scene geometry that is important for diffuse light bounces, and smaller geometry of lesser importance. While the latter can possibly be ignored altogether with only minor losses in quality, the shape of large-scale geometry is all the more important to preserve (relatively) precisely.
+
+The San Miguel scene is a good example for this: While the small detail work like dishes and small plants make up most of the geometry and thus most of the rendering time, they contribute only very little to global illumination. This is where our implementation suffers most from the lack of level-of-detail methods.
+
+
 
 
 \section{Interleaved Shading with Compute Shaders}
