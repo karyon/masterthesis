@@ -2,7 +2,7 @@
 
 
 \begin{abstract}
-TODO
+This paper presents extensions to the Imperfect Shadow Map algorithm used to compute visibility for many-light global illumination methods. The extensions combine compute shaders for rendering with an advanced postprocessing algorithm for surface reconstruction to improve the quality of the shadowmaps. This goal is achieved at the expense of performance and memory requirements, but at the same time comes with better scalability with regards to the captured geometric detail.
 \end{abstract}
 
 
@@ -10,63 +10,66 @@ TODO
 \section{Introduction}
 For decades, computer graphics researchers have strived to achieve the faithful reproduction of reality in synthetic renderings. While photorealism has been achieved in offline rendering contexts, many optical effects occurring in physical environments are still not in use in interactive and real-time applications or implemented with severe limitations. Several lighting effects collectively referred to as ``global illumination'', such as caustics, subsurface scattering and diffuse and specular indirect light, fall into this category.
 
-In this paper, we develop a system that simulates diffuse indirect light in arbitrary and dynamic scenes using many-light techniques. We will trade in quality and instead focus on performance while maintaining scalability with the goal to achieve real-time performance on commodity hardware.
+Many-light methods are one class of algorithms that has been used to simulate such effects. They use masses of \textit{Virtual Point Lights} (VPLs) placed in the scene to simulate reflected and refracted light. While the simulation of more advanced effects requires a large amount of lights (hundreds of thousands to millions) and is thus limited to offline rendering, it is possible to create a fairly accurate indirect lighting effect in real-time with only a few thousand lights.
+
+A major problem when simulating indirect lighting with many-light methods is computing visibility between the lights and the scene. While conventional shadow maps can be used, they are generally too slow to be re-computed every frame for every VPL. To this end, \textit{Imperfect Shadow Maps} (ISMs) have been proposed, an approximated form of shadow maps. They convert the scene's geometry to points and render those to thousands of small shadow maps.
+
+In this paper, we propose an extension to ISMs that enables more complex scenes to be captured more accurately. On the one hand, we use a more advanced and postprocessing method for reconstructing the scene's surfaces. On the other hand, we make use of compute shaders to provide better scalability when rendering large amounts of points, further contributing to higher accuracy.
 
 
 
 
 \section{Related Work}
 
-Many-light methods for simulating global illumination effects are a well-researched topic. They are based on Instant Radiosity \cite{Keller:1997:InstantRadiosity}, in which photon mapping is used to create small lights, called Virtual Point Lights (VPLs) at every intersection of photons with the scene geometry.
+Many-light methods for simulating global illumination effects are a well-researched topic. They are based on Instant Radiosity \cite{Keller:1997:InstantRadiosity}, which uses a process similar to photon mapping to trace rays through the scene, but instead of storing intersections as photon in a photon map, it creates a new VPL per intersection. The VPLs are then used to illuminate the scene.
 
-
-Most of the work on many-light methods can be categorized into the areas VPL placement, solving occlusion, gathering light into the framebuffer and mitigating singularities, an artifact that occurs near positions of VPLs.
+The two major problems that need to be solved when building a many-light rendering system are VPL placement and solving occlusion. A third problem, mitigating singularities, is very easily solved when accepting bias in the rendering.
 
 
 The foundation of many algorithms for VPL placement are Reflective Shadow Maps (RSMs) \cite{Dachsbacher:2005:RSM}, which are shadow maps with additional surface information. Using the additional data, VPLs are created per texel of the RSM. View-adaptive placement of VPLs greatly enhances performance and quality \cite{ritschel2011ismsViewAdaptive}. \cite{prutkin2012reflective} cluster RSM samples to virtual area lights, and \cite{hedman2016sequential} focuses on temporal coherence when placing VPLs to avoid flickering.
 
-A common approach for solving occlusion are Imperfect Sha\-dow Maps (ISMs) \cite{ritschel2008ism}, which use a point-based approximation of the scene to efficiently render a small, approximate shadow map for hundreds of VPLs simultaneously. ISMs have been used in production for rendering many spotlights with shadows \cite{evans2015dreams}, and several enhancements have been proposed \cite{ritschel2011ismsViewAdaptive, hollander2011manylods, barak2013temporally}. Using slim voxels \cite{sugihara2014layered, sun2015manylightsSVO, chen2016quantizing} for occlusion is another approach that needs only a single bit per voxel for visibility testing, thereby avoiding the usually high memory requirements of voxelization techniques.
+A common approach for solving occlusion are Imperfect Sha\-dow Maps (ISMs) \cite{ritschel2008ism}, which use a point-based approximation of the scene to efficiently render a small, approximate shadow map for hundreds of VPLs simultaneously. ISMs have been used in production for rendering shadows for primary scene lights\cite{evans2015dreams}, and several enhancements have been proposed \cite{ritschel2011ismsViewAdaptive, hollander2011manylods, barak2013temporally}. We take several aspects of \cite{ritschel2008ism} and \cite{barak2013temporally} and propose extensions for better scalability and quality.
 
-\cite{dachsbacher2006splatting, Nichols:2009:splatting} are using splatting techniques in favor of the more common gathering approach. \cite{sloan2007image, laine2007incremental} provide details on how to speed up the straight-forward approach of iterating over sets of VPLs per fragment.
+Other means for visibility computation can be combined with many-light methods as well. For instance, ray tracing through voxel grids has been proposed \cite{sugihara2014layered, sun2015manylightsSVO, Chen:2016:Compactvoxels}, albeit using slim voxels, i.e., using only one bit per voxel for visibility testing. This avoids the usually high memory requirements of voxelization techniques. Ray-tracing through a triangle-based scene representation is of course possible (e.\,g.\ \cite{segovia2006bidirectional}) but generally too slow to be used in a real-time context.
 
-In na\"ive implementations of many-light methods, bright spots will appear near the VPL's positions due to the light's attenuation term approaching infinity. A common approach is to clamp the term. This introduces bias, which can be compensated e.g. in screen space \cite{novak2011screen}. Those singularities can also be avoided through more advanced light representations \cite{tokuyoshi2015vsgl}. \cite{olsson2012clustered}
+Singularities are an artifact of many-light methods that appear as bright spots near the VPL's positions due to the light's attenuation term approaching infinity. A common approach is to clamp the term. This introduces bias, which can be compensated e.g. in screen space \cite{novak2011screen}. Those singularities can also be avoided through more advanced light representations \cite{tokuyoshi2015vsgl}.
 
 
 
-\section{Visibility Computation with Imperfect Shadow Maps}
+\section{Visibility Computation with \\ Imperfect Shadow Maps}
 \label{sec:concept:ism}
 
-The original paper \cite{ritschel2008ism} converts the scene geometry to a point set in a preprocessing step and uses the points to efficiently render hundreds of shadow maps in parallel. They use splatting to render the points and fill the resulting holes in the shadowmaps with a pull-push algorithm inspired by \cite{Marroquim:2007:reconstruction}.
+Imperfect Shadow Maps \cite{ritschel2008ism} convert the scene geometry to a point set in a preprocessing step and uses the points to efficiently render hundreds of shadow maps in parallel. They use splatting to render the points and fill the resulting holes in the shadow maps with a simplified version of the pull-push algorithm presented in \cite{Marroquim:2007:reconstruction}.
 
 \cite{ritschel2011ismsViewAdaptive} build on this by converting the scene to a triangle texture dynamically, and sampling the points from that texture. Instead of computing a triangle texture, \cite{barak2013temporally} use the tessellation units of recent GPUs to dynamically convert triangles into points.
-We follow this approach since it is relatively simple to implement and inherently dynamic, but have not implemented the adaptive sampling from \cite{ritschel2011ismsViewAdaptive} yet.
+We follow this approach since it is relatively straightforward to implement and inherently dynamic, but have not implemented the adaptive sampling from \cite{ritschel2011ismsViewAdaptive} yet.
 \cite{ritschel2008ism} also present multi-bounce indirect illumination with their technique, which we have not implemented.
 
-In contrast to \cite{ritschel2008ism}, we have found the pull-push postprocessing to be of little benefit when using regular point splatting. Instead, we propose to render single-pixel points, which opens interesting optimization opportunities but in turn does in fact require the pull-push algorithm to reconstruct the scene surfaces.
+In contrast to \cite{ritschel2008ism}, we have found the pull-push postprocessing to be of little benefit when using regular point splatting. Instead, we propose to render single-pixel points, which opens interesting optimization opportunities, but in turn requires the pull-push algorithm to reconstruct the scene surfaces.
 
 We describe the regular point splat rendering process in the following section and subsequently detail the pull-push algorithm that we use when rendering single-pixel points.
 
 
 \subsection{Point Rendering with Splatting}
 
-To convert the scene to be rendered into points, all its triangles are first tesselated to meet a certain maximum size in order for the point conversion to not introduce extreme inaccuracies. Of the smaller tesselated triangles, the center and area are calulated and a point with matching center and area is created. While it might be more performant to create points just on the vertices of the triangles, it will at the same time be more inaccurate since this approach will enlarge the rendered area considerably over the triangle's extents.
+To convert the scene into points, all its triangles are first tesselated to meet a certain maximum size in order for the point conversion to not introduce extreme inaccuracies. Of the smaller tesselated triangles, the center and area are calulated and a point with matching center and area is created. While it might be more performant to create points just on the vertices of the triangles, it will at the same time be more inaccurate since this approach will enlarge the rendered area considerably over the triangle's extents.
 
 Now a random VPL is chosen per point and backface culling is performed. Likewise, points that lie behind their VPL's hemisphere are culled before splatting the point into the respective imperfect shadow map. For performance reasons, a simple paraboloid projection is used for the ISMs in lieu of conventional cubemaps. Here, another advantage of using points comes into play: Compared to triangles, it is trivial to perform a paraboloid projection on them.
 
-As an optimization, we iterate over several VPLs per point and collect those that pass the culling test and render to all of them. More on this in \cref{chap:implementation}.
+As an optimization, we iterate over several VPLs per point and collect those that pass the culling test and render to all of them. More on this in the next section.
 
-To remove holes in the resulting shadowmap, the original paper implements a simplified variant of \cite{Marroquim:2007:reconstruction} that only uses depth information from the point rendering. We found that this approach has little benefit over simply enlarging all the point splats during rendering, therefore we did not use it when using splat rendering.
+To remove holes in the resulting shadow map, the original paper implements a simplified variant of \cite{Marroquim:2007:reconstruction} that only uses depth information from the point rendering. We found that this approach has little benefit over simply enlarging all the point splats during rendering, therefore we did not use it when using splat rendering.
 
 
 
 \subsection{Point Rendering with Pull-Push Postprocessing}
 
-As an alternative to point splat rendering, this subsection proposes a second approach that follows the algorithm of \cite{Marroquim:2007:reconstruction} more closely with the intent to obtain higher-quality shadowmaps. More specifically, the points are rendered as a single pixel, albeit with additional attributes like size and normal. These are then used in a subsequent reconstruction pass to create an (ideally) hole-free shadowmap. This approach also allows a point to be rendered into multiple shadowmaps with a moderate performance impact, more on this in the next chapter.
+As an alternative to point splat rendering, this subsection proposes a second approach that follows the algorithm of \cite{Marroquim:2007:reconstruction} more closely with the intent to obtain higher-quality shadow maps. More specifically, the points are rendered as a single pixel, albeit with additional attributes like size and normal. These are then used in a subsequent reconstruction pass to create an (ideally) hole-free shadow map. This approach also allows a point to be rendered into multiple shadow maps with a moderate performance impact, more on this in the next section.
 
 To provide a rough overview, the pull-push algorithm proposed by \cite{Marroquim:2007:reconstruction} is a ``pyramid-method'' (see \cite{Strengert:2006:Pyramid}) that uses the mipmap levels of a texture to first condense and then spread the data in the texture, in this case the sparse point set representing the scene. During the pull phase, it aggregates the information from four pixels of a finer level to one pixel of a coarser level. The subsequent push phase aggregates four pixels of a coarser level to one pixel of a finer level, but only if the pixel of the finer level contains no data or is determined to belong to an occluded surface. This way, closed surfaces are derived from single-pixel points.
 
 \subsubsection{Pull Phase}
-The pull phase reads four pixels of a finer level, computes an aggregate representation of them and writes the result to one pixels of the next coarser level. However, it only considers pixels that pass the following tests: First, they need to contain a valid depth at all (i.\,e.\ a point must have been rendered into this pixel) and second, the point in this pixel must not be occluded. A point is considered to be occluded if it is outside  the depth interval of the frontmost of the four pixel used for interpolation.
+The pull phase reads four pixels of a finer level, computes an aggregate representation of them and writes the result to one pixels of the next coarser level. However, it only considers pixels that pass the following tests: First, they need to contain a valid depth at all (i.\,e., a point must have been rendered into this pixel) and second, the point in this pixel must not be occluded. A point is considered to be occluded if it is outside  the depth interval of the frontmost of the four pixels used for interpolation.
 
 Figuratively speaking, the depth interval of a point denotes the range in which other points are considered to belong to the same surface and can be used for interpolation. For the rendered points, the depth interval is simply $[d;d+k]$ where $d$ is the points depth and $k$ an arbitrarily chosen constant. For interpolated points, the new depth interval spans the interpolated depth of the point to the highest depth value of the depth intervals of all ``parent'' points.
 
@@ -79,7 +82,7 @@ Analogous to the pull phase, the push phase reads four pixels of the coarser lev
 
 The target output location in the finer level might already contain data computed during the pull phase. This data is overwritten if the aggregated data has a smaller depth, i.e. if the original data is considered to be occluded. Otherwise, the original point is left untouched, as it is potentially more accurate than the just computed, interpolated point.
 
-Since the input and output pixel's location do not match the way they do during the pull phase, the weights used for interpolation during the push phase are not uniform, see Figure~\ref{fig:???}.
+Since the input and output pixel's location do not match the way they do during the pull phase, the weights used for interpolation during the push phase are not uniform.
 
  \cite{Marroquim:2007:reconstruction} also use the point's normals to correctly limit the point's size, and \cite{Marroquim:2008:reconstruction2} propose gaussian weights based on the pixel's distance to the point's location, instead constant weights solely based on pixel locations. Both of these additions we have not implemented yet.
 
@@ -90,6 +93,10 @@ Since the input and output pixel's location do not match the way they do during 
 
 
  \section{Implementation}
+
+The ISM algorithm is embedded in a larger system for computing indirect lighting in real-time. The system uses reflective shadow maps \cite{Dachsbacher:2005:RSM} that are regularly sampled to create VPLs, and performs interleaved shading \cite{Keller:2001:InterleavedSampling} with a block size of 4x4. The ISMs are rendered each frame right after the VPLs have been sampled.
+
+ \subsection{Point Creation}
  \label{sec:impl:ismRendering}
 
  Both the point splat renderer and the single-pixel point renderer share the first stages of their rendering pipelines, which are described here, before the following subsections describe the two renderers themselves and the pull-push postprocessing.
@@ -108,7 +115,7 @@ Since the input and output pixel's location do not match the way they do during 
 
  \subsection{Point Rendering with Splatting}
 
- In the case of point splatting, the geometry shader itself reads the VPL with the ID it determined, projects the point according to the VPL's data, performs culling (backface and hemisphere) sets \texttt{gl\_PointSize} to the projected size, and emits a vertex.
+ In the case of point splatting, the geometry shader itself reads the VPL with the ID it determined, projects the point according to the VPL's data, performs culling and discards the point if necessary, sets \texttt{gl\_PointSize} to the projected size, and emits a vertex.
 
  The \texttt{output\_primitive} must be set to \texttt{points} in the geometry shader's \texttt{layout} definition. As explained previously, for point splatting all points are simply enlarged by a small constant factor in lieu of the pull-push postprocessing. Since only depth information are needed in this case, the fragment shader is empty.
 
@@ -122,7 +129,7 @@ Since the input and output pixel's location do not match the way they do during 
 
  In order to maintain temporal coherence, the points are not written into a single large buffer, as it would be hard to consistently determine a location for each point in that buffer. Instead, the buffer is divided into one section per VPL, and the points are written into the section corresponding to the ID calculated before. An atomic counter that indicates the first free index is used per section to sequentially fill these sections without overwriting any data. The order of the points within each section is undefined, but that does not change the output since they all are going to be rendered into the same ISM.
 
- Now a compute shader is used to render the points. For each VPL, one work group reads through the respective section of the point buffer and performs the transformation and culling against the VPL for each point. It then uses \texttt{imageAtomicMin} to ``render'' the point with correct depth testing as a single pixel into the respective ISM. Since atomic operations require using single channel integer textures, it is not possible to use a second or third channel for additional attributes. Instead, the ISM is actually implemented as 3D texture, using the second index in the third dimension as additional ``render target'' to hold the radius and normal. However, this approach requires the use of 32 bit for storing the depth even if a lower precision would suffice, and the attributes need to be packed into 32-bit integers.
+ Now a compute shader is used to render the points. For each VPL, one work group reads through the respective section of the point buffer and performs the transformation and culling against the VPL for each point. It then uses the GLSL function \texttt{imageAtomicMin} to ``render'' the point with correct depth testing as a single pixel into the respective ISM. Since atomic operations require using single channel integer textures, it is not possible to use a second or third channel for additional attributes. Instead, the ISM is actually implemented as 3D texture, using the second index in the third dimension as additional ``render target'' to hold the radius and normal. However, this approach requires the use of 32 bit for storing the depth even if a lower precision would suffice, and the attributes need to be packed into 32-bit integers.
 
  As an optimization, the compute shader renders each point into several ISMs. To this end, each work group reads the data for a fixed number of VPLs (e.\,g.\ 16) into shared memory. Then, for each point culling is performed on all 16 VPLs, and those that pass the culling test are collected into a local array. Thereafter the point is transformed for each of the collected VPL and rendered into the respective ISM.
 
@@ -131,11 +138,11 @@ Since the input and output pixel's location do not match the way they do during 
  An attempt to do this optimization in the splat renderer by emitting multiple vertices in the geometry shader resulted in a significant performance hit, a problem not uncommon when using geometry shaders. While emitting additional vertices alone had a huge impact, the additional fillrate and overdraw became an issue when using too many points, a bottleneck that is unlikely to occur when using the single-pixel renderer.
 
 
- \subsubsection{Race Conditions caused by second render target??}
+ \subsubsection{Race Conditions in the Single-Pixel Renderer}
 
- There are two race conditions that may influence the output.
+ There are two race conditions that may influence the output when using the single-pixel renderer.
 
- First, the order of writes to the ISM depth buffer is undefined as the execution order of the different compute shaders is undefined in the OpenGL specification. Therefore, the classical z-fighting may occur if two points are rendered into the same pixel of the same shadowmap with the same depth value. The attributes that end up written into the additional render target are undefined and may differ between subsequent frames. In practice, this happens very rarely and we chose to ignore this.
+ First, the order of writes to the ISM depth buffer is undefined as the execution order of the different compute shaders is undefined in the OpenGL specification. Therefore, the classical z-fighting may occur if two points are rendered into the same pixel of the same shadow map with the same depth value. The attributes that end up written into the additional render target are undefined and may differ between subsequent frames. In practice, this happens very rarely and we chose to ignore this.
 
  However, a different race condition was frequently observable in our implementation:
  If two threads with differing depth values simultaneously write into the depth buffer, using \texttt{imageAtomicMin} guarantees the correct value will end up in the depth buffer. However, if the higher value got written first and gets overwritten by the second write, both writes have succeeded. This results in both threads attempting to write into the second buffer, creating another race condition since the here execution order is undefined again. THis problem can be alleviated by adding a synchronization point after the atomic write and then reading the memory location that just got written to. If it is equal to the written value, one can assume the write actually succeeded and did not get overwritten by a second, simultaneous write. Only then the write to the second buffer is performed.
@@ -167,15 +174,29 @@ Since the input and output pixel's location do not match the way they do during 
 
  \section{Results}
 
- \subsection{Point Rendering with Splatting}
 
+ The implementation is tested in the Crytek Sponza scene with 260k triangles, provided by \cite{McGuire2011Data}.
 
+ All measurements have been done on an Intel Xeon TODO with an NVIDIA GeForce GTX 750 Ti.
+
+ % no antialiasing but SSAO?
+
+ Unless otherwise noted, the parameters used for the measurements and screenshots are:
+ \vspace{-1em}
+ \begin{itemize}
+     \setlength\itemsep{0.0em}
+     \item 1920x1080\,px output resolution
+     \item 1024 VPLs
+     \item 2048\,px\textsuperscript{2} ISM texture, i.\,e.\ 64\,px\textsuperscript{2} per ISM
+     \item Single-pixel point renderer enabled, 16 VPLs considered per point, up to 4 collected
+     \item 4x4 interleaving pattern
+ \end{itemize}
 
 
  %\Cref{fig:???} shows the Crytek Sponza scene rendered using ISMs created by the splat renderer (a) and the single-pixel renderer (b). A section of the ISM texture is shown for each renderer in the lower row.
 
 
- \subsubsection{Quality}
+ \subsection{Quality}
 
  \begin{figure}[htb]
  \centering
@@ -217,7 +238,7 @@ Since the input and output pixel's location do not match the way they do during 
  \end{figure}
 
 
- \Cref{fig:results:leaks} shows a case the ISM technique has difficulties with. The image should be mostly dark or at least uniformly lit through the small gap below the curtains, but  since The root cause for the light problem is that the VPLs are placed right behind the curtains, so the occluding geometry, i.\,e.\ the curtain, is very near to the light source. Due to the randomness involved when selecting the point set for rendering the ISM, it often happens that the points near to the light source are rendered into other ISMs, leaving a large hole behind. The single-pixel renderer copes a bit better than the splat renderer since it uses more points, but does not provide a satisfactory result either.
+ \Cref{fig:results:leaks} shows a case the ISM technique has difficulties with. The image should be mostly dark or at least uniformly lit through the small gap below the curtains, but instead the wall and ceiling receive a lot of light and the floor displays several artifacts. The root cause is that the VPLs are placed right behind the curtains, so the occluding geometry, i.\,e.\ the curtain, is very near to the light source. Due to the randomness involved when selecting the point set for rendering the ISMs, it often happens that the points near to the light source are rendered into other ISMs, leaving a large hole behind. The single-pixel renderer copes a bit better than the splat renderer since it uses more points, but does not provide a satisfactory result either.
 
 
 
@@ -238,18 +259,8 @@ Since the input and output pixel's location do not match the way they do during 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
- \subsubsection{Performance}
+ \subsection{Performance}
+  \vspace{0.1em}
 
  \begin{table}[h]
  \begin{center}
@@ -268,7 +279,7 @@ Since the input and output pixel's location do not match the way they do during 
 
  Note that the comparison between the two renderers with default settings is not a fair one, since the single-pixel renderer uses more points and performs clamping per default. If the splat renderer is changed to behave similarly, it takes one additional millisecond for the clamping, and 33 additional milliseconds for using the same technique to collect VPLs as the single-pixel renderer does. The reason for this heavy slowdown is likely that the single-pixel renderer uses shared memory to load the 16 VPLs once, whereas the splatting renderer has to load all 16 VPLs per invocation, since the fragment shader does not provide access to shared memory.
 
- Conversely, if the single-pixel renderer does not perform clamping, the push phase needs 0.3\,ms less (2.4\,ms to 2.1\,ms), and when it considers only one VPL per point, the compute shader renderer uses 2.0\,ms less (2.9\,ms to 0.9\,ms).
+ Conversely, if the single-pixel renderer does not perform clamping, the push phase needs 0.3\,ms less (2.4\,ms to 2.1\,ms), and when it considers only one VPL per point, the point renderer uses 2.0\,ms less (2.9\,ms to 0.9\,ms).
 
  Since the technique implements no adaptivity, these numbers are independent from the viewport. They are however slightly affected by VPL placement, since it influences culling. In a second scenario, where the sunlight shines directly from above, all VPLs are placed on the floor facing up. As a result, much fewer points are culled during ISM rendering, resulting in slightly higher timings. The splat renderer needed an additional 0.7\,ms, whereas the single-pixel renderer needed only 0.2\,ms more.
 
@@ -277,16 +288,17 @@ Since the input and output pixel's location do not match the way they do during 
 
 
 
- \subsubsection{Detailed Performance Measurements for the \\ Single-Pixel Point Renderer}
+ \subsection{Detailed Performance Measurements for the Single-Pixel Point Renderer}
 
 
+% \setlength{\tabcolsep}{.16667em}
  \begin{table}[h]
+ \tymin=22pt
+ \tymax=61pt
  \begin{center}
-     \begin{tabulary}{0.47\textwidth}{| L | L | L | L || L |}
-         \hline
-         Point Collection & Point Rendering & Pull Phase & Push Phase & Total\\ \hline
-         2.1\,ms & 3.0\,ms & 1.0\,ms & 2.4\,ms & 8.5\,ms\\
-         \hline
+     \begin{tabulary}{0.47\textwidth}{| L | L | L | L | L |} \hline
+         Point Collection  & Point Rendering & Pull Phase & Push Phase & Total \\ \hline
+         2.1\,ms & 3.0\,ms & 1.0\,ms & 2.4\,ms & 8.5\,ms \\ \hline
      \end{tabulary}
      \caption{Timing breakdown of the single-pixel point renderer.}
      \label{tab:results:timing_breakdown_single_pixel}
@@ -295,19 +307,19 @@ Since the input and output pixel's location do not match the way they do during 
 
  \begin{table}[h]
  \begin{center}
-     \begin{tabulary}{0.47\textwidth}{| L | L | L | L | L | L | L | L || L | L || L |}
+     \begin{tabulary}{0.47\textwidth}{| L | L  | L | L | L | L || L | L || L |}
          \hline
-         PL 1 & PL 2 & PL 3 & PL > 3 & PS > 2 & PS 2 & PS 1 & PS 0 & PL Total & PS Total & Total \\ \hline
-         0.57 & 0.34 & 0.10 & 0.04 & 0.09 & 0.19 & 0.71 & 1.47 & 1.05 & 2.46 & 3.5\\
+         PL 1 & PL 2 & PL > 2 & PS > 1 & PS 1 & PS 0 & PL T & PS T & T \\ \hline
+         0.57 & 0.34 & 0.14 & 0.27 & 0.71 & 1.47 & 1.05 & 2.46 & 3.5\\
          \hline
      \end{tabulary}
-     \caption{Timing breakdown of the pull (PL) and push (PS) phase. The numbers of the individual steps indicate to which mipmap level they write, which is why the pull phase starts with 1 and the push phase has descending numbers. All timings are in milliseconds.}
+     \caption{Timing breakdown of the pull (PL) and push (PS) phase, and total timings (T). The numbers of the individual steps indicate to which mipmap level they write, which is why the pull phase starts with 1 and the push phase has descending numbers. All timings are in milliseconds.}
      \label{tab:results:timing_breakdown_pull_push}
  \end{center}
  \end{table}
 
 
- \Cref{tab:results:timing_breakdown_single_pixel} gives more detailed performance measurements of the single-pixel renderer, while \cref{tab:results:timing_breakdown_pull_push} further breaks down the individual steps of the pull and push phase. Note how the timings scale roughly as expected (PL 3 and PS 2 are taking roughly 4 times longer than PL 2 and PS 1, respectively), but not so the first and last step. This is due to the reduced input data size (or output size, respectively), as explained in \cref{sec:impl:pullPushPostprocessing}. Also note how the push phase does take roughly the time of the pull phase if it were not for the last phase, where it writes to the full 2048\,px² of miplevel zero, whereas the first pull phase only writes to the miplevel one with 1024\,px².
+ \Cref{tab:results:timing_breakdown_single_pixel} gives more detailed performance measurements of the single-pixel renderer, while \cref{tab:results:timing_breakdown_pull_push} further breaks down the individual steps of the pull and push phase. The timings scale roughly as expected, since PL 3 and PS 2 (not separately listed in the table) are taking roughly 4 times longer than PL 2 and PS 1, respectively. However, the first and last step fall out of line. This is due to the reduced input data size (or output size, respectively), as explained in \cref{sec:impl:pullPushPostprocessing}. Also note how the push phase does take roughly the time of the pull phase if it were not for the last phase, where it writes to the full 2048\,px\textsuperscript{2} of miplevel zero, whereas the first pull phase only writes to the miplevel one with 1024\,px\textsuperscript{2}.
 
 
 
@@ -318,48 +330,28 @@ Since the input and output pixel's location do not match the way they do during 
  %     - with more juju, maybe brought down to actually that time, except for the arithmetic stuff of course...
 
 
- \subsubsection{Memory Usage}
+ \subsection{Memory Usage}
 
- The point splat renderer uses no more memory than the ISM texture itself requires, which is 8\,MB for a 2048\,px² 16-bit depth buffer.
+ The point splat renderer uses no more memory than the ISM texture itself requires, which is 8\,MB for a 2048\,px\textsuperscript{2} 16-bit depth buffer.
 
- The single-pixel renderer uses additional memory. First, it uses a buffer for storing the points. This is implemented as four-channel 32-bit float texture, with the first three channels containing the position, and the last channel the radius (8 bit) and normal (24 bit, see \cite{Cigolle:2014:NormalPacking}). With a maximum point count of 2048 per ISM (keep in mind they are rendered into multiple ISMs later), this buffer uses 32\,MB.
- The additional textures used are the render target of the single-pixel renderer (single-channel 2048x2048x2\,px, 32-bit integer, uses 32\,MB), the mipmap levels used by the pull-push algorithm (two channels, 32-bit, use approx. 11\,MB) and the final ISM (same as used by the splat renderer, uses 8MB).
+ The single-pixel renderer uses additional memory. The buffer for storing points is implemented as four-channel 32-bit float texture, with the position in the first three channels, and the the radius (8 bit) and normal (24 bit, see \cite{Cigolle:2014:NormalPacking}) in the fourth channel. With a maximum point count of 2048 per ISM, this buffer uses 32\,MB.
+ The additional textures used are the render target of the single-pixel renderer (single-channel 2048x2048x2\,px, 32-bit integer, 32\,MB), the mipmap levels used by the pull-push algorithm (two channels, 32-bit, approx. 11\,MB) and the final ISM (same as used by the splat renderer, uses 8MB).
 
  Added together, the single-pixel renderer uses a total of 83\,MB, likely with room for optimization left.
 
 
- \subsubsection{Problems with High Geometric Density}
 
- As a more demanding test case the San Miguel scene with 7.9M triangles. The most apparent problem of the presented implementation is the lack of adaptivity to the current viewport and VPL positions in addition to the lack of LOD methods. As a result, all 7.9M triangles are used every frame to render the ISMs, with corresponding performance results.
+ \subsection{Comparison of the Splat and Single-Pixel Renderer}
 
- Screenshots with the San Miguel scene
+ The single-pixel renderer provides numerous advantages over the splat renderer. Using a compute shader to render the points lifts the restrictions of the fixed-function pipeline and e.\,g.\ enabled rendering each point into multiple ISMs without large performance losses. Quality-wise, it can reproduce surfaces more accurately by correctly interpolating between points.
 
- Quality also suffers. Not tuned to such small triangles.
-
- Numbers
-
-
- \subsection {Comparison of the Splat and Single-Pixel Renderer}
-
- The single-pixel renderer provides numerous advantages over the splat renderer.
-
- Using a compute shader to render the points lifts the restrictions of the fixed-function pipeline and e.\,g.\ enabled rendering each point into multiple ISMs without large performance losses.
-
- Quality-wise, it can reproduce surfaces more accurately by correctly interpolating between points.
-
- Obviously, the algorithm needs more rendering time and memory.
+ The drawbacks obviously include the additional rendering time and memory. Besides, the added complexity should not be underestimated. Specifically, we found it hard to fine-tune the pull-push algorithm to give us satisfactory results, especially in the face of the low resolutions of ISMs and the limited data available for reconstruction after selecting a random and sparse set of points.
 
 
 
- Another drawback is the added complexity. Specifically, we found it hard to fine-tune the pull-push algorithm to give us satisfactory results, especially in the face of the low resolutions of ISMs and the limited data available for reconstruction after selecting a random and sparse set of points.
-
- flexibility, interpolation, no fillrate problem
-
- but hard to fine-tune
 
 
-
- \subsection{Comparison and Discussion}
+ \section{Discussion}
 
 
  Imperfect shadow maps have several deficits, some of which are inherent to the technique and difficult to solve, others are specific to the implementation choices and tradeoffs in our implementation and might be easier to overcome.
@@ -374,4 +366,10 @@ Since the input and output pixel's location do not match the way they do during 
 
  As for most global illumination algorithms, a massive improvement would be to differentiate between large-scale scene geometry that is important for diffuse light bounces, and smaller geometry of lesser importance. While the latter can possibly be ignored altogether with only minor losses in quality, the shape of large-scale geometry is all the more important to preserve (relatively) precisely.
 
- The San Miguel scene is a good example for this: While the small detail work like dishes and small plants make up most of the geometry and thus most of the rendering time, they contribute only very little to global illumination. This is where our implementation suffers most from the lack of level-of-detail methods.
+
+
+\section{Conclusion}
+
+In this paper, we have presented extensions to the Imperfect Shadow map algorithm that allow greater accuracy at the cost of performance and memory. Compared to the original algorithm, our extensions make it scale better with the number of points, a determinant for the quality of the shadow map, and reconstruct surfaces from the available points more accurately.
+
+However, we do think that there is a rather low upper bound in quality that is achievable with the approach of randomly selecting points, especially in geometrically complex scenes. To mitigate this, the selection of points needs to be heavily improved or alternate methods of rendering masses of shadow maps need to be investigated.
