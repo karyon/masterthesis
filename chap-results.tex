@@ -35,7 +35,7 @@ The hardware specification of the testing system is as follows:
 
 \section{RSM Generation and VPL Sampling}
 \begin{outline}
-\1 RSM generation is the same as G-Buffer generation, possibly with a different resolution. as said earlier, depending on the specific use case, this rendering pass can also render the shadowmap.
+\1 RSM generation is the same as G-Buffer generation, possibly with a different resolution. as said earlier, depending on the specific use case, this rendering pass can also render the shadow map.
 \1 screenshot of RSM G-buffers
 
 \1 VPL sampling takes fractions of a millisecond and is negligible. bear in mind that in order to achieve high quality levels, a more elaborate sampling algorithms needs to be implemented, which can actually take most of the available time. See \citep{hedman2016sequential} for an advanced sampling algorithm.
@@ -61,6 +61,7 @@ The hardware specification of the testing system is as follows:
 
 
 \subsubsection{Quality}
+\label{sec:results:ism:quality}
 
 \begin{figure}[htb]
 \centering
@@ -102,7 +103,7 @@ As the single-pixel renderer does not use splats, it does not have this problem.
 \end{figure}
 
 
-\Cref{fig:results:leaks} shows a case the ISM technique has difficulties with. The image should be mostly dark or at least uniformly lit through the small gap below the curtains, but  since The root cause for the light problem is that the VPLs are placed right behind the curtains, so the occluding geometry, i.\,e.\ the curtain, is very near to the light source. Due to the randomness involved when selecting the point set for rendering the ISM, it often happens that the points near to the light source are rendered into other ISMs, leaving a large hole behind. The single-pixel renderer copes a bit better than the splat renderer since it uses more points, but does not provide a satisfactory result either.
+\Cref{fig:results:leaks} shows a case the ISM technique has difficulties with. The image should be mostly dark or at least uniformly lit through the small gap below the curtains,instead the wall and ceiling receive a lot of light and the floor displays several artifacts. The root cause is that the VPLs are placed right behind the curtains, so the occluding geometry, i.\,e.\, the curtain, is very near to the light source. Due to the randomness involved when selecting the point set for rendering the ISMs, it often happens that the points near to the light source are rendered into other ISMs, leaving a large hole behind. The single-pixel renderer copes a bit better than the splat renderer since it uses more points, but does not provide a satisfactory result either.
 
 
 
@@ -131,10 +132,11 @@ Our implementation hides some of the inaccuracies of the ISMs by using a relativ
 
 \todo[color=yellow]{implement max quality. every point into every ISM. likely render everything once for each ISM. a checkbox: when checked, compute high-quality once and don't change. back to normal when unchecked.}
 
-\todo{for single-pixel-renderer: maybe show one full-size shadowmap to show this *can* work}
+\todo{for single-pixel-renderer: maybe show one full-size shadow map to show this *can* work}
 
 
 \subsubsection{Performance}
+\label{sec:results:ism:performance}
 
 \begin{table}[h]
 \begin{center}
@@ -151,9 +153,9 @@ Our implementation hides some of the inaccuracies of the ISMs by using a relativ
 
 \Cref{tab:results:ism_timings} shows the time needed for rendering the ISMs with both renderers and different settings.
 
-Note that the comparison between the two renderers with default settings is not a fair one, since the single-pixel renderer uses more points and performs clamping per default. If the splat renderer is changed to behave similarly, it takes one additional millisecond for the clamping, and 33 additional milliseconds for using the same technique to collect VPLs as the single-pixel renderer does. The reason for this heavy slowdown is likely that the single-pixel renderer uses shared memory to load the 16 VPLs once, whereas the splatting renderer has to load all 16 VPLs per invocation, since the fragment shader does not provide access to shared memory.
+Note that the comparison between the two renderers with default settings is not a fair one, since the single-pixel renderer uses more points and performs clamping per default. If the splat renderer is changed to behave similarly, it takes one additional millisecond for the clamping, and 33 additional milliseconds for using the same technique to collect VPLs as the single-pixel renderer does. There are several reasons for this heavy slowdown: First, we implemented this by emitting multiple vertices in the geometry shader, which is known to have poor performance on current GPUs. Second, the additional fillrate and overdraw became an issue when using too many points, a bottleneck that is unlikely to occur when using the single-pixel renderer. And third, while the single-pixel renderer uses shared memory to load the 16 VPLs once, the fragment shader of the splat renderer has no access to shared memory and has to load all 16 VPLs per invocation, creating high register pressure.
 
-Conversely, if the single-pixel renderer does not perform clamping, the push phase needs 0.3\,ms less (2.4\,ms to 2.1\,ms), and when it considers only one VPL per point, the compute shader renderer uses 2.0\,ms less (2.9\,ms to 0.9\,ms).
+Conversely, if the single-pixel renderer does not perform clamping, the push phase needs 0.3\,ms less (2.4\,ms to 2.1\,ms), and when it considers only one VPL per point, the point renderer uses 2.0\,ms less (2.9\,ms to 0.9\,ms).
 
 Since the technique implements no adaptivity, these numbers are independent from the viewport. They are however slightly affected by VPL placement, since it influences culling. In a second scenario, where the sunlight shines directly from above, all VPLs are placed on the floor facing up. As a result, much fewer points are culled during ISM rendering, resulting in slightly higher timings. The splat renderer needed an additional 0.7\,ms, whereas the single-pixel renderer needed only 0.2\,ms more.
 
@@ -163,6 +165,7 @@ Since the technique implements no adaptivity, these numbers are independent from
 
 
 \subsubsection{Detailed Performance Measurements for the Single-Pixel Point Renderer}
+\label{sec:results:ism:performanceSinglePixelRenderer}
 
 
 \begin{table}[h]
@@ -204,6 +207,7 @@ Since the technique implements no adaptivity, these numbers are independent from
 
 
 \subsubsection{Memory Usage}
+\label{sec:results:ism:memory}
 
 The point splat renderer uses no more memory than the ISM texture itself requires, which is 8\,MB for a 2048\,px² 16-bit depth buffer.
 
@@ -214,6 +218,7 @@ Added together, the single-pixel renderer uses a total of 83\,MB, likely with ro
 
 
 \subsubsection{Problems with High Geometric Density}
+\label{sec:results:ism:densityProblems}
 
 As a more demanding test case the San Miguel scene with 7.9M triangles. The most apparent problem of the presented implementation is the lack of adaptivity to the current viewport and VPL positions in addition to the lack of LOD methods. As a result, all 7.9M triangles are used every frame to render the ISMs, with corresponding performance results.
 
@@ -224,36 +229,28 @@ Quality also suffers. Not tuned to such small triangles.
 Numbers
 
 
-\subsection {Comparison of the Splat and Single-Pixel Renderer}
+\subsection{Comparison of the Splat and Single-Pixel Renderer}
+\label{sec:results:ism:comparison}
 
-The single-pixel renderer provides numerous advantages over the splat renderer.
 
-Using a compute shader to render the points lifts the restrictions of the fixed-function pipeline and e.\,g.\ enabled rendering each point into multiple ISMs without large performance losses.
+The single-pixel renderer provides numerous advantages over the splat renderer. Using a compute shader to render the points lifts the restrictions of the fixed-function pipeline and e.\,g.\ enables rendering each point into multiple ISMs without large performance losses. Quality-wise, it can reproduce surfaces more accurately by correctly interpolating between points.
 
-Quality-wise, it can reproduce surfaces more accurately by correctly interpolating between points.
-
-Obviously, the algorithm needs more rendering time and memory.
+The drawbacks obviously include the additional rendering time and memory. Besides, the added complexity should not be underestimated. Specifically, we found it hard to fine-tune the pull-push algorithm to give us satisfactory results, especially in the face of the low resolutions of ISMs and the limited data available for reconstruction after selecting a random and sparse set of points.
 
 \todo{Add notes about scaling when i have point counts}
 
-Another drawback is the added complexity. Specifically, we found it hard to fine-tune the pull-push algorithm to give us satisfactory results, especially in the face of the low resolutions of ISMs and the limited data available for reconstruction after selecting a random and sparse set of points.
 
-flexibility, interpolation, no fillrate problem
 
-but hard to fine-tune
-
-\todo{comparison of pull-push vs splatting}
-
-\subsection{Comparison and Discussion}
-
+\subsection{Discussion}
+\label{sec:results:ism:discussion}
 
 Imperfect shadow maps have several deficits, some of which are inherent to the technique and difficult to solve, others are specific to the implementation choices and tradeoffs in our implementation and might be easier to overcome.
 
 First, ISMs reduce the scene's geometry to points. At the resolution that is achievable in a real-time budget, this is already a stark approximation that loses a lot of accuracy.
 
-Second, because a sparse set of points is used for each ISM, each point must be enlarged to accomodate for the neighboring points that are likely missing in the chosen ISM. For instance, if an area is represented by a thousand points and we now use one tenth of all points for an ISM, each remaining point's area must be enlarged by a factor of ten to result in an equally large area in the rendered output. Of course, this approach leads to deformed geometry since points at the edges of the area get enlarged as well, growing over the borders of the original geometry.
+Second, because a sparse set of points is used for each ISM, each point must be enlarged to accomodate for the neighboring points that are likely missing in the chosen ISM. For instance, if an area is represented by a thousand points and only one tenth of all points is used for each ISM, each remaining point's area must be enlarged by a factor of ten to result in an equally large area in the rendered output. Of course, this approach leads to deformed geometry since points at the edges of the area get enlarged as well, growing over the borders of the original geometry.
 
-Third, there are also numerical issues. For instance, both the splatting and postprocessing approaches ignore the distortion caused by the projection, and thus might render even simple surfaces incorrectly. This contributes to the necessity of using a relatively large shadow bias. This can likely be solved however, albeit at the cost of additional complexity.
+Third, there are also numerical issues. For instance, both the splatting and postprocessing approaches ignore the distortion caused by the projection, and thus might render even simple surfaces incorrectly. This contributes to the necessity of using a relatively large shadow bias. This can likely be solved, albeit at the cost of additional complexity.
 
 Fourth, and this is in our view the most important shortcoming, ISMs handle geometry in the vicinity to VPLs badly as can be seen in \cref{fig:results:leaks}. To sufficiently approximate such surfaces when rendering ISMs, one would need to greatly increase the number of points created near VPLs, possibly in addition to stepping away from using a fully random approach for point selection and select a specific point set for each ISM depending on the VPLs location.
 

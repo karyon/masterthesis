@@ -30,7 +30,7 @@
 \1 show what's compute shader and what not?
 \1 it's basically lighting plus
     \2 g-buffer generation
-    \2 shadowmap which is part of the RSM,
+    \2 shadow map which is part of the RSM,
     \2 SSAO
     \2 deferredshading
     \2 srgb and HDR.
@@ -46,9 +46,9 @@
 \1 use the same code for RSM generation as for G-Buffer generation with only slight modifications:
 \1 don't use normalmaps as the triangle normals are sufficient
 \1 instead of individual texture lookups, we use the material's average color as diffuse color as suggested by \citet{hedman2016sequential} to avoid high-frequency color changes to affect the outcome.
-\1 we re-use RSM as shadowmap
+\1 we re-use RSM as shadow map
     \2 usually, one might want to decouple this since they likely need different resolutions/cascading schemes etc. One could also render the RSM with a less detailed version of the scene. Since we had no culling and LOD implemented, we were bottlenecked on geometry complexity and chose to do this in one pass.
-    \2 we use variance shadowmapping. so we add the variance buffer if we're rendering an RSM, and disable another buffer (non-face normals).
+    \2 we use variance shadow mapping. so we add the variance buffer if we're rendering an RSM, and disable another buffer (non-face normals).
 
 \1 with a compute shader, we sample the RSM in a regular pattern and write VPLs into a buffer
 \1 VPLs are position, normal, color
@@ -65,11 +65,11 @@ Both the point splat renderer and the single-pixel point renderer share the firs
 
 We make use of OpenGL's tessellation shader to subdivide triangles to make them meet a certain maximum size. The tessellation control shader determines the tessellation levels according to the triangle's size. The tessellation evaluation shader does nothing more than correctly interpolating the vertex positions.
 
-The geometry shader, which now recieves the smaller, tessellated triangles, converts the triangle to a point. The point's center equals the triangle's center, and the radius is chosen so the areas of the point and triangle match.
+The geometry shader, which now recieves the smaller, tessellated triangles, converts each triangle to a point. The point's center equals the triangle's center, and the radius is chosen so the areas of the point and triangle match.
 
 \todo[color=yellow]{implement that area thing}
 
-While a random subset of all points needs to be chosen for each ISM, special care must be taken to make sure that the same subset of points is used for each ISM in each frame. Otherwise, the ISMs will be temporally incoherent and cause flickering in the final rendering. To this end, the point's barycentric coordinate inside its triangle and the triangle's primitive ID are passed to a fast hashing algorithm. The result is is used to determine an ISM ID (or, equivalently, a VPL ID) for use in the next step.
+While a random subset of all points needs to be chosen for each ISM, special care must be taken to make sure that the same subset of points is used for each ISM in each frame. Otherwise, the ISMs will be temporally incoherent and cause flickering in the final rendering. To this end, the point's barycentric coordinate inside its triangle and the triangle's \texttt{gl\_PrimitiveID} are passed to a fast hashing algorithm. The result is is used to determine an ISM ID (or, equivalently, a VPL ID) for use in the next step.
 
 Note that no translation or projection has been applied yet, this happens in a later stage. As a result, the vertex shader is a simple pass-through shader.
 
@@ -78,14 +78,16 @@ The next step depends on whether point splatting or the single-pixel renderer is
 
 
 \subsection{Point Rendering with Splatting}
+\label{sec:impl:splatting}
 
-In the case of point splatting, the geometry shader itself reads the VPL with the ID it determined, projects the point according to the VPL's data, performs culling (backface and hemisphere) sets \texttt{gl\_PointSize} to the projected size, and emits a vertex.
+In the case of point splatting, the geometry shader itself reads the VPL with the ID it determined, projects the point according to the VPL's data, performs culling and discards the point if necessary, sets \texttt{gl\_PointSize} to the projected size, and emits a vertex.
 
 The \texttt{output\_primitive} must be set to \texttt{points} in the geometry shader's \texttt{layout} definition. As explained previously, for point splatting all points are simply enlarged by a small constant factor in lieu of the pull-push postprocessing. Since only depth information are needed in this case, the fragment shader is empty.
 
 
 
 \subsection{Single-Pixel Point Rendering with Compute Shaders}
+\label{sec:impl:singlePixelRendering}
 
 This approach was inspired by the fact that the surface reconstruction in \citet{Marroquim:2007:reconstruction} works with single-pixel ``splats''. Since in this case the hardware rasterizer is not required to achieve good performance, this allowed for more flexibility and new optimization opportunities.
 
@@ -97,38 +99,39 @@ Now a compute shader is used to render the points. For each VPL, one work group 
 
 \todo[color=yellow]{put radius into 8 lower bits of depth channel, remove normal from softrenderbuffer and pullpush}
 
-As an optimization, the compute shader renders each point into several ISMs. To this end, each work group reads the data for a fixed number of VPLs (e.\,g.\ 16) into shared memory. Then, for each point culling is performed on all 16 VPLs, and those that pass the culling test are collected into a local array. Thereafter the point is transformed for each of the collected VPL and rendered into the respective ISM.
+As an optimization, the compute shader renders each point into several ISMs. To this end, each work group reads the data of a fixed number of VPLs (e.\,g.\ 16) into shared memory. Then, while rendering the points, the culling is performed per point on all 16 VPLs, and those VPLs where the point passes the culling test are collected into a local array. Thereafter the point is transformed for each of the collected VPLs and rendered into the respective ISM.
 
 % In practice it turned out to be more efficient to limit the number of slots in the local array to a constant maximum (e.\,g.\ 4), possibly because this ensures that the rendering loop is not diverging and enables compiler optimizations like loop unrolling.
 
-An attempt to do this optimization in the splat renderer by emitting multiple vertices in the geometry shader resulted in a significant performance hit, a problem not uncommon when using geometry shaders. While emitting additional vertices alone had a huge impact, the additional fillrate and overdraw became an issue when using too many points, a bottleneck that is unlikely to occur when using the single-pixel renderer.
+An attempt to do this optimization in the splat renderer by emitting multiple vertices in the geometry shader resulted in a significant performance hit, see \Cref{sec:results:ism:performance}.
 
 
 \subsubsection{Race Conditions caused by second render target??}
+\label{sec:impl:raceCondition}
 
-There are two race conditions that may influence the output.
+There are two race conditions that may influence the output when using the single-pixel renderer.
 
-First, the order of writes to the ISM depth buffer is undefined as the execution order of the different compute shaders is undefined in the OpenGL specification. Therefore, the classical z-fighting may occur if two points are rendered into the same pixel of the same shadowmap with the same depth value. The attributes that end up written into the additional render target are undefined and may differ between subsequent frames. In practice, this happens very rarely and we chose to ignore this.
+First, the order of writes to the ISM depth buffer is undefined as the execution order of the different compute shaders is undefined in the OpenGL specification. Therefore, the classical z-fighting may occur if two points are rendered into the same pixel of the same shadow map with the same depth value. The attributes that end up written into the additional render target are undefined in this case and may differ between subsequent frames. In practice, this happens very rarely and we chose to ignore this.
 
 However, a different race condition was frequently observable in our implementation:
-If two threads with differing depth values simultaneously write into the depth buffer, using \texttt{imageAtomicMin} guarantees the correct value will end up in the depth buffer. However, if the higher value got written first and gets overwritten by the second write, both writes have succeeded. This results in both threads attempting to write into the second buffer, creating another race condition since the here execution order is undefined again. THis problem can be alleviated by adding a synchronization point after the atomic write and then reading the memory location that just got written to. If it is equal to the written value, one can assume the write actually succeeded and did not get overwritten by a second, simultaneous write. Only then the write to the second buffer is performed.
+If two threads with differing depth values simultaneously write into the depth buffer, using \texttt{imageAtomicMin} guarantees the correct value will end up in the buffer. However, if the higher value got written first and gets overwritten by the second write, both writes have succeeded. This results in both threads attempting to write into the second buffer, creating another race condition since the here execution order is undefined again. This problem can be alleviated by adding a synchronization point after the atomic write and then reading the memory location that just got written to. If it is equal to the written value, one can assume the write actually succeeded and did not get overwritten by a second, simultaneous write. Only then the write to the second buffer is performed.
 
 However, this solution fixes the race condition only inside one work group and not between work groups, for which no efficient synchronization primitives exist on the GPU. The problem occurred infrequently enough though to be negligible.
 
-A proper solution that would fix this problem completely, avoiding the synchronization overhead and open more optimization possibilities would involve a more advanced software renderer, e.\,g.\ following the approaches of \citet{Laine:2011:SoftwareRasterization}.
+A proper solution that would fix this problem completely, avoid the synchronization overhead and open more optimization possibilities would involve a more advanced software renderer, e.\,g.\ following the approaches of \citet{Laine:2011:SoftwareRasterization}.
 
 
 \subsection{Pull-Push Postprocessing}
 \label{sec:impl:pullPushPostprocessing}
 
-Our implementation of the pull-push algorithm is relatively straightforward. For each miplevel to be calculated, one \texttt{dispatchCompute} is called. Since the first step of the pull phase has different inputs than the subsequent steps (it only has depth and size, not the displacement vector and depth interval), a slightly different shader is used there. Analogous the last step of the push phase outputs only depth, therefore a shader variant is used for that step as well. For the same reason, the input texture (the ``render target'' used by the single-pixel renderer) and output texture (the final ISM used later for shadowing) have different formats than the mipmap levels used by the pull-push algorithm.
+Our implementation of the pull-push algorithm is relatively straightforward. For each miplevel to be calculated, one \texttt{dispatchCompute} is called. Since the first step of the pull phase has different inputs than the subsequent steps (it only has depth and size, not the displacement vector and depth interval), a slightly different shader is used there. Analogous the last step of the push phase outputs only depth, therefore a shader variant is used for that step as well. For the same reason, the input texture (the ``render target'' used by the single-pixel renderer) and output texture (the final ISM used later for shadowing) have different formats than the mipmap levels used by the pull-push algorithm. 
 
 
 
 In the pull phase, one compute shader invocation calculates one output pixel. It reads its four input pixels, determines which of them are valid, and uses the valid ones for interpolating.
 
 
-During the push phase, groups of four output pixels share the same input pixels. This can be exploited by letting each shader invocation computing four output pixels while still reading only four input pixels. Naturally, the weights applied to the input pixels need to be adjusted per output pixel. For invalidating input pixels, their weights can simply be set to zero instead of separately marking them as invalid.
+During the push phase, groups of four output pixels share the same input pixels. This can be exploited by letting each shader invocation compute four output pixels while still reading only four input pixels. Naturally, the weights applied to the input pixels need to be adjusted per output pixel. For invalidating input pixels, their weights can simply be set to zero instead of separately marking them as invalid.
 
 %Since this technique is heavily bandwidth-bound, we aggressively pack the data.
 \todo[color=yellow]{actually pack this shit aggressively. 32bit depth and depth interval, 32bit displacement and radius and that's it. }
@@ -147,7 +150,7 @@ Note that there is still lots of room for optimization. Especially the pull phas
 \1 diagram of the pixels. \ref{fig:impl:pixels} explain this. we still do coherent VPL processing.
 \1 more explanation on id calculation
 \1 reasons for single pass? 1. Easier to implement. 2. Basically, we completely remove the separate interleaving and deinterleaving step and simply change the read and write patterns, saving on the absolute amount of memory read and written. 3. Less memory used since no additional buffers are needed. 4. scales better to 8x8 interleaving pattern, since 64 interleaving sections ??? might introduce significant overhead (interleaving through buffers: maximum render targets often 8 or 16, so now multiple passes needed, interleaving through shared memory: becomes impossible, too large work groups, too much shared memory needed)
-\1 potential downside is that we introduce one scattered read compared to several coherent reads in the buffer splitting method. but, bottleneck is lookups in the VPL buffer and the respective shadowmaps in the main loop, as well as ALU operations, so this one-time lookup doesn't have any impact. maybe completely latency covered or workgroups are distributed in a way that the reads are still cache-coherent.
+\1 potential downside is that we introduce one scattered read compared to several coherent reads in the buffer splitting method. but, bottleneck is lookups in the VPL buffer and the respective shadow maps in the main loop, as well as ALU operations, so this one-time lookup doesn't have any impact. maybe completely latency covered or workgroups are distributed in a way that the reads are still cache-coherent.
 \1 in fact, any attempts to do coherent reads did not result in speedups.
 
 \todo[color=yellow]{investigate into interleaving via shared memory in 2x2 groups}
