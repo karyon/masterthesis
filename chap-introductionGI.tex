@@ -25,15 +25,15 @@ To determine how much and in what direction incoming light is reflected from sur
 
 In order for light to interact with surfaces, it needs to be ``transported'' to them from light sources. The simplest case, light that hit only one surface before reaching the camera, is called direct light. To determine surfaces that are directly hit by a certain light source, shadow maps are commonly used in real-time computer graphics.
 
-Direct light it usually has a single point as origin in the case of point lights, or consists of entirely parallel light rays in the case of directional lights. This structuredness makes it comparatively easy to compute.
+\textbf{Direct light} usually has a single point as origin in the case of point lights, or consists of entirely parallel light rays in the case of directional lights. This structuredness makes it comparatively easy to compute.
 
-Indirect light on the other hand is bounced off at least two surfaces before reaching the camera. Since each point that is directly lit now reflects light into arbitrary directions, this process is much less structured and thus harder to compute. To cope with this complexity, indirect light has been separated into small-scale and large-scale indirect light. An intermediate step for medium-scale indirect lighting has also been proposed \citep{reed:2012:mediumAO}.
+\textbf{Indirect light} on the other hand is bounced off at least two surfaces before reaching the camera. Since each point that is directly lit now reflects light into arbitrary directions, this process is much less structured and thus harder to compute. To cope with this complexity, indirect light has been separated into small-scale and large-scale indirect light. An intermediate step for medium-scale indirect lighting has also been proposed \citep{reed:2012:mediumAO}.
 
-The simulation of small-scale indirect light has been made popular with \textit{screen-space ambient occlusion} (SSAO, \cite{Mittring:2007:Cryengine2}). While this should be more accurately described as small-scale indirect \textit{occlusion}, since it only darkens occluded areas, \textit{screen-space directional occlusion} (SSDO, \cite{Ritschel:2009:SSDO}) actually performs a form of indirect lighting, albeit a limited one. \citet{jimenez:2016:AO} have finally put this technique onto a physically based foundation.
+The simulation of \textbf{small-scale indirect light} has been made popular with \textit{screen-space ambient occlusion} (SSAO, \cite{Mittring:2007:Cryengine2}). While this should be more accurately described as small-scale indirect \textit{occlusion}, since it only darkens occluded areas, \textit{screen-space directional occlusion} (SSDO, \cite{Ritschel:2009:SSDO}) actually performs a form of indirect lighting, albeit a limited one. \citet{jimenez:2016:AO} have finally put this technique onto a physically based foundation.
 
-Small-scale indirect lighting techniques such as SSAO are important for accentuating small geometric details in objects and providing a sort of contact shadow as a visual cue for the proximity of objects to each other. In contrast, large scale indirect lighting provides more realistic lighting for entire scenes.
+Small-scale indirect lighting techniques such as SSAO are important for accentuating small geometric details in objects and providing a sort of contact shadow as a visual cue for the proximity of objects to each other.
 
-While it has been simulated for static scenes for a while even in real-time applications, large-scale indirect lighting for fully dynamic scenes has yet to reach mainstream in real-time applications. More on this in the next section.
+In contrast, \textbf{large scale indirect lighting} provides more realistic lighting for entire scenes. While it has been simulated for static scenes for a while even in real-time applications, large-scale indirect lighting for fully dynamic scenes has yet to reach mainstream in real-time applications. More on this in the next section.
 \\
 \\
 The term \textit{global illumination} (GI) has been used for varying sets of lighting effects throughout the literature. In this thesis, we use it to describe the lastly discussed aspect, large-scale indirect lighting.
@@ -75,32 +75,43 @@ Allowing changing geometry provides additional benefits: Games can create new ex
 
 \newcommand{\surfaceNormal}{\vec{n}}
 
-We will start with the most basic form of the rendering equation \citep{Kajiya:1986:RenderingEquation}:
+The most basic form of the rendering equation \citep{Kajiya:1986:RenderingEquation} is as follows:
 
-\begin{figure}[!htp]
+% \begin{figure}[!htp]
   \begin{equation}
     \outgoingRadiance = \emittedRadiance + \reflectedRadiance
   \label{eq:renderBasic}
   \end{equation}
-\end{figure}
+% \end{figure}
 \noindent
 This describes the outgoing radiance $L_o$ from a surface point $x$ in the direction $\outgoingDir$, which is equal to the emitted radiance $L_e$ plus the reflected radiance $L_r$.
 
 The reflected radiance can be defined as
 
-\begin{figure}[!htp]
+% \begin{figure}[!htp]
   \begin{equation}
     \reflectedRadiance = \int\limits_{\Omega} \brdf(x, \incidenceDir, \outgoingDir)\incidentRadiance (\incidenceDir \cdot \surfaceNormal) d \omega_i
   \label{eq:render}
   \end{equation}
-\end{figure}
+% \end{figure}
 \noindent
 where $\Omega$ is the upper hemisphere of point $x$, $\brdf$ is the BRDF of the surface, $L_i$ the incident radiance and $\surfaceNormal$ the surface normal at point $x$.
 
-When not simulating global illumination,
+While this is the most common representation of the rendering equation, \citet{Kajiya:1986:RenderingEquation} defined the reflected radiance using an integral over all surface points, not all directions:
 
-\todo[color=blue]{GI theory}
-- part of this must be what makes this so computationally intensive
+% \begin{figure}[!h]
+  \begin{equation}
+    \reflectedRadiance = \int\limits_{S} \brdf(x, \incidenceDir, \outgoingDir) \incidentRadiance (\incidenceDir \cdot \surfaceNormal) V(x, x') d x'
+  \label{eq:renderWithVisibility}
+  \end{equation}
+% \end{figure}
+\noindent
+where $\incidenceDir$ is now defined as the normalized difference vector between $x$ and $x'$ and S is the (infinite) set of all surface points. Since not all surface points are visible from $x$, a visibility term $V$ has been added that is $0$ if $x$ and $x'$ are mutually visible, 1 otherwise.
+
+This equation illustrates a major difficulty when simulating global illumination, namely the integral that needs to be solved for the infinite set of surface points. To approximate this integral, one generally picks a random set of points or clusters points to form surface patches. Even then, the performance requirements are generally too high for real-time computer graphics. As a result, this integral is either solved in a preprocessing step for static parts of the scene, or solved only for the set of points that are considered light sources, discarding a large portion of the light energy in the scene and heavily altering the rendered output. In fact, area lights are often ignored or approximated because they again would require solving this integral for an infinite number of points.
+
+Another difficulty made explicit by \Cref{eq:renderWithVisibility} is the visibility term. Even with an algorithm that transfers light between points or surface patches at a sufficient resolution and sufficient speed, the visibility term requires the addition of another algorithm that tests for each pair of surface elements whether any other surface element is located between them. This is often one of the most computationally intensive parts of global illumination algorithms.
+
 
 
 \subsection{The Path to Real-Time Dynamic Global Illumination}
