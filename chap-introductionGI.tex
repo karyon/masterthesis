@@ -58,6 +58,7 @@ Allowing changing geometry provides additional benefits: Games can create new ex
 \todo[color=green]{formatting requirements? like that comma after e.g. weirdness}
 
 \subsection{Theory}
+\label{sec:intro:gi:theory}
 
 
 % based on https://github.com/naps62/msc-thesis/tree/ee10a36eecbb691ba1a67b4c5367967023d07440/doc/common/equations
@@ -116,39 +117,44 @@ Another difficulty made explicit by \Cref{eq:renderWithVisibility} is the visibi
 
 \subsection{The Path to Real-Time Dynamic Global Illumination}
 
-\begin{outline}
-\1 traditionally ignored, to avoid unlit areas: ambient term
-\1 for large-scale indirect lighting, people have used lightmaps and/or per-vertex baked ambient occlusion. inherently static and large scale, because memory or tessellation levels, respectively.
-\1 Games have used variations of \emph{precomputed radiance transfer} (PRT, \cite{sloan:2002:PRT}) to accomodate for changing lighting conditions \cite{stefanov:2012:PRTinFarCry3}. More specifically, they use probes instead of of the scene geometry to store the PRT results to be able to light dynamic objects. These objects do not affect indirect lighting of other objects however, a common compromise.
+Originally, global illumination has been ignored in 3D computer graphics, especially in interactive applications. To avoid completely unlit areas, an ambient term has been used that uniformly adds light to all surfaces.
 
-\1 besides not fully supporting dynamic objects, long precomputation times are often slowing down artists.
-\1 real-time GI for completely dynamic scenes has yet to reach widespread use in real-time applications due to the high performance requirements.
-\end{outline}
+For large-scale indirect lighting, light maps have seen widespread use since they have been introduced in the video game Quake \citep{Abrash:1997:BlackBook}. This technique is inherently static since the texturing of scene surfaces is a offline preprocessing step, and it is inherently large-scale since large texels are used to avoid excessive memory requirements.
+
+Games have used variations of \emph{precomputed radiance transfer} (PRT, \cite{sloan:2002:PRT}) to accomodate for changing lighting conditions \cite{stefanov:2012:PRTinFarCry3}. More specifically, they use probes instead of of the scene geometry to store the PRT results to be able to light dynamic objects. These objects do not affect indirect lighting of other objects however, a common compromise.
+
+Besides not fully supporting dynamic objects, long precomputation times are a common hindrance in the workflow of artists. Real-time dynamic global illumination, being the solution to both of these problems, has yet to reach widespread use in real-time applications due to the high performance requirements.
 
 
 \subsection{Components of Real-Time Dynamic Global Illumination}
-\label{sec:componentsOfGI}
+\label{sec:intro:gi:components}
 
-\begin{outline}
-\1 before diving into the current research around real-time dynamic GI, we will try to structure the different components that most methods consist of.
-\1 roughly, real-time GI consists of three steps:
-    \2 Direct lighting / light injection
-        \3 Since the light sources can be very (if not infinitely) small and can be unwieldy to work with, some techniques have a special first step, sometimes called ``light injection'' that computes areas that are directly lit by the light which are then used as starting point for the GI algorithm.
-    \2 light propagation
-        \3 starting from the light source or directly lit surfaces, this step sends out the light and records where it hits scene geometry. This might be done repeatedly to simulate multiple light bounces.
-    \2 final gathering
-        \3 Several techniques perform one last step that, instead of propagating light starting at lit surfaces into all directions, gathers light from lit surfaces into areas that are visible to the camera (more specifically, into \textit{receiving elements}, see below for further explanation). This is a common optimization that guarantees that the calculations are relevant to the currently rendered frame, whereas the light propagation step is often more unguided and oblivious to the current viewport.
-\1 Note that not all techniques implement all of these steps. For instance, performing direct lighting and a final gathering step while ommitting the light propagation step is enough for simulating one indirect bounce. Brute-force ray-tracing can be done with step 2 alone, and light propagation volumes omit the final gathering step.
-\1 two more important design decisions:
-    \2 visibility testing
-        \3 Answers part XY of the rendering equation, can point/patch X see point/patch Y. Is needed for light not shining through objects or walls. Since brute-force raycasting is prohibitively slow, this needs special acceleration structures or simplifications, like replacing raycasts by rendering a moderate amount of shadow maps. In fact, for many of the approaches presented in the next section, this part uses a substantial if not most of the computation time.
-    \2 choice of receiving elements
-        \3 the question is into which datastructure that the light is gathered into. Besides directly using pixels in screen-space, other choices are texels in texture-space, surfels or voxels in world- or view-space or other virtual objects placed in the scene, e.g. in the form of spherical harmonics, which are then interpolated between to shade the individual pixels. Technically, the light propagation step also necessarily uses some form of receiving elements (which might differ from the ones that are used during final gathering), but we use the term for those datastructures that are used to perform the actual per-pixel shading.
+Before the next section dives into the current research around real-time dynamic GI, this section will structure the different components that most methods consist of.
 
-\1 As with most lighting concepts, real-time GI is often separated into diffuse and specular, since diffuse is both easier to plausibly simulate because of lower frequency and it is more important for visual quality.
-\1 In this thesis, we focus only on the diffuse part.
+Generally speaking, real-time GI consists of three steps:
 
-\end{outline}
+\paragraph{Direct lighting or light injection}
+Since the light sources can be very (if not infinitely) small and can be unwieldy to work with for some techniques, the first step of the light propagation, sometimes called ``light injection'', can be separated and used to compute areas that are directly lit by the scene lights. These areas are then used as starting point for the GI algorithm. Other techniques use this method purely as an optimization, since the first light bounce can be easier to compute than subsequent bounces.
+
+\paragraph{Light propagation}
+Starting from the light source or directly lit surfaces, this step sends out the light and records where it hits scene geometry. This might be done repeatedly to simulate multiple light bounces.
+
+\paragraph{Final gathering}
+Several techniques perform one last step that, instead of propagating light from lit surfaces into all directions, gathers light from lit surfaces into areas that are visible to the camera (more specifically, into \textit{receiving elements}, see below for further explanation). This is a common optimization that guarantees that the calculations are relevant to the currently rendered frame, whereas the light propagation step is often more unguided and oblivious to the current viewport.
+
+Note that not all techniques implement all of these steps. For instance, performing direct lighting and a final gathering step while ommitting the light propagation step is enough for simulating one indirect bounce. Brute-force ray-tracing can be done with step 2 alone, and light propagation volumes (see next section) omit the final gathering step.
+\\
+\\
+There are two more essential components, or rather, design decisions to be made:
+
+\paragraph{Visibility testing}
+To prevent light from incorrectly shining through objects or walls, the visibility term in \Cref{eq:renderWithVisibility} needs to be solved. Since brute-force ray casting is prohibitively slow, this needs special accelerations structures or alternative approximations, like replacing ray casts with rendering a moderate amount of shadow maps. As mentioned previously, this part uses a substantial if not most of the computation time for many of the approaches presented in the next section.
+
+\paragraph{Choice of receiving elements}
+The final gathering step gather light into areas that are visible to the camera. These areas can be represented by varying forms of \textit{receiving elements}. Besides directly using pixels in screen-space, other choices are texels in texture-space, surfels or voxels in world- or view-space or other virtual objects placed in the scene, e.\,g.\ in the form of spherical harmonics, which are then interpolated between to shade the individual pixels. Technically, the light propagation step also necessarily uses some form of receiving elements (which might differ from the ones that are used during final gathering), but we use the term for those datastructures that are used to perform the actual per-pixel shading.
+\\
+\\
+As with most lighting concepts, real-time GI is often additionally separated into a diffuse and specular component, since the diffuse part is both easier to plausibly simulate because of its low-frequency nature, and it is more important for the visual quality compared to the specular part. For the same reasons, we focus only on the diffuse part in this thesis.
 
 
 
@@ -216,38 +222,40 @@ The use of many-light methods is intriguing since they are a natural and intuiti
 Of course, when used for real-time applications the available performance budget enforces the use of a limited number of lights. With a few thousand lights at most, many effects are not possible to simulate anymore. Due to the low-frequency nature of diffuse reflections, however, global illumination is still feasible to create with convincing results. In real-time applications, a different advantage comes into play: Since the method uses more or less conventional point light sources, many techniques from classical real-time rendering are applicable, such as point light rendering including conventional shadow maps for visibility testing. This makes basic implementations easy to create, even though more advanced techniques are necessary to achieve high performance.
 
 
-\subsection{Theory}
-\todo[color=blue]{many-light theory}
+\todo[color=white]{many-light theory}
 - focusing on why this is a valid model
 - maybe explain clamping here and leave it out everywhere else?
 
 
 \subsection{Components of Many-Light Methods}
+This section will take the components of global illumination identified in \Cref{sec:intro:gi:components} and explain how they translate into many-light methods.
 
-\begin{outline}
+\paragraph{Direct lighting or light injection}
+In theory, many-light methods don't need a light injection step since they are usually iterative processes that start with the scene lights and from there on, create new lights whereever the current light set lights the scene. In practice, the first bounce is often handled separately for performance reasons, and because the VPLs have different characteristics than most scene lights.
 
-\1 refer to survey \cite{Dachsbacher:2014:ManyLightsSTAR}
+\paragraph{Light propagation}
+As just mentioned, many-light methods can simulate an arbitrary number of light bounces by repeating the propagation step with an expanding set of VPLs. However, many techniques (and this thesis) simulate just the first bounce, since that alone provides a large quality enhancement over simulating no GI at all, and subsequent bounces are more complex in terms of implementation and computation.
 
-\1 analog to Section~\ref{sec:componentsOfGI} five major challenges/design decisions:
-    \2 light injection / vpl sampling:
-        \3 in theory, there is no light injection needed since this is an iterative process that starts with the scene lights and from there on, creates new lights whereever the current light set lits the scene. in practice, the first bounce is often handled separately.
-    \2 light transport: as just mentioned, the many-light concept is capable of simulating an arbitrary number of light bounces. However, many techniques (and this thesis) simulate just the first bounce, since that alone provides a large quality enhancement over simulating no GI at all, and subsequent bounces are more complex in terms of implementation and computation.
-    \2 shading / final gathering
-        \3 Mainly two approaches: Splatting and gathering. Both are too slow to brute-force this pixel-perfectly, more optimizations are needed.
-    \2 visibility testing
-        \3 Many-light methods provide no means of visibility computation; these need to be solved separately.  The advantage of many-light methods is that each receiving element only needs to test the (bounded) number of VPLs for visibility, not an arbitrarily high number of scene elements.
-    \2 choice of receiving elements
-        \3 This is another design decision that is orthogonal to the previous challenges. While screen-space pixels are often used (often downscaled or combined with interleaved sampling, see Section~\ref{sec:manyLightsFinalGathering}), the other options listed in Section~\ref{sec:componentsOfGI} are technically possible as well.
-    \2 mitigating singularities
-        \3 unique to many-light methods, explain what those are and why
+\paragraph{Final gathering}
+Most many-light methods perform final gathering per screen-space pixel. There are two main approaches commonly referred to as splatting and gathering. Both are too slow to use every light to shade every pixel, therefore optimizations and approximations are used. More on this in the next section.
 
-\end{outline}
+\paragraph{Visibility testing}
+Many-light methods provide no means of visibility computation; these need to be solved separately. The advantage of many-light methods is that each receiving element only needs to test the (bounded) number of VPLs for visibility, not an arbitrarily high number of scene elements.
+
+\paragraph{Choice of receiving elements}
+As mentioned before, screen-space pixels are most commonly used, albeit often downscaled or combined with interleaved sampling (see \Cref{sec:manyLightsFinalGathering}). The other options listed in \Cref{sec:componentsOfGI} are technically possible as well, but haven't been combined with many-light methods yet.
+\\
+\\
+Another challenge that is unique to many-light methods is \textbf{mitigating singularities}. Since the entire energy of the indirect light bounces is concentrated into a few infinitely small light sources, the areas near these light sources receive too much light. This effect is distinctly visible as bright spots around the VPL's location, making it neccessary for many-light methods to alleviate this artifact.
 
 
 
 \section{Previous Work on Real-Time Many-Light Methods}
 
 The following will concentrate on those that are applicable to real-time rendering. We divide the sections according to the different design decisions to be taken when applying many-light methods: VPL sampling, computing visibility, final gathering and mitigating singularities. We won't cover the light transport step separately as it is often either omitted, simulating only one bounce, or integral part of the VPL sampling algorithm. The choice of receiving elements is not covered as well, as most papers in this area simply use screen-space pixels.
+
+\citet{Dachsbacher:2014:ManyLightsSTAR} provide another overview over many-light methods, including those unsuitable for real-time rendering.
+
 
 \subsection{Virtual Point Light Sampling}
 
@@ -256,6 +264,12 @@ While \citet{Keller:1997:InstantRadiosity} uses an approach similar to photon ma
 \citet{georgiev2010simple, ritschel2011ismsViewAdaptive} sample the RSM to create a set of VPLs with (estimated) high contributions to the final image. \citet{dong2009real, prutkin2012reflective} cluster several samples to form \emph{virtual area lights} (VALs). They observe that far fewer VALs than VPLs are necessary to achieve the same quality at a minor performance expense.
 
 Most of these approaches suffer from poor temporal stability. To improve on that, \citet{laine2007incremental} update only a portion of the VPLs per frame but introduce latency to the indirect light, additionally dynamic objects can receive but not bounce light. \citet{barak2013temporally} provide temporally stable results with dynamic scene geometry, but not with moving light sources. \citet{hedman2016sequential} achieve near-optimal temporal stability even with moving light sources while maintaining high per-image accuracy at real-time framerates. They use one classic shadow map per VPL though, which must be updated lazily to stay within real-time limits.
+
+
+\subsection{Final Gathering}
+\label{sec:manyLightsFinalGathering}
+
+Splatting techniques have been used to add a light's contribution to the rendered image \citep{dachsbacher2006splatting, Nichols:2009:splatting}, but do not utilize modern GPUs efficiently. Instead, gathering approaches are commonly used today, using interleaved sampling \citep{Keller:2001:InterleavedSampling} with an edge-aware blur similar to \citep{laine2007incremental}. \cite{segovia2006non} improve the cache efficiency of interleaved sampling.
 
 
 \subsection{Visibility Computation}
@@ -267,16 +281,8 @@ A popular approach are \emph{imperfect shadow maps} \citep[ISMs,][]{ritschel2008
 Ray-tracing has been proposed to compute visibility as well \citep[e.\,g.][]{segovia2006bidirectional}, but suffers from the usual drawbacks of ray-tracing in a real-time context. A voxel-based scene representation has also been used to perform visibility queries for many-light techniques \citep{sun2015manylightsSVO}.
 
 
-\subsection{Final Gathering}
-\label{sec:manyLightsFinalGathering}
-
-Splatting techniques have been used to add a light's contribution to the rendered image \citep{dachsbacher2006splatting, Nichols:2009:splatting}, but do not utilize modern GPUs efficiently. Instead, gathering approaches are commonly used today, using interleaved sampling \citep{Keller:2001:InterleavedSampling} with an edge-aware blur similar to \citep{laine2007incremental}. \cite{segovia2006non} improve the cache efficiency of interleaved sampling.
-
-
 \subsection{Mitigating Singularities}
- In naïve implementations of many-lights techniques, bright spots will appear near the VPL’s positions due to the light’s attenuation term approaching infinity. A common approach is to clamp the term. This introduces bias, which can be compensated e.g. in screen space \citep{novak2011screen}. Singularities can also be avoided through more advanced light representations \citep{tokuyoshi2015vsgl}.
+In naïve implementations of many-lights techniques, bright spots will appear near the VPL’s positions due to the light’s attenuation term approaching infinity. A common approach is to clamp the term. This introduces bias, which can be compensated e.g. in screen space \citep{novak2011screen}. Singularities can also be avoided through more advanced light representations \citep{tokuyoshi2015vsgl}.
 
-
-\todo[color=blue]{textify introductionGI}
 
 \cleardoublepage
