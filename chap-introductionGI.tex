@@ -243,7 +243,7 @@ Most many-light methods perform final gathering per screen-space pixel. There ar
 Many-light methods provide no means of visibility computation; these need to be solved separately. The advantage of many-light methods is that each receiving element only needs to test the (bounded) number of VPLs for visibility, not an arbitrarily high number of scene elements. In contrast to other global illumination methods, mhis makes it possible (although not performant) to use shadow maps for visibility testing.
 
 \paragraph{Choice of receiving elements}
-As mentioned before, screen-space pixels are most commonly used, albeit often downscaled or combined with interleaved sampling (see \Cref{sec:manyLightsFinalGathering}). The other options listed in \Cref{sec:componentsOfGI} are technically possible as well, but haven't been combined with many-light methods yet.
+As mentioned before, screen-space pixels are most commonly used, albeit often downscaled or combined with interleaved sampling (see \Cref{sec:intro:relatedWorkManyLight:finalGathering}). The other options listed in \Cref{sec:componentsOfGI} are technically possible as well, but haven't been combined with many-light methods yet.
 \\
 \\
 Another challenge that is unique to many-light methods is \textbf{mitigating singularities}. Since the entire energy of the indirect light bounces is concentrated into a few infinitely small light sources, the areas near these light sources receive too much light. This effect is distinctly visible as bright spots around the VPL's location, making it neccessary for many-light methods to alleviate this artifact.
@@ -251,6 +251,7 @@ Another challenge that is unique to many-light methods is \textbf{mitigating sin
 
 
 \section{Previous Work on Real-Time Many-Light Methods}
+\label{sec:intro:relatedWorkManyLight}
 
 The following will present several many-light methods while concentrating on those that are applicable to real-time rendering. This section is structured roughly according to the different design decisions to be taken when applying many-light methods: VPL sampling, computing visibility, final gathering and mitigating singularities. The light transport step is not covered separately as it is often either omitted, simulating only one bounce, or integral part of the VPL sampling algorithm. The choice of receiving elements is not covered as well, as most papers in this area simply use screen-space pixels.
 
@@ -258,6 +259,7 @@ The following will present several many-light methods while concentrating on tho
 
 
 \subsection{Virtual Point Light Sampling}
+\label{sec:intro:relatedWorkManyLight:vplSampling}
 
 While \citet{Keller:1997:InstantRadiosity} uses an approach similar to photon mapping to create VPLs, real-time applications are in need of something more performant. A commonly used technique are \emph{reflective shadow maps} (RSMs, \cite{Dachsbacher:2005:RSM}), which use rasterization to create first-order VPLs. While in this paper, each pixel of the RSM is considered a VPL and during gathering, a random subset of all VPLs is sampled, beginning with \citet{dachsbacher2006splatting} most papers sample the RSM to create a fixed set of VPLs which is used during shading.
 
@@ -267,12 +269,13 @@ Most of these approaches suffer from poor temporal stability. To improve on that
 
 
 \subsection{Final Gathering}
-\label{sec:manyLightsFinalGathering}
+\label{sec:intro:relatedWorkManyLight:finalGathering}
 
 Splatting techniques have been used to add a light's contribution to the rendered image \citep{dachsbacher2006splatting, Nichols:2009:splatting}, but do not utilize modern GPUs efficiently. Instead, gathering approaches are commonly used today, using interleaved sampling \citep{Keller:2001:InterleavedSampling} with an edge-aware blur similar to \citet{laine2007incremental}. \citet{segovia2006non} improve the cache efficiency of interleaved sampling.
 
 
 \subsection{Visibility Computation}
+\label{sec:intro:relatedWorkManyLight:visibility}
 
 Several approaches exist to calculate visibility between VPLs and the scene parts visible to the camera. Classic shadow maps are a fairly exact solution, but cannot be updated every frame for the several hundreds or even thousands of VPLs.
 
@@ -282,6 +285,8 @@ Ray-tracing has been proposed to compute visibility as well \citep[e.\,g.][]{seg
 
 
 \subsection{Mitigating Singularities}
+\label{sec:intro:relatedWorkManyLight:singularities}
+
 In naïve implementations of many-lights techniques, bright spots will appear near the VPL’s positions due to the light’s attenuation term approaching infinity. A common approach is to clamp the term. This introduces bias, which can be compensated e.\,g.\ in screen space \citep{novak2011screen}. Singularities can also be avoided through more advanced light representations \citep{tokuyoshi2015vsgl}.
 
 

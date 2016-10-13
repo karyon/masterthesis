@@ -7,6 +7,7 @@
 This chapter details the performance and quality characteristics of the implemented techniques and  examines their memory usage. For each technique, it will subsequently discuss the up- and downsides and identify alternatives.
 
 \section{Scenes, Settings and Testing System}
+\label{sec:results:settings}
 
 The implementation is tested in the Crytek Sponza and San Miguel scene, with 260k and 7.9M triangles respectively, both provided by \citet{McGuire2011Data}.
 
@@ -34,6 +35,7 @@ The hardware specification of the testing system is as follows:
 \todo{hardware specifications}
 
 \section{RSM Generation and VPL Sampling}
+\label{sec:results:RsmAndVplSampling}
 \begin{outline}
 \1 RSM generation is the same as G-Buffer generation, possibly with a different resolution. as said earlier, depending on the specific use case, this rendering pass can also render the shadow map.
 \1 screenshot of RSM G-buffers
@@ -262,6 +264,7 @@ The San Miguel scene is a good example for this: While the small detail work lik
 
 
 \section{Interleaved Shading with Compute Shaders}
+\label{sec:results:interleavedShading}
 
 \begin{outline}
 \1 performance
@@ -278,7 +281,7 @@ The San Miguel scene is a good example for this: While the small detail work lik
 
 
 \section{Clustered Deferred Shading}
-
+\label{sec:results:clusteredShading}
 
 \begin{outline}
 \1 parameters: cluster size
