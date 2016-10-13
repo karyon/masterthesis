@@ -44,7 +44,7 @@
 \label{sec:impl:rsmAndVplSampling}
 \begin{outline}
 \1 use the same code for RSM generation as for G-Buffer generation with only slight modifications:
-\1 don't use normalmaps as the triangle normals are sufficient
+\1 do not use normalmaps as the triangle normals are sufficient
 \1 instead of individual texture lookups, we use the material's average color as diffuse color as suggested by \citet{hedman2016sequential} to avoid high-frequency color changes to affect the outcome.
 \1 we re-use RSM as shadow map
     \2 usually, one might want to decouple this since they likely need different resolutions/cascading schemes etc. One could also render the RSM with a less detailed version of the scene. Since we had no culling and LOD implemented, we were bottlenecked on geometry complexity and chose to do this in one pass.
@@ -124,7 +124,7 @@ A proper solution that would fix this problem completely, avoid the synchronizat
 \subsection{Pull-Push Postprocessing}
 \label{sec:impl:pullPushPostprocessing}
 
-Our implementation of the pull-push algorithm is relatively straightforward. For each miplevel to be calculated, one \texttt{dispatchCompute} is called. Since the first step of the pull phase has different inputs than the subsequent steps (it only has depth and size, not the displacement vector and depth interval), a slightly different shader is used there. Analogous the last step of the push phase outputs only depth, therefore a shader variant is used for that step as well. For the same reason, the input texture (the ``render target'' used by the single-pixel renderer) and output texture (the final ISM used later for shadowing) have different formats than the mipmap levels used by the pull-push algorithm. 
+Our implementation of the pull-push algorithm is relatively straightforward. For each miplevel to be calculated, one \texttt{dispatchCompute} is called. Since the first step of the pull phase has different inputs than the subsequent steps (it only has depth and size, not the displacement vector and depth interval), a slightly different shader is used there. Analogous the last step of the push phase outputs only depth, therefore a shader variant is used for that step as well. For the same reason, the input texture (the ``render target'' used by the single-pixel renderer) and output texture (the final ISM used later for shadowing) have different formats than the mipmap levels used by the pull-push algorithm.
 
 
 

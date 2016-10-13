@@ -13,13 +13,13 @@
 \end{figure}
 
 
-This chapter will detail the individual stages of the global illumination pipeline presented in this thesis. Figure~\ref{fig:GIPipelineConcept} provides an overview.
-The reflective shadow map and the subsequent VPL sampling (left part of middle row in the diagram) will be covered in the following section.
-Section~\ref{sec:concept:ism} describes the rendering process for the imperfect shadow maps (lower row) in detail.
-The final gathering step uses data from the clustered shading technique (upper row, detailed in Section~\ref{sec:concept:clusteredShading}) and performs interleaved sampling (right part of middle row, detailed in Section~\ref{sec:concept:interleavedSampling}).
+This chapter will detail the individual stages of the global illumination pipeline presented in this thesis. \Cref{fig:GIPipelineConcept} provides an overview.
+Rendering the reflective shadow map and the subsequent VPL sampling (left part of middle row in the diagram) will be covered in the following section.
+\Cref{sec:concept:ism} describes the rendering process for the imperfect shadow maps (lower row) in detail.
+The final gathering step uses data from the clustered shading technique (upper row, detailed in \Cref{sec:concept:clusteredShading}) and performs interleaved sampling (right part of middle row, detailed in \Cref{sec:concept:interleavedSampling}).
 
-During final gathering, clamping is used to remove singularities. Since this is a fairly trivial solution, this is not covered further.
-In addition, our G-buffer rendering does not differ from common deferred rendering pipelines and is not covered further as well.
+During final gathering, clamping is used to remove singularities. Since this is a fairly trivial solution, it is not covered further.
+In addition, the G-buffer rendering does not differ from common deferred rendering pipelines and is not covered further as well.
 
 
 \section{Virtual Point Light Sampling with Reflective Shadow Maps}
@@ -27,7 +27,7 @@ In addition, our G-buffer rendering does not differ from common deferred renderi
 
 Reflective shadow maps are often preferred due to their simplicity and efficiency. Both advantages come from the fact that they are generated similar to conventional shadow maps, making them easy to implement and a perfect fit for GPUs. A downside is that they are well-suited only for computing the first light bounce.
 
-Just like conventional shadow maps, RSMs render the scene form the viewpoint of a light. Besides the depth buffer used for shadow mapping, they render additional surface information, namely normal and color. This is similar to the additional G-buffers used by deferred rendering.
+Just like conventional shadow maps, RSMs render the scene from the viewpoint of a light. Besides the depth buffer used for shadow mapping, they render additional surface information, namely normal and color. This is similar to the additional G-buffers used by deferred rendering.
 
 The result can be sampled to create VPLs with a certain position reconstructed from the depth buffer, and normal and color taken from the additional buffers.
 
@@ -50,7 +50,7 @@ The following subsections describe the regular point splat rendering process and
 
 \subsection{Point Rendering with Splatting}
 
-To convert the scene into points, all its triangles are first tessellated to meet a certain maximum size in order for the point conversion to not introduce extreme inaccuracies. Of the smaller tessellated triangles, the center and area are calulated and a point with matching center and area is created. While it might be more performant to create points just on the vertices of the triangles, at the same time it will be more inaccurate since this approach will enlarge the rendered area considerably over the triangle's extents.
+To convert the scene into points, all its triangles are first tessellated to meet a certain maximum size in order for the point conversion to not introduce extreme inaccuracies. Of the smaller tessellated triangles, the center and area are calculated and a point with matching center and area is created. While it might be more performant to create points just on the vertices of the triangles, at the same time it will be more inaccurate since this approach will enlarge the rendered area considerably over the triangle's extents.
 
 Now a random VPL is chosen per point and backface culling is performed. Likewise, points that lie behind their VPL's illuminated hemisphere are culled before splatting the point into the respective ISM. For performance reasons, a simple paraboloid projection is used for the ISMs in lieu of conventional cubemaps. Here, another advantage of using points comes into play: Compared to triangles, it is trivial to perform a paraboloid projection on them.
 
@@ -76,13 +76,15 @@ To calculate the attributes for a new point, the depth and radius of the parent 
 
 \subsubsection{Push Phase}
 
-Analogous to the pull phase, the push phase reads four pixels of the coarser level, rejects pixels that don't pass certain tests, and writes one output pixel into the finer level. First, just like in the pull phase, the input pixels must contain a valid depth and not be occluded to be considered. Additionally, a radius check is performed: If the pixel's location is outside the point's extents described by the displacement vector and its radius, then the point is not considered either. This is done to limit a point's influence to its actual size.
+Analogous to the pull phase, the push phase reads four pixels of the coarser level, rejects pixels that do not pass certain tests, and writes one output pixel into the finer level. First, just like in the pull phase, the input pixels must contain a valid depth and not be occluded to be considered. Additionally, a radius check is performed: If the pixel's location is outside the point's extents described by the displacement vector and its radius, then the point is not considered either. This is done to limit a point's influence to its actual size.
 
 The target output location in the finer level might already contain data computed during the pull phase. This data is overwritten if its depth is behind the interpolated point's depth interval, i.\,e., if the original data is considered to be occluded. Otherwise, the original point is left untouched, as it is likely more accurate than the just computed, interpolated point.
 
 Since the input and output pixel's location do not match the way they do during the pull phase, the weights used for interpolation during the push phase are not uniform, see Figure~\ref{fig:???}.
 
- \citet{Marroquim:2007:reconstruction} also use the point's normals to correctly limit the point's size, and \citet{Marroquim:2008:reconstruction2} propose gaussian weights based on the pixel's distance to the point's location, instead of constant weights solely based on pixel locations. Both of these additions we have not implemented yet.
+\todo{some figure about weights during pull-push}
+
+ \citet{Marroquim:2007:reconstruction} also use the point's normals to correctly limit the point's size, and \citet{Marroquim:2008:reconstruction2} propose Gaussian weights based on the pixel's distance to the point's location, instead of constant weights solely based on pixel locations. Both of these additions we have not implemented yet.
 
 
 
@@ -90,22 +92,20 @@ Since the input and output pixel's location do not match the way they do during 
 \label{sec:concept:clusteredShading}
 
 In real-time graphics applications, primarily video games, a technique called \textit{clustered shading} \citep{olsson2012clustered}, has seen increased usage. Its goal is to increase the efficiency of lighting a scene with multiple light sources.
-The effectiveness of clustered shading in the context of many-light global illumination has not been studied so far to our knowledge, and we aim to contribute a few datapoints to this end.
+The effectiveness of clustered shading in the context of many-light global illumination has not been studied so far to our knowledge, and we aim to contribute a few data points to this end.
 
-The clustered shading technique works as follows:
+The clustered shading technique works as follows: First, the view frustum is divided into a fixed number of three-dimensional clusters. For each fragment, the respective cluster is determined with the purpose to ignore all clusters with no fragments in them. Then, for each cluster, all lights (in this case, VPLs) whose illuminated region is intersected by the cluster are added into a light list for that cluster. All other lights are ``culled'', i.\,e.\ not added to the list.
 
-First, the view frustum is divided into a fixed number of three-dimensional clusters. For each fragment, the respective cluster is determined with the purpose to ignore all clusters with no fragments in them. Then, for each cluster, all lights (in this case, VPLs) whose illuminated hemisphere the cluster intersects are added into a light list for that cluster. All other lights are ``culled'', i.\,e.\ ignored.
+When shading a fragment, the algorithm first determines the fragment's cluster again, and then iterates only over the lights in that cluster's light list. This way, all the lights that have been discarded in the previous step do not need to be considered per fragment.
 
-When shading a fragment, the algorithm first determines the fragment's cluster again, and then iterates only over the lights in that cluster's light list. This way, many lights that have been discarded in the previous step don't need to be considered per fragment.
+This technique yields the most gains when using lights with a limited radius. In that case, the culling is all the more effective since all lights that are farther away from a cluster than the light's radius can be culled as well. However, many-light methods often use infinite radii to enable light transport over long distances. Nonetheless, one can still expect to cull roughly half of all lights with this technique in a many-light context.
 
-This technique yields the most gains when using lights with a limited radius. In that case, the culling is all the more effective since all clusters that are farther away than the light's radius can be culled as well. Many-light methods often use infinite radii to enable light transport over long distances. However, one can still expect to cull roughly half of all lights with this technique in a many-light context.
+As an extension, \citet{olsson2012clustered} propose to calculate explicit bounds for the fragment's position in each cluster to enable more precise culling. We expected only moderate performance gains from that and have not implemented it.
 
-As an extension, \citet{olsson2012clustered} propose to calculate explicit bounds for the cluster's fragments to enable more precise culling. We expected only moderate performance gains from that and have not implemented it.
-
-Another extension is to use the surface normal's direction as fourth dimension after the three spatial dimensions for clustering, allowing for some sort of backface culling for even greater efficiency. While this seems more promising in terms of performance gains, we have not implemented it yet either.
+Another extension is to use the surface normal's direction as fourth dimension after the three spatial dimensions for clustering, allowing for a kind of backface culling for even greater efficiency. While this seems more promising in terms of performance gains, we have not implemented it yet either.
 
 
-Clustered shading is an extension and improvement to \textit{tiled shading} \citep{Olsson:2011:TiledShading}, which uses screen-space tiles instead of view-space clusters. Tiled shading has previously combined with many-lights global illumination by \citet{Tokuyoshi:2016:Stochastic}. They use an order of magnitude more lights than we do, but stochastically limit them in range. As a result, the light culling is much more effective in their case.
+Clustered shading is an extension and improvement to \textit{tiled shading} \citep{Olsson:2011:TiledShading}, which uses screen-space tiles instead of view-space clusters. Tiled shading has previously been combined with many-light global illumination by \citet{Tokuyoshi:2016:Stochastic}. They use an order of magnitude more lights than we do, but stochastically limit them in range. As a result, the light culling is much more effective in their case.
 We implemented tiled shading as well and will compare it to clustered shading in \Cref{sec:results:clusteredShading}.
 
 
@@ -113,10 +113,10 @@ We implemented tiled shading as well and will compare it to clustered shading in
 \label{sec:concept:interleavedSampling}
 Interleaved sampling \citep{Keller:2001:InterleavedSampling} is often used to tremendously improve the performance of GI methods with a negligible quality impact.
 
-The general idea is as follows: given a set of samples that, when not using interleaved sampling, would be performed per pixel, distribute those samples over a block of pixels. Now, since each pixel has only a partition of the samples, there is obviously information missing per pixel. Visually, this becomes apparent in the form of structured noise. To this end, a geometry-awarl blur similar to \citet{laine2007incremental} is used to spread the information and thereby even out the noise. The blur is often implemented in a separated fashion, although it is, strictly speaking, not a separable one due to its geometry-awareness.
+The general idea is as follows: Instead of calculating all samples per pixels, the samples are distributed over a block of pixels. Now, since each pixel has only a partition of the samples, there is obviously information missing per pixel. Visually, this becomes apparent in the form of structured noise. To this end, a geometry-aware blur similar to \citet{laine2007incremental} is used to spread the information and thereby even out the noise. The blur is often implemented in a separated fashion, although it is, strictly speaking, not a separable one due to its geometry-awareness.
 
-Since adjacent pixels now access disjoint sets of samples, naïve implementations of this technique usually show bad cache coherence. To improve on this, \citet{segovia2006non} proposed ``de-interleaving'' to group and process those pixel simultaneously that use the same sample set.
+Since adjacent pixels now access disjoint sets of samples, naive implementations of this technique usually show bad cache coherence. To improve on this, \citet{segovia2006non} proposed ``de-interleaving'' to group and process those pixel simultaneously that use the same sample set.
 
-Effectively, when applied to blocks of $n²$ pixels, this technique cuts down the cost of sampling to $ 1 / n² $ at the expense of smoothing high-frequency changes in the samples over $n$ pixels. Since global illumination is usually of low frequency, i.\,e.\ adjacent pixels usually receive a similar amount of indirect light, interleaved shading does not significantly affect quality when applied to global illumination. It falls short near depth and normal discontinuities, where the geometry-aware blur ignores several pixels. However, even in this case the quality degradation is hardly noticable as soon as the global illumination results are blended over the rendered image, see \Cref{sec:results:interleavedShading}.
+Effectively, when applied to blocks of $n^2$ pixels, this technique cuts down the cost of sampling to $ 1 / n^2 $ at the expense of smoothing high-frequency changes in the samples over $n$ pixels. Since global illumination is usually of low frequency, i.\,e.\ adjacent pixels usually receive a similar amount of indirect light, interleaved shading does not significantly affect quality when applied to global illumination. However, it falls short near depth and normal discontinuities, where the geometry-aware blur ignores several pixels. Nevertheless, even in this case the quality degradation is hardly noticeable as soon as the global illumination results are blended over the rendered image, see \Cref{sec:results:interleavedShading}.
 
-In most aspects we follow the standard approach for interleaved shading. The only notable deviation is the implementation of de-interleaving that does not use any separate splitting/merging passes, again we defer details to Section~\ref{sec:impl:interleavedShading}.
+In most aspects we follow the standard approach for interleaved shading. The only notable deviation is the implementation of de-interleaving that does not use any separate splitting and merging passes. For details, see \Cref{sec:impl:interleavedShading}.

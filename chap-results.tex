@@ -132,7 +132,7 @@ Our implementation hides some of the inaccuracies of the ISMs by using a relativ
 
 \todo{Compare to max quality}
 
-\todo[color=yellow]{implement max quality. every point into every ISM. likely render everything once for each ISM. a checkbox: when checked, compute high-quality once and don't change. back to normal when unchecked.}
+\todo[color=yellow]{implement max quality. every point into every ISM. likely render everything once for each ISM. a checkbox: when checked, compute high-quality once and do not change. back to normal when unchecked.}
 
 \todo{for single-pixel-renderer: maybe show one full-size shadow map to show this *can* work}
 
@@ -250,7 +250,7 @@ Imperfect shadow maps have several deficits, some of which are inherent to the t
 
 First, ISMs reduce the scene's geometry to points. At the resolution that is achievable in a real-time budget, this is already a stark approximation that loses a lot of accuracy.
 
-Second, because a sparse set of points is used for each ISM, each point must be enlarged to accomodate for the neighboring points that are likely missing in the chosen ISM. For instance, if an area is represented by a thousand points and only one tenth of all points is used for each ISM, each remaining point's area must be enlarged by a factor of ten to result in an equally large area in the rendered output. Of course, this approach leads to deformed geometry since points at the edges of the area get enlarged as well, growing over the borders of the original geometry.
+Second, because a sparse set of points is used for each ISM, each point must be enlarged to accommodate for the neighboring points that are likely missing in the chosen ISM. For instance, if an area is represented by a thousand points and only one tenth of all points is used for each ISM, each remaining point's area must be enlarged by a factor of ten to result in an equally large area in the rendered output. Of course, this approach leads to deformed geometry since points at the edges of the area get enlarged as well, growing over the borders of the original geometry.
 
 Third, there are also numerical issues. For instance, both the splatting and postprocessing approaches ignore the distortion caused by the projection, and thus might render even simple surfaces incorrectly. This contributes to the necessity of using a relatively large shadow bias. This can likely be solved, albeit at the cost of additional complexity.
 
