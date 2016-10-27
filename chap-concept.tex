@@ -94,7 +94,8 @@ Since the input and output pixel's location do not match the way they do during 
 In real-time graphics applications, primarily video games, a technique called \textit{clustered shading} \citep{olsson2012clustered}, has seen increased usage. Its goal is to increase the efficiency of lighting a scene with multiple light sources.
 The effectiveness of clustered shading in the context of many-light global illumination has not been studied so far to our knowledge, and we aim to contribute a few data points to this end.
 
-The clustered shading technique works as follows: First, the view frustum is divided into a fixed number of three-dimensional clusters. For each fragment, the respective cluster is determined with the purpose to ignore all clusters with no fragments in them. Then, for each cluster, all lights (in this case, VPLs) whose illuminated region is intersected by the cluster are added into a light list for that cluster. All other lights are ``culled'', i.\,e.\ not added to the list.
+The clustered shading technique works as follows: First, the view frustum is divided into a fixed number of three-dimensional clusters. For each fragment, the respective cluster is determined with the purpose of ignoring all clusters with no fragments in them. Then, each cluster is ``assigned'' a list of all lights that potentially illuminate fragments in that cluster, i.\,e.\, whose illuminated region is intersecting with a bounding volume of the cluster. All other lights are ``culled'', i.\,e.\ not added to the list.
+
 
 When shading a fragment, the algorithm first determines the fragment's cluster again, and then iterates only over the lights in that cluster's light list. This way, all the lights that have been discarded in the previous step do not need to be considered per fragment.
 
