@@ -95,9 +95,7 @@ The general idea is to first let the geometry shader write the generated points 
 
 In order to maintain temporal coherence, the points are not written into a single large buffer, as it would be hard to consistently determine a location for each point in that buffer. Instead, the buffer is divided into one section per VPL, and the points are written into the section corresponding to the ID calculated before. An atomic counter that indicates the first free index is used per section to sequentially fill these sections without overwriting any data. The order of the points within each section is undefined, but that does not change the output since they all are going to be rendered into the same ISM.
 
-Now a compute shader is used to render the points. For each VPL, one work group reads through the respective section of the point buffer and performs the transformation and culling against the VPL for each point. It then uses \texttt{imageAtomicMin} to ``render'' the point with correct depth testing as a single pixel into the respective ISM. Since atomic operations require using single channel integer textures, it is not possible to use a second or third channel for additional attributes. Instead, the ISM is actually implemented as 3D texture, using the second index in the third dimension as additional ``render target'' to hold the radius and normal. However, this approach requires the use of 32 bit for storing the depth even if a lower precision would suffice, and the attributes need to be packed into 32-bit integers.
-
-\todo[color=yellow]{put radius into 8 lower bits of depth channel, remove normal from softrenderbuffer and pullpush}
+Now a compute shader is used to render the points. For each VPL, one work group reads through the respective section of the point buffer and performs the transformation and culling against the VPL for each point. It then uses \texttt{imageAtomicMin} to ``render'' the point with correct depth testing as a single pixel into the respective ISM. Since atomic operations require using single channel integer textures, it is not possible to use a second or third channel for additional attributes. Instead, one 32\,bit channel is used, with 24\,bits containing the depth, and 8\,bits containing the radius, which is the only attribute that is saved. Since the depth is in the 24 more significant bits, the depth test still works correctly. Another version that used a 3D texture for additionally storing the normal was implemented as well, see the next subsection.
 
 As an optimization, the compute shader renders each point into several ISMs. To this end, each work group reads the data of a fixed number of VPLs (e.\,g.\ 16) into shared memory. Then, while rendering the points, the culling is performed per point on all 16 VPLs, and those VPLs where the point passes the culling test are collected into a local array. Thereafter the point is transformed for each of the collected VPLs and rendered into the respective ISM.
 
@@ -106,17 +104,21 @@ As an optimization, the compute shader renders each point into several ISMs. To 
 An attempt to do this optimization in the splat renderer by emitting multiple vertices in the geometry shader resulted in a significant performance hit, see \Cref{sec:results:ism:performance}.
 
 
-\subsubsection{Race Conditions caused by second render target??}
+\subsubsection{Issues when storing normals}
 \label{sec:impl:raceCondition}
 
-There are two race conditions that may influence the output when using the single-pixel renderer.
+For a higher-quality postprocessing, the normals of the points are required. Since we did not use the normals in our final version, we were able to follow the simplified one-channel approach described above, but we had implemented a different version that also stored normals. The issues we faced when implementing it are described here.
+
+Instead of using a one-channel 2D texture for the ISM, where the single channel contained both the depth and radius, a 3D texture where the third dimension has a depth of two can be used. The first index of the third dimension would hold the depth, while the second index is used as additional ``render target'' to hold the radius and normal.
+
+Besides roughly doubling the time needed to render the points due to the increased bandwidth, this implementation introduces a second race condition besides the usual z-fighting that can occur.
 
 First, the order of writes to the ISM depth buffer is undefined as the execution order of the different compute shaders is undefined in the OpenGL specification. Therefore, the classical z-fighting may occur if two points are rendered into the same pixel of the same shadow map with the same depth value. The attributes that end up written into the additional render target are undefined in this case and may differ between subsequent frames. In practice, this happens very rarely and we chose to ignore this.
 
 However, a different race condition was frequently observable in our implementation:
 If two threads with differing depth values simultaneously write into the depth buffer, using \texttt{imageAtomicMin} guarantees the correct value will end up in the buffer. However, if the higher value got written first and gets overwritten by the second write, both writes have succeeded. This results in both threads attempting to write into the second buffer, creating another race condition since the here execution order is undefined again. This problem can be alleviated by adding a synchronization point after the atomic write and then reading the memory location that just got written to. If it is equal to the written value, one can assume the write actually succeeded and did not get overwritten by a second, simultaneous write. Only then the write to the second buffer is performed.
 
-However, this solution fixes the race condition only inside one work group and not between work groups, for which no efficient synchronization primitives exist on the GPU. The problem occurred infrequently enough though to be negligible.
+This solution had little cost (0.08\,ms), but fixes the race condition only inside one work group and not between work groups, for which no efficient synchronization primitives exist on the GPU. On a NVIDIA GTX 750 Ti, the race condition was still observable but not annoying. Interestingly, on a GTX 980, the race condition seemed to not occur at all with the described workaround.
 
 A proper solution that would fix this problem completely, avoid the synchronization overhead and open more optimization possibilities would involve a more advanced software renderer, e.\,g.\ following the approaches of \citet{Laine:2011:SoftwareRasterization}.
 
@@ -132,9 +134,6 @@ In the pull phase, one compute shader invocation calculates one output pixel. It
 
 
 During the push phase, groups of four output pixels share the same input pixels. This can be exploited by letting each shader invocation compute four output pixels while still reading only four input pixels. Naturally, the weights applied to the input pixels need to be adjusted per output pixel. For invalidating input pixels, their weights can simply be set to zero instead of separately marking them as invalid.
-
-%Since this technique is heavily bandwidth-bound, we aggressively pack the data.
-\todo[color=yellow]{actually pack this shit aggressively. 32bit depth and depth interval, 32bit displacement and radius and that's it. }
 
 Note that there is still lots of room for optimization. Especially the pull phase is basically a parallel reduction which is well-researched and for which optimized algorithms on the GPU exist, see e.\,g.\ \citet{Harris:2007:ParallelReduction}. Several optimizations from that field might be applicable here.
 

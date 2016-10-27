@@ -232,9 +232,9 @@ Since the technique implements no adaptivity, these numbers are independent from
 The point splat renderer uses no more memory than the ISM texture itself requires, which is 8\,MB for a 2048\,px² 16-bit depth buffer.
 
 The single-pixel renderer uses additional memory. First, it uses a buffer for storing the points. This is implemented as four-channel 32-bit float texture, with the first three channels containing the position, and the last channel the radius (8 bit) and normal (24 bit, see \cite{Cigolle:2014:NormalPacking}). With a maximum point count of 2048 per ISM (keep in mind they are rendered into multiple ISMs later), this buffer uses 32\,MB.
-The additional textures used are the render target of the single-pixel renderer (single-channel 2048x2048x2\,px, 32-bit integer, uses 32\,MB), the mipmap levels used by the pull-push algorithm (two channels, 32-bit, use approx. 11\,MB) and the final ISM (same as used by the splat renderer, uses 8MB).
+The additional textures used are the render target of the single-pixel renderer (single-channel 2048x2048\,px, 32-bit integer, uses 16\,MB), the mipmap levels used by the pull-push algorithm (four channels, 32-bit, use approx. 22\,MB) and the final ISM (same as used by the splat renderer, uses 8MB).
 
-Added together, the single-pixel renderer uses a total of 83\,MB, likely with room for optimization left.
+Added together, the single-pixel renderer uses a total of 79\,MB, likely with room for optimization left.
 
 
 \subsubsection{Problems with High Geometric Density}
