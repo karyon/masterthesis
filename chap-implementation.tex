@@ -62,7 +62,7 @@ The geometry shader, which now recieves the smaller, tessellated triangles, conv
 
 \todo[color=yellow]{implement that area thing}
 
-While a random subset of all points needs to be chosen for each ISM, special care must be taken to make sure that the same subset of points is used for each ISM in each frame. Otherwise, the ISMs will be temporally incoherent and cause flickering in the final rendering. To this end, the point's barycentric coordinate inside its triangle and the triangle's \texttt{gl\_PrimitiveID} are passed to a fast hashing algorithm. The result is is used to determine an ISM ID (or, equivalently, a VPL ID) for use in the next step.
+While a random subset of all points needs to be chosen for each ISM, special care must be taken to make sure that the same subset of points is used for each ISM in each frame. Otherwise, the ISMs will be temporally incoherent and cause flickering in the final rendering. To this end, the point's barycentric coordinate inside its triangle and the triangle's \texttt{gl\_PrimitiveID} are passed to a fast hashing algorithm. The result is used to determine an ISM ID (or, equivalently, a VPL ID) for use in the next step.
 
 Note that no translation or projection has been applied yet, this happens in a later stage. As a result, the vertex shader is a simple pass-through shader.
 
@@ -73,7 +73,7 @@ The next step depends on whether point splatting or the single-pixel renderer is
 \subsection{Point Rendering with Splatting}
 \label{sec:impl:splatting}
 
-In the case of point splatting, the geometry shader itself reads the VPL with the ID it determined, projects the point according to the VPL's data, performs culling and discards the point if necessary, sets \texttt{gl\_PointSize} to the projected size, and emits a vertex.
+In the case of point splatting, the geometry shader itself reads the VPL with the ID it determined, projects the point according to the VPL's data, performs culling and discards the point if necessary, sets \texttt{gl\_PointSize} to the correct size after projection, and emits a vertex.
 
 The \texttt{output\_primitive} must be set to \texttt{points} in the geometry shader's \texttt{layout} definition. As explained previously, for point splatting all points are simply enlarged by a small constant factor in lieu of the pull-push postprocessing. Since only depth information are needed in this case, the fragment shader is empty.
 
@@ -109,7 +109,7 @@ Besides roughly doubling the time needed to render the points due to the increas
 First, the order of writes to the ISM depth buffer is undefined as the execution order of the different compute shaders is undefined in the OpenGL specification. Therefore, the classical z-fighting may occur if two points are rendered into the same pixel of the same shadow map with the same depth value. The attributes that end up written into the additional render target are undefined in this case and may differ between subsequent frames. In practice, this happens very rarely and we chose to ignore this.
 
 However, a different race condition was frequently observable in our implementation:
-If two threads with differing depth values simultaneously write into the depth buffer, using \texttt{imageAtomicMin} guarantees the correct value will end up in the buffer. However, if the higher value got written first and gets overwritten by the second write, both writes have succeeded. This results in both threads attempting to write into the second buffer, creating another race condition since the here execution order is undefined again. This problem can be alleviated by adding a synchronization point after the atomic write and then reading the memory location that just got written to. If it is equal to the written value, one can assume the write actually succeeded and did not get overwritten by a second, simultaneous write. Only then the write to the second buffer is performed.
+If two threads with differing depth values simultaneously write into the depth buffer, using \texttt{imageAtomicMin} guarantees the correct value will end up in the buffer. However, if the higher value is written first and subsequently is overwritten by the second write, both writes have in fact succeeded. This results in both threads attempting to write into the second buffer, creating another race condition since the execution order is undefined again. This problem can be alleviated by adding a synchronization point after the atomic write and then reading the memory location that just got written to. If it is equal to the written value, one can assume the write actually succeeded and did not get overwritten by a second, simultaneous write. Only then the write to the second buffer is performed.
 
 This solution had little cost (0.08\,ms), but fixes the race condition only inside one work group and not between work groups, for which no efficient synchronization primitives exist on the GPU. On a NVIDIA GTX 750 Ti, the race condition was still observable but not annoying. Interestingly, on a GTX 980, the race condition seemed to not occur at all with the described workaround.
 
@@ -128,7 +128,7 @@ In the pull phase, one compute shader invocation calculates one output pixel. It
 
 During the push phase, groups of four output pixels share the same input pixels. This can be exploited by letting each shader invocation compute four output pixels while still reading only four input pixels. Naturally, the weights applied to the input pixels need to be adjusted per output pixel. For invalidating input pixels, their weights can simply be set to zero instead of separately marking them as invalid.
 
-Note that there is still lots of room for optimization. Especially the pull phase is basically a parallel reduction which is well-researched and for which optimized algorithms on the GPU exist, see e.\,g.\ \citet{Harris:2007:ParallelReduction}. Several optimizations from that field might be applicable here.
+Note that there is still lots of room for optimization. Especially the pull phase is basically a parallel reduction which is well-researched and for which optimized algorithms on the GPU exist, see  \citet{Harris:2007:ParallelReduction}. Several optimizations from that field might be applicable here.
 
 
 
