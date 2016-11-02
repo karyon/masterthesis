@@ -25,9 +25,16 @@ In addition, the G-buffer rendering does not differ from common deferred renderi
 \section{Virtual Point Light Sampling with Reflective Shadow Maps}
 \label{sec:concept:rsmVplSampling}
 
+\begin{figure}[htb]
+\centering
+    \includegraphics[width=\textwidth]{graphics/rsm_dachsbacher}
+  \caption{A reflective shadow ap as proposed by \citet{Dachsbacher:2005:RSM}. The buffers contain, from left to right, depth, world position, normal, and flux as a measure for light intensity. Figure reprinted from \citet{Dachsbacher:2005:RSM}.}
+  \label{fig:concept:rsm_dachsbacher}
+\end{figure}
+
 Reflective shadow maps are often preferred due to their simplicity and efficiency. Both advantages come from the fact that they are generated similar to conventional shadow maps, making them easy to implement and a perfect fit for GPUs. A downside is that they are well-suited only for computing the first light bounce.
 
-Just like conventional shadow maps, RSMs render the scene from the viewpoint of a light. Besides the depth buffer used for shadow mapping, they render additional surface information, namely normal and color. This is similar to the additional G-buffers used by deferred rendering.
+Just like conventional shadow maps, RSMs render the scene from the viewpoint of a light. Besides the depth buffer used for shadow mapping, they render additional surface information, namely normal and color. As becomes apparent in \Cref{fig:concept:rsm_dachsbacher}, this is similar to the additional G-buffers used by deferred rendering.
 
 The result can be sampled to create VPLs with a certain position reconstructed from the depth buffer, and normal and color taken from the additional buffers.
 
@@ -37,7 +44,14 @@ VPL sampling has not been the focus of this thesis, therefore we use a rather ba
 \section{Visibility Computation with Imperfect Shadow Maps}
 \label{sec:concept:ism}
 
-The original paper \citep{ritschel2008ism} converts the scene geometry to a point set in a preprocessing step and uses the points to efficiently render hundreds of shadow maps in parallel. For performance reasons, they use only a small subset of all points per shadow map, relying on the large number of shadow maps, each using a different subset, to keep the overall error small. They use splatting to render the points and fill the resulting holes in the shadow maps with a simplified version of the pull-push algorithm presented in  \citep{Marroquim:2007:reconstruction}.
+The original paper \citep{ritschel2008ism} converts the scene geometry to a point set in a preprocessing step and uses the points to efficiently render hundreds of shadow maps in parallel. For performance reasons, they use only a small subset of all points per shadow map, relying on the large number of shadow maps, each using a different subset, to keep the overall error small. See \Cref{fig:concept:ism_ritschel_08} for a visualization. They use splatting to render the points and fill the resulting holes in the shadow maps with a simplified version of the pull-push algorithm presented in  \citep{Marroquim:2007:reconstruction}.
+
+\begin{figure}[htb]
+\centering
+    \includegraphics[width=\textwidth]{graphics/ism_ritschel_08}
+  \caption{Visualization of Imperfect Shadow Maps. For each VPL, a different set of points, colored yellow and pink, representing the scene is chosen. These are rendered into one small shadowmap per VPL (top right). A pull-push postprocessing algorithm fills holes in the shadowmaps (bottom right). Figure reprinted from \citet{ritschel2008ism}.}
+  \label{fig:concept:ism_ritschel_08}
+\end{figure}
 
 \citet{ritschel2011ismsViewAdaptive} build on this by converting the scene to a triangle texture dynamically, and sampling the points from that texture. Instead of computing a triangle texture, \citet{barak2013temporally} use the tessellation units of recent GPUs to dynamically convert triangles into points.
 We follow this approach since it is relatively straightforward to implement and inherently dynamic, but have not implemented the adaptive sampling from \citet{ritschel2011ismsViewAdaptive} yet.
@@ -62,16 +76,49 @@ To remove holes in the resulting shadow map, the original paper implements a sim
 
 \subsection{Point Rendering with Pull-Push Postprocessing}
 
-As an alternative to point splat rendering, this subsection proposes a second approach that follows the algorithm of \citet{Marroquim:2007:reconstruction} more closely with the intent to obtain higher-quality shadow maps. More specifically, the points are rendered as a single pixel, albeit with additional attributes like size and normal. These are then used in a subsequent reconstruction pass to create an (ideally) hole-free shadow map. This approach also allows a point to be rendered into multiple shadow maps with a moderate performance impact, more on this in \Cref{sec:impl:singlePixelRendering}.
+As an alternative to point splat rendering, this subsection proposes a second approach that follows the algorithm of \citet{Marroquim:2007:reconstruction} more closely with the intent to obtain higher-quality shadow maps. More specifically, the points are rendered as a single pixel, albeit with additional attributes like size and normal. These are then used in a subsequent reconstruction pass to create an (ideally) hole-free shadow map. See \Cref{fig:concept:pull_push_dataflow_marroquim} for a visualization of the algorithm. This approach also allows a point to be rendered into multiple shadow maps with a moderate performance impact, more on this in \Cref{sec:impl:singlePixelRendering}.
+
+
+\begin{figure}[htb]
+\centering
+    \includegraphics[width=\textwidth]{graphics/pullpush_dataflow_marroquim}
+  \caption{Data flow of the pull-push surface reconstruction algorithm. Note that the shading step is skipped for rendering ISMs, as the depth information is sufficient. Figure reprinted from \citet{Marroquim:2007:reconstruction}.}
+  \label{fig:concept:pull_push_dataflow_marroquim}
+\end{figure}
+
 
 To provide a rough overview, the pull-push algorithm proposed by \citet{Marroquim:2007:reconstruction} is a ``pyramid-method'' (see \cite{Strengert:2006:Pyramid}) that uses the mipmap levels of a texture to first condense and then spread the data in the texture, in this case the sparse point set representing the scene. During the pull phase, it aggregates the information from four pixels of a finer level to one pixel of a coarser level. The subsequent push phase aggregates four pixels of a coarser level to one pixel of a finer level, but only if the pixel of the finer level contains no data or is determined to belong to an occluded surface. This way, closed surfaces are derived from single-pixel points.
+
 
 \subsubsection{Pull Phase}
 The pull phase reads four pixels of a finer level, computes an aggregate representation of them and writes the result to one pixel of the next coarser level. However, it only considers pixels that pass the following tests: First, they need to contain a valid depth at all (i.\,e., a point must have been rendered into this pixel) and second, the point in this pixel must not be occluded. A point is considered to be occluded if it is outside the depth interval of the frontmost of the four pixels used for interpolation.
 
 Figuratively speaking, the depth interval of a point denotes the range in which other points are considered to belong to the same surface and can be used for interpolation. For the rendered points, the depth interval is simply $[d;d+k]$ where $d$ is the points depth and $k$ is a constant manually chosen to provide ``good'' results. For interpolated points, the new depth interval spans the interpolated depth of the point to the highest depth value of the depth intervals of all ``parent'' points.
 
-To calculate the attributes for a new point, the depth and radius of the parent points are interpolated in between with equal weights. Since the center of the aggregated point might not match with the position of the pixel (this happens if not all four pixels are used for interpolation), a displacement vector is also calculated and stored to accurately describe the point's location.
+To calculate the attributes for a new point, the depth and radius of the parent points are interpolated in between with equal weights, see \Cref{fig:concept:weights_marroquim}. Since the center of the aggregated point might not match with the position of the pixel (this happens if not all four pixels are used for interpolation), a displacement vector is also calculated and stored to accurately describe the point's location.
+
+\begin{figure}[htb]
+  \centering
+  \begin{subfigure}[b]{0.25\textwidth}
+    \centering\includegraphics[width=\textwidth]{graphics/pull_weights_marroquim1}
+    \caption{\label{fig:concept:weights_marroquim1}}
+  \end{subfigure}%
+  \begin{subfigure}[b]{0.25\textwidth}
+    \centering\includegraphics[width=\textwidth]{graphics/pull_weights_marroquim2}
+    \caption{\label{fig:concept:weights_marroquim2}}
+  \end{subfigure}%
+  \begin{subfigure}[b]{0.25\textwidth}
+    \centering\includegraphics[width=\textwidth]{graphics/push_weights_marroquim1}
+    \caption{\label{fig:concept:weights_marroquim3}}
+  \end{subfigure}%
+  \begin{subfigure}[b]{0.25\textwidth}
+    \centering\includegraphics[width=\textwidth]{graphics/push_weights_marroquim2}
+    \caption{\label{fig:concept:weights_marroquim4}}
+  \end{subfigure}
+  \caption{Visualization of the weights used for interpolation during the pull phase (Figures~ \subref{fig:concept:weights_marroquim1} and \subref{fig:concept:weights_marroquim2}) and push phase (Figures~\subref{fig:concept:weights_marroquim3} and \subref{fig:concept:weights_marroquim4}). Figures reprinted from \citet{Marroquim:2007:reconstruction}.}
+  \label{fig:concept:weights_marroquim}
+\end{figure}
+
 
 
 \subsubsection{Push Phase}
@@ -80,9 +127,7 @@ Analogous to the pull phase, the push phase reads four pixels of the coarser lev
 
 The target output location in the finer level might already contain data computed during the pull phase. This data is overwritten if its depth is behind the interpolated point's depth interval, i.\,e., if the original data is considered to be occluded. Otherwise, the original point is left untouched, as it is likely more accurate than the previously computed, interpolated point.
 
-Since the input and output pixel's location do not match the way they do during the pull phase, the weights used for interpolation during the push phase are not uniform, see Figure~\ref{fig:???}.
-
-\todo{some figure about weights during pull-push}
+Since the input and output pixel's location do not match the way they do during the pull phase, the weights used for interpolation during the push phase are not uniform, see \Cref{fig:concept:weights_marroquim}.
 
  \citet{Marroquim:2007:reconstruction} also use the point's normals to correctly limit the point's size, and \citet{Marroquim:2008:reconstruction2} propose Gaussian weights based on the pixel's distance to the point's location, instead of constant weights solely based on pixel locations. Both of these additions we have not implemented yet.
 
@@ -94,12 +139,19 @@ Since the input and output pixel's location do not match the way they do during 
 In real-time graphics applications, primarily video games, a technique called \textit{clustered shading} \citep{olsson2012clustered}, has seen increased usage. Its goal is to increase the efficiency of lighting a scene with multiple light sources.
 The effectiveness of clustered shading in the context of many-light global illumination has not been studied so far to our knowledge, and we aim to contribute a few data points to this end.
 
-The clustered shading technique works as follows: First, the view frustum is divided into a fixed number of three-dimensional clusters. For each fragment, the respective cluster is determined with the purpose of ignoring all clusters with no fragments in them. Then, each cluster is ``assigned'' a list of all lights that potentially illuminate fragments in that cluster, i.\,e.\, whose illuminated region is intersecting with a bounding volume of the cluster. All other lights are ``culled'', i.\,e.\ not added to the list.
+The clustered shading technique works as follows: First, the view frustum is divided into a fixed number of three-dimensional clusters. For each fragment, the respective cluster is determined with the purpose of ignoring all clusters with no fragments in them. Then, each cluster is ``assigned'' a list of all lights that potentially illuminate fragments in that cluster, i.\,e.\, whose illuminated region is intersecting with a bounding volume of the cluster. See \Cref{fig:concept:clustered_olsson} for a visualization of this process. All lights not intersecting a cluster are ``culled'', i.\,e.\ not added to the cluster's light list.
+
+\begin{figure}[htb]
+\centering
+    \includegraphics[width=\textwidth]{graphics/clustered_olsson}
+  \caption{Visualization of clusters and light ranges used for the light assignment step. Figure reprinted from \citet{Olsson:2015:manylightmanagement}.}
+  \label{fig:concept:clustered_olsson}
+\end{figure}
 
 
 When shading a fragment, the algorithm first determines the fragment's cluster again, and then iterates only over the lights in that cluster's light list. This way, all the lights that have been discarded in the previous step do not need to be considered per fragment.
 
-This technique yields the most gains when using lights with a limited radius. In that case, the culling is all the more effective since all lights that are farther away from a cluster than the light's radius can be culled as well. However, many-light methods often use infinite radii to enable light transport over long distances. Nonetheless, one can still expect to cull roughly half of all lights with this technique in a many-light context.
+This technique yields the most gains when using lights with a limited radius. In that case, the culling is all the more effective since all lights that are farther away from a cluster than the light's radius can be culled as well. However, many-light methods often use infinite radii to enable light transport over long distances. Nonetheless, one can still expect to cull roughly half of all lights with this technique in a many-light context, since VPLs have a field of view of 180° instead of being completely spherical.
 
 As an extension, \citet{olsson2012clustered} propose to calculate explicit bounds for the fragment's position in each cluster to enable more precise culling. We expected only moderate performance gains from that and have not implemented it.
 
@@ -116,7 +168,39 @@ Interleaved sampling \citep{Keller:2001:InterleavedSampling} is often used to tr
 
 The general idea is as follows: Instead of calculating all samples per pixels, the samples are distributed over a block of pixels. Now, since each pixel has only a partition of the samples, there is obviously information missing per pixel. Visually, this becomes apparent in the form of structured noise. To this end, a geometry-aware blur similar to \citet{laine2007incremental} is used to spread the information and thereby even out the noise. The blur is often implemented in a separated fashion, although it is, strictly speaking, not a separable one due to its geometry-awareness.
 
-Since adjacent pixels now access disjoint sets of samples, naive implementations of this technique usually show bad cache coherence. To improve on this, \citet{segovia2006non} proposed ``de-interleaving'' to group and process those pixel simultaneously that use the same sample set.
+Since adjacent pixels now access disjoint sets of samples, naive implementations of this technique usually show bad cache coherence. To improve on this, \citet{segovia2006non} proposed ``non-interleaved shading of interleaved sample patterns'', or for short ``de-interleaving''. They group those pixels that use the same sample set into smaller sub-buffers, coherently process each buffer, and then merge the sub-buffer to one large buffer again. See \Cref{fig:concept:interleaved_segovia} for the intermediate results of this algorithm.
+
+
+\begin{figure}[htb]
+  \centering
+  \begin{subfigure}[b]{0.33\textwidth}
+    \centering\includegraphics[width=0.95\textwidth]{graphics/interleaved_segovia_1}
+    \caption{\label{fig:concept:interleaved_segovia_1}}
+  \end{subfigure}%
+  \begin{subfigure}[b]{0.33\textwidth}
+    \centering\includegraphics[width=0.95\textwidth]{graphics/interleaved_segovia_2}
+    \caption{\label{fig:concept:interleaved_segovia_2}}
+  \end{subfigure}%
+  \begin{subfigure}[b]{0.33\textwidth}
+    \centering\includegraphics[width=0.95\textwidth]{graphics/interleaved_segovia_3}
+    \caption{\label{fig:concept:interleaved_segovia_3}}
+  \end{subfigure}
+  \begin{subfigure}[b]{0.33\textwidth}
+    \centering\includegraphics[width=0.95\textwidth]{graphics/interleaved_segovia_4}
+    \caption{\label{fig:concept:interleaved_segovia_4}}
+  \end{subfigure}%
+  \begin{subfigure}[b]{0.33\textwidth}
+    \centering\includegraphics[width=0.95\textwidth]{graphics/interleaved_segovia_5}
+    \caption{\label{fig:concept:interleaved_segovia_5}}
+  \end{subfigure}%
+  \begin{subfigure}[b]{0.33\textwidth}
+    \centering\includegraphics[width=0.95\textwidth]{graphics/interleaved_segovia_6}
+    \caption{\label{fig:concept:interleaved_segovia_6}}
+  \end{subfigure}
+  \caption{Visualization of the de-interleaving process. (a) The original G-buffer. (b) The G-buffer is split into multiple smaller sub-buffers. (c) Each sub-buffer is processed using a different set of lights. (d) The sub-buffers are re-interleaved to one large buffer. (e) A depth discontinuity buffer is computed for the next step. This is usually omitted in modern implementations. (f) An geometry-aware blur is applied to mask the noise visible in (d). Figures reprinted from \citet{segovia2006non}.}
+  \label{fig:concept:interleaved_segovia}
+\end{figure}
+
 
 Effectively, when applied to blocks of $n^2$ pixels, this technique cuts down the cost of sampling to $ 1 / n^2 $ at the expense of smoothing high-frequency changes in the samples over $n$ pixels. Since global illumination is usually of low frequency, i.\,e.\ adjacent pixels usually receive a similar amount of indirect light, interleaved shading does not significantly affect quality when applied to global illumination. However, it falls short near depth and normal discontinuities, where the geometry-aware blur ignores several pixels. Nevertheless, even in this case the quality degradation is hardly noticeable as soon as the global illumination results are blended over the rendered image, see \Cref{sec:results:interleavedShading}.
 

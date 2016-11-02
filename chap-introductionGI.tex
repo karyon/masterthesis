@@ -214,9 +214,17 @@ Screen-space approaches inherently suffer from the lack of information about obj
 \section{Introduction to Many-Light Methods}
 
 
-Many-light methods as another means to compute global illumination originate in instant radiosity \citep{Keller:1997:InstantRadiosity}. In the original paper, photons are traced through the scene, similar to photon mapping \citep{Jensen:1996:PhotonMapping}. With each bounce, however, in place of storing the photon in a photon map, instant radiosity creates a new \emph{virtual point light} (VPL). These point lights illuminate the scene and thereby simulate light reflections. While the concrete method of creating VPLs often differs, many-light methods share the idea of simulating various lighting effects through large numbers of VPLs.
+Many-light methods as another means to compute global illumination originate in instant radiosity \citep{Keller:1997:InstantRadiosity}. In the original paper, photons are traced through the scene, similar to photon mapping \citep{Jensen:1996:PhotonMapping}. With each bounce, however, in place of storing the photon in a photon map, instant radiosity creates a new \emph{virtual point light} (VPL). These point lights illuminate the scene and thereby simulate light reflections, see \Cref{fig:intro:many_lights_visualization} for a visualization. While the concrete method of creating VPLs often differs, many-light methods share the idea of simulating various lighting effects through large numbers of VPLs.
 
-\todo{some figure to explain the concept}
+\begin{figure}[htb]
+\centering
+  \begin{tabular}{@{}cc@{}}
+    \includegraphics[width=.48\textwidth]{graphics/many_lights_laine_1} &
+    \includegraphics[width=.48\textwidth]{graphics/many_lights_laine_2}\\
+  \end{tabular}
+  \caption{Visualization of the many-light concept. (Left) VPLs are created on surfaces that are directly lit by a light source. (Right) when shading a surface point (orange), all VPLs that are visible for that point are used to indirectly light it. Figures reprinted from \citet{laine2007incremental}.}
+  \label{fig:intro:many_lights_visualization}
+\end{figure}
 
 The use of many-light methods is intriguing since they are a natural and intuitive model of real-world light interactions. In addition the concept is highly scalable: Many-light methods have been used for real-time applications with up to a few thousand lights to offline rendering with millions of lights. Given enough lights, the concept is capable of accurately simulating advanced effects like subsurface scattering and participating media. Refer to \citet{Dachsbacher:2014:ManyLightsSTAR} for the higher-end spectrum of many-light methods.
 
@@ -243,7 +251,7 @@ Most many-light methods perform final gathering per screen-space pixel. There ar
 Many-light methods provide no means of visibility computation; these need to be solved separately. The advantage of many-light methods is that each receiving element only needs to test the (bounded) number of VPLs for visibility, not an arbitrarily high number of scene elements. In contrast to other global illumination methods, this makes it possible (although not performant) to use shadow maps for visibility testing.
 
 \paragraph{Choice of receiving elements}
-As mentioned before, screen-space pixels are most commonly used, albeit often downscaled or combined with interleaved sampling (see \Cref{sec:intro:relatedWorkManyLight:finalGathering}). The other options listed in \Cref{sec:componentsOfGI} are technically possible as well, but haven't been combined with many-light methods yet.
+As mentioned before, screen-space pixels are most commonly used, albeit often downscaled or combined with interleaved sampling (see \Cref{sec:intro:relatedWorkManyLight:finalGathering}). The other options listed in \Cref{sec:intro:gi:components} are technically possible as well, but haven't been combined with many-light methods yet.
 \\
 \\
 Another challenge that is unique to many-light methods is \textbf{mitigating singularities}. Since the entire energy of the indirect light bounces is concentrated into a few infinitely small light sources, the areas near these light sources receive too much light. This effect is distinctly visible as bright spots around the VPL's location, making it necessary for many-light methods to alleviate this artifact.
