@@ -63,7 +63,7 @@ The sampling does not regard the relevance of the sampled VPLs to the current fr
 
 An additional downside of the naive sampling is the poor temporal stability when the scene light moves. This is due to each VPL staying at the exact same position in the light's viewport, so it strictly ``follows'' the light's movement, jumping over depth discontinuities along the way. See \Cref{???} for a figure visualizing the frame-to-frame coherency.
 
-\todo{several screenshots. maybe one screenshot just for debug splotches.}
+\todo{frame-to-frame coherencey screenshots/visualization}
 
 
 \section{ISM Rendering}
@@ -106,7 +106,7 @@ Comparing the screenshots in \cref{fig:results:ismDarkening}, it becomes apparen
 As the single-pixel renderer does not use splats, it does not have this problem. One could say it performs the per-fragment depth calculation implicitly during interpolation in the postprocessing phase.
 
 
-\begin{figure}[]
+\begin{figure}[htb]
 \centering
   \begin{tabular}{@{}cc@{}}
     \includegraphics[width=.48\textwidth]{screenshots/leaks_splat} &
@@ -123,7 +123,7 @@ As the single-pixel renderer does not use splats, it does not have this problem.
 
 
 
-\begin{figure}[]
+\begin{figure}[htb]
 \centering
   \begin{tabular}{@{}cc@{}}
     \includegraphics[width=.48\textwidth]{screenshots/bias_splat} &
@@ -275,6 +275,7 @@ As for most global illumination algorithms, a massive improvement would be to di
 The San Miguel scene is a good example for this: While the small detail work like dishes and small plants make up most of the geometry and thus most of the rendering time, they contribute only very little to global illumination. This is where our implementation suffers most from the lack of level-of-detail methods.
 
 
+\todo[color=yellow]{implement some moving object. show temporal coherency when it moves. or even moving spherical light.}
 
 
 \section{Interleaved Shading with Compute Shaders}

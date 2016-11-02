@@ -22,21 +22,16 @@ Additionally, \textit{assimp}\footnote{\url{http://www.assimp.org/}} is used to 
 
 
 \section{Rendering Pipeline Overview}
-\begin{outline}
-\1 would be much the same as the concept pipeline...
-\1 show what's compute shader and what not?
-\1 it's basically lighting plus
-    \2 g-buffer generation
-    \2 shadow map which is part of the RSM,
-    \2 SSAO
-    \2 deferredshading
-    \2 srgb and HDR.
-    \2 all of this is not
-\1 model loading?
-\1 kernel generation?
-\end{outline}
 
-\todo[color=blue]{textify rendering pipeline overview implementation}
+\begin{figure}[h]
+    \includegraphics[width=\textwidth]{graphics/Rendering_pipeline_rough}
+    \caption{Rendering pipeline overview. The global illumination section is a simplified version of \Cref{fig:GIPipelineConcept}. The RSM rendering does not fully belong to the global illumination section, since it both provides a conventional shadow map for direct lighting, as well as additional information to form a RSM for VPL sampling.}
+    \label{fig:RenderingPipelineOverview}
+\end{figure}
+
+\todo{implementation pipeline adds little value over concept pipeline}
+
+To provide some context, \Cref{fig:RenderingPipelineOverview} visualizes the complete rendering pipeline of the implemented application. It follows a standard deferred rendering approach. The result of the global illumination is a texture that contains indirect lighting, which is added to the direct lighting in the combine pass.
 
 
 \section{RSM Generation and VPL Sampling}
@@ -147,15 +142,8 @@ There are several reasons for this approach: First, it is easier to implement, s
 
 A potential downside is that this technique performs one scattered read of the G-Buffers, compared to several coherent reads performed by the buffer splitting method. However, the bottleneck of the final gathering phase lies within the loop over the VPLs, so this one-time scattered read is likely to not have any impact but to be swallowed by latency-covering techniques of the GPU. Theoretically, the works groups could be distributed over the GPU's processor clusters (Streaming Multiprocessors on NVIDIA, Compute Units on AMD) in a way that adjacent pixels are still processed on the same cluster, but unfortunately application developers have no control over this.
 
-\todo[color=yellow]{investigate into interleaving via shared memory in 2x2 groups}
-\todo{write hedman, how did they do the 8x8 interleaving? or maybe check his master thesis first}
+Since only a subset of all samples is processed per pixel and this subset repeats every four pixels, interleaved shading results in structured noise. To this end, a geometry-aware blur similar to \citet{laine2007incremental} is often used. The geometry-awareness is needed to prevent light from bleeding over geometry edges. Although the blur filter is not separable due to its geometry-awareness, we implement it in a separated fashion, trading a neglibile quality impact for large performance benefits.
 
-Since only a subset of all samples is processed per pixel and this subset repeats every four pixels, interleaved shading results in structured noise. (see Figure \ref{fig:???} or this figure in concept?). To this end, a geometry-aware blur similar to \citet{laine2007incremental} is often used. The geometry-awareness is needed to prevent light from bleeding over geometry edges. Although the blur filter is not separable due to its geometry-awareness, we implement it in a separated fashion, trading a neglibile quality impact for large performance benefits.
-
-\todo{implementation: interleaved: figure of noise here? or just in results?}
-
-
-Because of the regular sampling, the noise produced during interleaved shading (\Cref{sec:impl:interleavedShading}) is more structured and harder to mask by the blur pass. To alleviate that, we permutate the VPL order with a random permutation computed on the CPU. See \Cref{sec:results:interleavedShading} for the effects of this small optimization.
 
 While the geometry-aware blur achieves perfect result on even surfaces, the structured noise is harder to mask along geometry edges due to missing information. This problem becomes even more apparent when using regular VPL sampling, which makes each pixel use VPLs that are near each other. This results in e.g. the first pixel inside a 4x4 block to use VPLs that are near the pixel's location, but the second pixel uses VPLs that are all farther away, causing the differences between the pixels to be amplified. To this end, the order of the VPLs in the VPL buffer created during the VPL sampling phase is simply shuffled, using a fixed permutation precomputed on the CPU. See \Cref{sec:results:interleavedShading} for the effects of this small optimization.
 
@@ -204,10 +192,7 @@ While the geometry-aware blur achieves perfect result on even surfaces, the stru
         \3 now, each invocation takes one VPL and culls it against the bounding box. If it passes the culling test, it adds it to a list in shared memory, again using an atomic counter that describes the list's current size to not overwrite any VPL added by another invocation.
         \3 perform the regular final gathering, using the list of VPLs in shared memory.
 
-\todo[]{remove all we}
 
-\todo[color=yellow]{rename gi shader to final gathering. other renames?}
-\todo{what openGL version do i require? also, i should look up which dedicated GPUs support 4.5/4.4 and what Intels GPUs say. maybe point out the need for modern OpenGL more? also, how they make it easier to implement.}
 \end{outline}
 
 \todo[color=blue]{textify clustered shading implementation}
