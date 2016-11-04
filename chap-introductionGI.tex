@@ -279,7 +279,7 @@ Most of these approaches suffer from poor temporal stability. To improve on that
 \subsection{Final Gathering}
 \label{sec:intro:relatedWorkManyLight:finalGathering}
 
-Splatting techniques have been used to add a light's contribution to the rendered image \citep{dachsbacher2006splatting, Nichols:2009:splatting}, but do not utilize modern GPUs efficiently. Instead, gathering approaches are commonly used today, using interleaved sampling \citep{Keller:2001:InterleavedSampling} with an edge-aware blur similar to \citet{laine2007incremental}. \citet{segovia2006non} improve the cache efficiency of interleaved sampling.
+Splatting techniques have been used to add a light's contribution to the rendered image \citep{dachsbacher2006splatting, Nichols:2009:splatting}, but do not utilize modern GPUs efficiently. Instead, gathering approaches are commonly used today, using interleaved sampling \citep{Keller:2001:InterleavedSampling} to reduce the number of lights processed per pixel, in combination with an edge-aware blur similar to \citet{laine2007incremental}. \citet{segovia2006non} improve the cache efficiency of interleaved sampling.
 
 
 \subsection{Visibility Computation}
