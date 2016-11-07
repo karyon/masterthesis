@@ -66,7 +66,7 @@ The following subsections describe the regular point splat rendering process and
 
 To convert the scene into points, all its triangles are first tessellated to meet a certain maximum size in order for the point conversion to not introduce extreme inaccuracies. Of the smaller tessellated triangles, the center and area are calculated and a point with matching center and area is created. While it might be more performant to create points just on the vertices of the triangles, at the same time it will be more inaccurate since this approach will enlarge the rendered area considerably over the triangle's extents.
 
-Now a random VPL is chosen per point and backface culling is performed. Likewise, points that lie behind their VPL's illuminated hemisphere are culled before splatting the point into the respective ISM. For performance reasons, a simple paraboloid projection is used for the ISMs in lieu of conventional cubemaps. Here, another advantage of using points comes into play: Compared to triangles, it is trivial to perform a paraboloid projection on them.
+Now a random VPL is chosen per point and backface culling is performed. Likewise, points that do not lie on the VPL's illuminated side are culled before splatting the point into the respective ISM. For performance reasons, a simple paraboloid projection is used for the ISMs in lieu of conventional cubemaps. Here, another advantage of using points comes into play: Compared to triangles, it is trivial to perform a paraboloid projection on them.
 
 As an optimization, we iterate over several VPLs per point, collect those that pass the culling test and render to all the collected ones. More on this in \cref{chap:implementation}.
 
