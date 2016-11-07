@@ -106,7 +106,9 @@ First, the order of writes to the ISM depth buffer is undefined as the execution
 However, a different race condition was frequently observable in our implementation:
 If two threads with differing depth values simultaneously write into the depth buffer, using \texttt{imageAtomicMin} guarantees the correct value will end up in the buffer. However, if the higher value is written first and subsequently is overwritten by the second write, both writes have in fact succeeded. This results in both threads attempting to write into the second buffer, creating another race condition since the execution order is undefined again. This problem can be alleviated by adding a synchronization point after the atomic write and then reading the memory location that just got written to. If it is equal to the written value, one can assume the write actually succeeded and did not get overwritten by a second, simultaneous write. Only then the write to the second buffer is performed.
 
-This solution had little cost (0.08\,ms), but fixes the race condition only inside one work group and not between work groups, for which no efficient synchronization primitives exist on the GPU. On a NVIDIA GTX 750 Ti, the race condition was still observable but not annoying. Interestingly, on a GTX 980, the race condition seemed to not occur at all with the described workaround.
+This solution had little cost (0.08\,ms), but fixes the race condition only inside one work group and not between work groups, for which no efficient synchronization primitives exist on the GPU. On a NVIDIA GTX 750 Ti, the race condition was still observable but acceptable. Interestingly, on a GTX 980, the race condition seemed to not occur at all with the described workaround.
+
+\todo[color=yellow]{longer critical section with an actual lock, atomicCompSwap, "A GPGPU-based Pipeline for Accelerated Rendering of Point Clouds"}
 
 A proper solution that would fix this problem completely, avoid the synchronization overhead and open more optimization possibilities would involve a more advanced software renderer, e.\,g.\ following the approaches of \citet{Laine:2011:SoftwareRasterization}.
 
@@ -153,48 +155,44 @@ Instead of shuffling, an interesting and more elaborate solution to make the noi
 \section{Clustered Deferred Shading}
 \label{sec:impl:clusteredShading}
 
-\begin{outline}
-\1 we use 128 pixels as screen-space tile width and 16 depth slices. We also use an optimization proposed by \citet{persson::2013::practical} and use a larger near cluster for better depth slice utilization.
+The presented implementation uses 128 pixels as screen-space tile width and 16 depth slices. It also uses an optimization proposed by \citet{persson::2013::practical} by using a larger near cluster for better depth slice utilization.
 
-\1 \citet{persson::2013::practical} do culling on the CPU. they have small radii and can therefore quickly determine the clusters that are reached by a certain light.
-\1 we have infinite light radii and therefore lots of clusters per light. therefore, we can expect to cull maybe half the lights and not the majority.
-\1 therefore, we decided to iterate over all lights per used cluster, as opposed to iterate over reached clusters per light.
-\1 the more uniform control flow of this approach as also better suited to GPUs.
+The light assignment or culling step is performed on the CPU by \citet{persson::2013::practical}. In their context of computer games they have small light radii, making it possible to quickly determine the clusters that are reached by a certain light.
+
+For global illumination, however, infinite light radii are preferred, resulting in higher number of clusters that are reached by each light. Therefore, starting with all clusters that contain fragments and iterating over all lights for each cluster becomes viable, as opposed to determining the set of reached clusters per light. The more uniform control flow of this approach makes it a reasonable choice to use GPUs for the light assignment step. Additionally, since the lights are already generated on the GPU, CPU-side culling would require copying light data to the CPU and culling results back; performing culling on the GPU eliminates these data transfers.
 
 
-\1 three phases, each corresponding to one dispatch compute call:
-\1 clustering
-    \2 each work group processes one tile and has one 16 bool array which indicates which depth slices in that tile are used.
-    \2 for each fragment, set the corresponding bool to true. no synchronization needed.
-    \2 since the work group size is limited, we set it to 128 and let each invocation iterate through 128 pixels in the tile to cover all pixels.
-    \2 per work group, count the number of used slices
-        \3 we use the first 16 threads in the work group and atomic adds, but one could just as well let one thread do it serially, it doesn't matter.
-    \2 then it adds the number of used depth slices to one global atomic counter. the glsl function to do this returns the value of the counter before the addition.
-    \2 this way, each workgroup ``allocates'' some space in the list of used clusters. it then writes an id for each cluster into that list.
-\1 calculating light lists
-    \2 one invocation per used cluster.
-    \2 calculate world-space corners of that cluster.
-    \2 show some code? but it's really ugly...
-    \2 for each light
-        \3 if any corner is inside the illuminated hemisphere, add the light to this cluster's light list.
-    \2 we simply allocate the maximum space for this.
-        \3 for full HD / 128\,px tiles = 135 tiles, * 16 depth slices = 2160 light lists, * 1024 vpls = 2160k indices, * 2 bytes per index makes 4mb.
-        \3 we thought it's unnecessary to cut that down.
-        \3 by a (conservative) estimate of four used depth slices per tile on average, (plus possibly runtime checks to allocate more space when running over that limit), on could reduce this to 1MB with little implementation effort.
-        \3 compacting the light lists themselves is probably not worth it due to implementation complexity and performance penalty
-        \3 since we expect to cull roughly half the lights, the potential saving by compacting the light lists is only 50\% anyways.
-\1 shading
-    \2 during shading, when processing a pixel, the pixel's cluster is first determined and only the lights of this cluster's light list are processed.
-    \2 we use a very basic approach to combine this with interleaved shading: of all lights in the light list, each pixels gets an equally sized fraction. while this might lead to adjacent pixels processing overlapping sets of lights if they are in different clusters, they are either in clusters near to each other in which case the light lists are probably quite similar, or they are in clusters seperated from each other so the geometry-aware blur wouldn't consider them anyway.
+The clustered shading technique is divided into three phases, each corresponding to one compute shader dispatch call.
 
-\1 Tiled shading
-    \2 In addition to clustered deferred shading, we also implemented its predecessor tiled shading. Since it does not perform a clustering in the z-dimension and thus has only one cluster per tile, it allows for a simpler implementation.
-    \2 We integrated this directly into our final gathering shader. Since each work group processes all pixels that are in the same tile and use the same set of VPLs for lighting, we can easily do the following:
-        \3 each invocation reads one pixel. With six shared variables (minimum and maximum x, y and z values) and the atomicMin and atomicMax methods, create an exact bounding box in NDC
-        \3 now, each invocation takes one VPL and culls it against the bounding box. If it passes the culling test, it adds it to a list in shared memory, again using an atomic counter that describes the list's current size to not overwrite any VPL added by another invocation.
-        \3 perform the regular final gathering, using the list of VPLs in shared memory.
+\paragraph{Clustering.}
+In this step, each work group processes one 128²\,px screen-space tile. Since the number of threads in a work group is limited, each threads iterates over a set of fragments. For each fragment, the corresponding depth slice is determined and marked as used in a shared array of 16 booleans. Since each thread only sets a boolean to true, simultaneous writes of different threads into the same boolean do not change the results, and no synchronization is needed in this step.
+
+Now the work group counts the number of used depth slices. This can be done with 16 threads, using atomic increment operations of one shared variable, or one thread that iterates over the sixteen booleans. Since both ways use a negligible amount of time, the choice does not matter in practice.
+
+The number of used depth slices is then added to one global atomic counter. The corresponding GLSL function (\texttt{atomicAdd}) returns the value of the counter before the addition. This way, each workgroup ``allocates'' some space in a global list of used clusters. It then writes an id identifying each cluster into that list.
 
 
-\end{outline}
+\paragraph{Light assignment.}
+With a new dispatch call, each thread now performs culling for one light and one cluster. Given the cluster coordinates, it reconstructs the cluster's bounds and checks on which side of the plane described by the VPL's position and normal the cluster is located. More specifically, if any of the cluster's eight corners is on the illuminated side of the VPL, the light cannot be culled and is added to the light list of the cluster.
 
-\todo[color=blue]{textify clustered shading implementation}
+The light lists are stored in a 2D texture with a height of the expected maximum amount of used clusters (plus a safety margin) and a width of the number of VPLs. The $n$th row in that texture contains the light list of the cluster at index $n$ in the global list of used clusters created in the previous step. Additionally, each light list is divided into 16 partitions, one partition for each pixel in an interleaving block. See \Cref{fig:impl:light_lists} for a visualization of this texture. The partitioning not only simplifies the light list lookup during shading, it also guarantees that each light is processed exactly once in an interleaving block.
+
+\begin{figure}[h]
+    \includegraphics[width=\textwidth]{graphics/light_lists}
+    \caption{A visualization of the light lists texture. Each row contains the light list of one cluster. The lists are divided into 16 partitions, one for each pixel in an interleaving block. Each red pixel represents an index to an VPL, a brighter red is a higher index. White pixels contain no data. The first value in each partition is the number of lights in that partition, therefore the dark line in front of the partitions.}
+    \label{fig:impl:light_lists}
+\end{figure}
+
+As a simplified example, suppose that only four lights are used and the interleaving block size is 2x1, i.\,e. contains only two pixels. In this case, the interleaved shading algorithm now makes the first pixel process the first half of its light list, while the second pixel will process the second half of its respective light list. If the first pixel's light list contains lights 3 and 4, while the other pixel is in a different cluster whose light list contains lights 2 and 3, both lights will end up processing only light 3. As a result, one light will have been accounted for twice, while two other lights have not been considered at all. This was visible as darkened or brightened lines along the screen-space tiles used by the clustered shading algorithm. The partitioning scheme completely fixes this by guaranteeing that the first pixel always processes light 1 and 2 (minus culling results), while the second pixel always processes light 3 and 4.
+
+The memory requirements of the light list are as follows: Since each partition contains only 64 lights, 8-bit indices are sufficient. The light list of each cluster thus needs 1\,kb. For a full HD resolution and screen-space tiles of 128\,px, the maximum number of clusters is 2160, so a little over 2\,MB of memory is used. While the partitions cannot reasonably be shrinked much, one could use estimates on how much depth slices per tile are used to reduce the memory consumption. Since the list of used clusters is stored in a compacted list, individual tiles might still use more depth slices than anticipated and not break the algorithm. An average of 4 out of 16 depth slices is likely enough for most scenes and would cut down the memory consumption to 540\,kb.
+
+\paragraph{Shading.}
+The final gathering shader processes one pixel per invocation. It will first determine the pixel's cluster and subsequently process the lights in this cluster's light list and in the partition corresponding to the pixel's position in its interleaving block.
+
+
+\subsection{Tiled Shading}
+
+In addition to clustered deferred shading, we also implemented its predecessor tiled shading. Since it does not perform a clustering in the z-dimension (or in other words, it uses only one depth slice per tile), it allows for a simpler implementation.
+
+We integrated tiled shading directly into the final gathering shader. As a reminder, during final gathering each work group processes those pixels from several interleaving blocks that use the same partition of the light list, e.\,g. every first pixel of 8x8 interleaving blocks, and each invocation processes one pixel. With tiled shading, each pixel's z-value is used to build a minimum and maximum z-value for this tile, again using atomic operations. In a second step, each invocation processes one VPL and culls it against the bounding box of the pixels, which is defined by the pixel's minimum and maximum fragment coordinates and z-values determined in the previous step. All lights that pass the culling test are added to a light list in a shared array, again using atomic counters to ensure no gaps are produced and no light is overwritten. Subsequently, final gathering is performed as usual with the difference of using the light list in the shared array instead of a light list computed in a previous shader pass.
