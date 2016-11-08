@@ -13,7 +13,7 @@ The implementation is tested in the Crytek Sponza and San Miguel scene, with 260
 \begin{outline}
     \1 1920x1080\,px output resolution
     \1 1024 VPLs
-    \1 2048\,px² ISM texture, i.\,e.\ 64\,px² per ISM
+    \1 2048\,px² ISM texture, i.\,e., 64\,px² per ISM
     \1 Single-pixel point renderer enabled, 16 VPLs considered per point, up to 4 collected
     \1 4x4 interleaving pattern
     \1 Clustered shading: 128\,px² tile size, 16 depth slices
@@ -249,7 +249,7 @@ Numbers
 \label{sec:results:ism:comparison}
 
 
-The single-pixel renderer provides numerous advantages over the splat renderer: Using a compute shader to render the points lifts the restrictions of the fixed-function pipeline and e.\,g.\ enables rendering each point into multiple ISMs without large performance losses. Quality-wise, it can reproduce surfaces more accurately by correctly interpolating between points.
+The single-pixel renderer provides numerous advantages over the splat renderer: Using a compute shader to render the points lifts the restrictions of the fixed-function pipeline and e.\,g., enables rendering each point into multiple ISMs without large performance losses. Quality-wise, it can reproduce surfaces more accurately by correctly interpolating between points.
 
 The drawbacks obviously include the additional rendering time and memory. Besides, the added complexity should not be underestimated. Specifically, we found it hard to fine-tune the pull-push algorithm to give us satisfactory results, especially in the face of the low resolutions of ISMs and the limited data available for reconstruction after selecting a random and sparse set of points.
 

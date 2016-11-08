@@ -38,18 +38,18 @@ Just like conventional shadow maps, RSMs render the scene from the viewpoint of 
 
 The result can be sampled to create VPLs with a certain position reconstructed from the depth buffer, and normal and color taken from the additional buffers.
 
-VPL sampling has not been the focus of this thesis, therefore we use a rather basic approach by creating an RSM and regularly sampling it. More advanced approaches are available (see \Cref{sec:intro:relatedWorkManyLight:vplSampling}), some of which do not use RSMs (e.\,g.\ \cite{hedman2016sequential})
+VPL sampling has not been the focus of this thesis, therefore we use a rather basic approach by creating an RSM and regularly sampling it. More advanced approaches are available (see \Cref{sec:intro:relatedWorkManyLight:vplSampling}), some of which do not use RSMs (e.\,g., \cite{hedman2016sequential})
 
 
 \section{Visibility Computation with Imperfect Shadow Maps}
 \label{sec:concept:ism}
 
-The original paper \citep{ritschel2008ism} converts the scene geometry to a point set in a preprocessing step and uses the points to efficiently render hundreds of shadow maps in parallel. For performance reasons, they use only a small subset of all points per shadow map, relying on the large number of shadow maps, each using a different subset, to keep the overall error small. See \Cref{fig:concept:ism_ritschel_08} for a visualization. They use splatting to render the points and fill the resulting holes in the shadow maps with a simplified version of the pull-push algorithm presented in  \citep{Marroquim:2007:reconstruction}.
+The original paper \citep{ritschel2008ism} converts the scene geometry to a point set in a preprocessing step and uses the points to efficiently render hundreds of shadow maps in parallel. For performance reasons, they use only a small subset of all points per shadow map, relying on the large number of shadow maps, each using a different subset, to keep the overall error small (\Cref{fig:concept:ism_ritschel_08}). They use splatting to render the points and fill the resulting holes in the shadow maps with a simplified version of the pull-push algorithm presented in  \citep{Marroquim:2007:reconstruction}.
 
 \begin{figure}[htb]
 \centering
     \includegraphics[width=\textwidth]{graphics/ism_ritschel_08}
-  \caption{Visualization of Imperfect Shadow Maps. For each VPL, a different set of points, colored yellow and pink, representing the scene is chosen. These are rendered into one small shadowmap per VPL (top right). A pull-push postprocessing algorithm fills holes in the shadowmaps (bottom right). Figure reprinted from \citet{ritschel2008ism}.}
+  \caption{Illustration of Imperfect Shadow Maps. For each VPL, a different set of points, colored yellow and pink, representing the scene is chosen. These are rendered into one small shadowmap per VPL (top right). A pull-push postprocessing algorithm fills holes in the shadowmaps (bottom right). Figure reprinted from \citet{ritschel2008ism}.}
   \label{fig:concept:ism_ritschel_08}
 \end{figure}
 
@@ -95,7 +95,7 @@ The pull phase reads four pixels of a finer level, computes an aggregate represe
 
 Figuratively speaking, the depth interval of a point denotes the range in which other points are considered to belong to the same surface and can be used for interpolation. For the rendered points, the depth interval is simply $[d;d+k]$ where $d$ is the points depth and $k$ is a constant manually chosen to provide ``good'' results. For interpolated points, the new depth interval spans the interpolated depth of the point to the highest depth value of the depth intervals of all ``parent'' points.
 
-To calculate the attributes for a new point, the depth and radius of the parent points are interpolated in between with equal weights, see \Cref{fig:concept:weights_marroquim}. Since the center of the aggregated point might not match with the position of the pixel (this happens if not all four pixels are used for interpolation), a displacement vector is also calculated and stored to accurately describe the point's location.
+To calculate the attributes for a new point, the depth and radius of the parent points are interpolated in between with equal weights (\Cref{fig:concept:weights_marroquim}). Since the center of the aggregated point might not match with the position of the pixel (this happens if not all four pixels are used for interpolation), a displacement vector is also calculated and stored to accurately describe the point's location.
 
 \begin{figure}[htb]
   \centering
@@ -115,7 +115,7 @@ To calculate the attributes for a new point, the depth and radius of the parent 
     \centering\includegraphics[width=\textwidth]{graphics/push_weights_marroquim2}
     \caption{\label{fig:concept:weights_marroquim4}}
   \end{subfigure}
-  \caption{Visualization of the weights used for interpolation during the pull phase (Figures~ \subref{fig:concept:weights_marroquim1} and \subref{fig:concept:weights_marroquim2}) and push phase (Figures~\subref{fig:concept:weights_marroquim3} and \subref{fig:concept:weights_marroquim4}). Figures reprinted from \citet{Marroquim:2007:reconstruction}.}
+  \caption{Illustration of the weights used for interpolation during the pull phase (Figures~ \subref{fig:concept:weights_marroquim1} and \subref{fig:concept:weights_marroquim2}) and push phase (Figures~\subref{fig:concept:weights_marroquim3} and \subref{fig:concept:weights_marroquim4}). Figures reprinted from \citet{Marroquim:2007:reconstruction}.}
   \label{fig:concept:weights_marroquim}
 \end{figure}
 
@@ -139,7 +139,7 @@ Since the input and output pixel's location do not match the way they do during 
 In real-time graphics applications, primarily video games, a technique called \textit{clustered shading} \citep{olsson2012clustered}, has seen increased usage. Its goal is to increase the efficiency of lighting a scene with multiple light sources.
 The effectiveness of clustered shading in the context of many-light global illumination has not been studied so far to our knowledge, and we aim to contribute a few data points to this end.
 
-The clustered shading technique works as follows: First, the view frustum is divided into a fixed number of three-dimensional clusters. For each fragment, the respective cluster is determined with the purpose of ignoring all clusters with no fragments in them. Then, each cluster is ``assigned'' a list of all lights that potentially illuminate fragments in that cluster, i.\,e.\, whose illuminated region is intersecting with a bounding volume of the cluster. See \Cref{fig:concept:clustered_olsson} for a visualization of this process. All lights not intersecting a cluster are ``culled'', i.\,e.\ not added to the cluster's light list.
+The clustered shading technique works as follows: First, the view frustum is divided into a fixed number of three-dimensional clusters. For each fragment, the respective cluster is determined with the purpose of ignoring all clusters with no fragments in them. Then, each cluster is ``assigned'' a list of all lights that potentially illuminate fragments in that cluster, i.\,e.\, whose illuminated region is intersecting with a bounding volume of the cluster (\Cref{fig:concept:clustered_olsson}). All lights not intersecting a cluster are ``culled'', i.\,e., not added to the cluster's light list.
 
 \begin{figure}[htb]
 \centering
@@ -202,6 +202,6 @@ Since adjacent pixels now access disjoint sets of samples, naive implementations
 \end{figure}
 
 
-Effectively, when applied to blocks of $n^2$ pixels, this technique cuts down the cost of sampling to $ 1 / n^2 $ at the expense of smoothing high-frequency changes in the samples over $n$ pixels. Since global illumination is usually of low frequency, i.\,e.\ adjacent pixels usually receive a similar amount of indirect light, interleaved shading does not significantly affect quality when applied to global illumination. However, it falls short near depth and normal discontinuities, where the geometry-aware blur ignores several pixels. Nevertheless, even in this case the quality degradation is hardly noticeable as soon as the global illumination results are blended over the rendered image, see \Cref{sec:results:interleavedShading}.
+Effectively, when applied to blocks of $n^2$ pixels, this technique cuts down the cost of sampling to $ 1 / n^2 $ at the expense of smoothing high-frequency changes in the samples over $n$ pixels. Since global illumination is usually of low frequency, i.\,e., adjacent pixels usually receive a similar amount of indirect light, interleaved shading does not significantly affect quality when applied to global illumination. However, it falls short near depth and normal discontinuities, where the geometry-aware blur ignores several pixels. Nevertheless, even in this case the quality degradation is hardly noticeable as soon as the global illumination results are blended over the rendered image, see \Cref{sec:results:interleavedShading}.
 
 In most aspects we follow the standard approach for interleaved shading. The only notable deviation is the implementation of de-interleaving that does not use any separate splitting and merging passes. For details, see \Cref{sec:impl:interleavedShading}.
