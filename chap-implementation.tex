@@ -162,7 +162,7 @@ For global illumination, however, infinite light radii are preferred, resulting 
 The clustered shading technique is divided into three phases, each corresponding to one compute shader dispatch call.
 
 \paragraph{Clustering.}
-In this step, each work group processes one 128²\,px screen-space tile. Since the number of threads in a work group is limited, each thread in the work group iterates over several fragments. For each fragment, the corresponding depth slice is determined and marked as used in a shared array of 16 booleans. Since no thread writes False or reads from the shared array, no data races can occur and no synchronization is needed in this step.
+In this step, each work group processes one 128\,px² screen-space tile. Since the number of threads in a work group is limited, each thread in the work group iterates over several fragments. For each fragment, the corresponding depth slice is determined and marked as used in a shared array of 16 booleans. Since no thread writes False or reads from the shared array, no data races can occur and no synchronization is needed in this step.
 
 Now the work group counts the number of used depth slices. This can be done with 16 threads, using atomic increment operations on a shared variable, or one thread that iterates over the sixteen booleans. Since both ways use a negligible amount of time, the choice does not matter in practice.
 

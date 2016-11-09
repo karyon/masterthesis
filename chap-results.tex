@@ -202,7 +202,7 @@ Since the technique implements no adaptivity, these numbers are independent from
     \begin{tabulary}{0.98\textwidth}{| L | L | L | L | L | L | L | L || L | L || L |}
         \hline
         PL 1 & PL 2 & PL 3 & PL > 3 & PS > 2 & PS 2 & PS 1 & PS 0 & PL Total & PS Total & Total \\ \hline
-        0.16 & 0.16 & 0.04 & 0.03   & 0.06   & 0.08 & 0.30 & 0.41 & 0.39     & 0.85     & 2.72\\
+        0.16 & 0.16 & 0.04 & 0.03   & 0.06   & 0.08 & 0.30 & 0.41 & 0.39     & 0.85     & 1.24\\
         \hline
     \end{tabulary}
     \caption{Timing breakdown of the pull (PL) and push (PS) phase. The numbers of the individual steps indicate to which mipmap level they write, which is why the pull phase starts with 1 and the push phase has descending numbers. All timings are in milliseconds.}
@@ -236,18 +236,35 @@ Added together, the single-pixel renderer uses a total of 79\,MB, likely with ro
 \subsubsection{Problems with High Geometric Density}
 \label{sec:results:ism:densityProblems}
 
-As a more demanding test case the San Miguel scene with 7.9M triangles. The most apparent problem of the presented implementation is the lack of adaptivity to the current viewport and VPL positions in addition to the lack of LOD methods. As a result, all 7.9M triangles are used every frame to render the ISMs, with corresponding performance results.
+As a more demanding test case the San Miguel scene with 7.9M triangles. The most apparent problem of the presented implementation is the lack of adaptivity to the current viewport in addition to the lack of LOD methods. As a result, all 7.9M triangles are used every frame to render the ISMs, with corresponding performance results: While the postprocessing takes the same time due to working fixed resolution textures, the point collection phase now takes 11.4\,ms, while the point rendering when using the single-pixel renderer uses an additional 5.7\,ms. The fact that the point collection phase, albeit doing no rasterization work, takes exactly the same amount of time as the splat renderer, shows how this process is bottlenecked by geometric complexity.
 
-Screenshots with the San Miguel scene
 
-Quality also suffers. Not tuned to such small triangles.
+\begin{figure}[htb]
+\centering
+  \begin{tabular}{@{}c@{}}
+    \includegraphics[width=1.0\textwidth]{screenshots/san_miguel_wide} \\
+  \end{tabular}
+  \caption{A rendering of the San Miguel scene in the presented implementation. Note the unnaturally dark region behind the pillars.}
+  \label{fig:results:san_miguel_wide}
+\end{figure}
 
-Numbers
+\begin{figure}[htb]
+\centering
+  \begin{tabular}{@{}cc@{}}
+    \includegraphics[width=.48\textwidth]{screenshots/san_miguel_ugly_shadow} &
+    \includegraphics[width=.48\textwidth]{screenshots/san_miguel_ugly_shadow_gi_only}
+  \end{tabular}
+  \caption{A particularly inaccurate shadow produced by the ISMs. Right image shows only indirect light. The shadow should be much more smooth, the low-frequency noise is caused choosing random points per ISM, while the many edges of the shadows are caused by the basic shadow mapping algorithm, which performs a simple binary choice.}
+  \label{fig:results:san_miguel_ugly_shadow}
+\end{figure}
+
+\Cref{fig:results:san_miguel_wide} shows an example screenshot of the San Miguel scene. There are several factors contributing to an overly dark region behind the pillars. First, during ISM rendering all points are rendered into at least one pixel, making them take out too much light if they are actually smaller than one pixel. This likely happens in case of the thin structures of the chairs. Additionally, the implementation simulates only one bounce, making it impossible for the floor behind the pillars to be lit at all.
+
+Another problem case is shown by \Cref{fig:results:san_miguel_ugly_shadow}, where the table and chairs cast a visibly inaccurate shadow.
 
 
 \subsection{Comparison of the Splat and Single-Pixel Renderer}
 \label{sec:results:ism:comparison}
-
 
 The single-pixel renderer provides numerous advantages over the splat renderer: Using a compute shader to render the points lifts the restrictions of the fixed-function pipeline and e.\,g., enables rendering each point into multiple ISMs without large performance losses. Quality-wise, it can reproduce surfaces more accurately by correctly interpolating between points.
 
