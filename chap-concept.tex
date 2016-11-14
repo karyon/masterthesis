@@ -174,28 +174,40 @@ Since adjacent pixels now access disjoint sets of samples, naive implementations
 \begin{figure}[htb]
   \centering
   \begin{subfigure}[b]{0.33\textwidth}
-    \centering\includegraphics[width=0.95\textwidth]{graphics/interleaved_segovia_1}
-    \caption{\label{fig:concept:interleaved_segovia_1}}
+    \centering
+    \includegraphics[width=0.95\textwidth]{graphics/interleaved_segovia_1}
+    \caption{}
+    \label{fig:concept:interleaved_segovia_1}
   \end{subfigure}%
   \begin{subfigure}[b]{0.33\textwidth}
-    \centering\includegraphics[width=0.95\textwidth]{graphics/interleaved_segovia_2}
-    \caption{\label{fig:concept:interleaved_segovia_2}}
+    \centering
+    \includegraphics[width=0.95\textwidth]{graphics/interleaved_segovia_2}
+    \caption{}
+    \label{fig:concept:interleaved_segovia_2}
   \end{subfigure}%
   \begin{subfigure}[b]{0.33\textwidth}
-    \centering\includegraphics[width=0.95\textwidth]{graphics/interleaved_segovia_3}
-    \caption{\label{fig:concept:interleaved_segovia_3}}
+    \centering
+    \includegraphics[width=0.95\textwidth]{graphics/interleaved_segovia_3}
+    \caption{}
+    \label{fig:concept:interleaved_segovia_3}
   \end{subfigure}
   \begin{subfigure}[b]{0.33\textwidth}
-    \centering\includegraphics[width=0.95\textwidth]{graphics/interleaved_segovia_4}
-    \caption{\label{fig:concept:interleaved_segovia_4}}
+    \centering
+    \includegraphics[width=0.95\textwidth]{graphics/interleaved_segovia_4}
+    \caption{}
+    \label{fig:concept:interleaved_segovia_4}
   \end{subfigure}%
   \begin{subfigure}[b]{0.33\textwidth}
-    \centering\includegraphics[width=0.95\textwidth]{graphics/interleaved_segovia_5}
-    \caption{\label{fig:concept:interleaved_segovia_5}}
+    \centering
+    \includegraphics[width=0.95\textwidth]{graphics/interleaved_segovia_5}
+    \caption{}
+    \label{fig:concept:interleaved_segovia_5}
   \end{subfigure}%
   \begin{subfigure}[b]{0.33\textwidth}
-    \centering\includegraphics[width=0.95\textwidth]{graphics/interleaved_segovia_6}
-    \caption{\label{fig:concept:interleaved_segovia_6}}
+    \centering
+    \includegraphics[width=0.95\textwidth]{graphics/interleaved_segovia_6}
+    \caption{}
+    \label{fig:concept:interleaved_segovia_6}
   \end{subfigure}
   \caption{Visualization of the de-interleaving process. (a) The original G-buffer. (b) The G-buffer is split into multiple smaller sub-buffers. (c) Each sub-buffer is processed using a different set of lights. (d) The sub-buffers are re-interleaved to one large buffer. (e) A depth discontinuity buffer is computed for the next step. This is usually omitted in modern implementations. (f) An geometry-aware blur is applied to mask the noise visible in (d). Figures reprinted from \citet{segovia2006non}.}
   \label{fig:concept:interleaved_segovia}

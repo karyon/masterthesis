@@ -298,19 +298,97 @@ The San Miguel scene is a good example for this: While the small detail work lik
 \section{Interleaved Shading with Compute Shaders}
 \label{sec:results:interleavedShading}
 
-\begin{outline}
-\1 performance
-\1 1x1 and 4x4, if i'm good also 2x2 and 8x8...
-\1 quality
-    \2 screenshots with and without, with details on e.g. foliage, diffimage? and shaded result
-\1 memory usage
-    \2 one additional buffer
-\1 discussion
-\1 possibly put the VPL shuffling comparison here
+Interleaved shading substantially reduces the number of lights that are processed per pixel. Using a 4x4 interleaving pattern, each pixel processes only a sixteenth of all lights, ideally speeding up the final gathering phase by a factor of 16. However, an additional blur pass is required to mask the noise that results from interleaving, which takes additional time.
 
-\end{outline}
 
-\todo[color=blue]{interleaved shading results}
+\begin{table}[h]
+    \begin{center}
+        \begin{tabulary}{0.98\textwidth}{| L | L | L | L | L |}
+            \hline
+            Without IS & With IS & Speedup & Blur Pass & Speedup with blur\\ \hline
+            50.4\,ms & 3.38\,ms & 14.91 & 0.63\,ms & 12.57\\
+            \hline
+        \end{tabulary}
+        \caption{Timings of interleaved shading (IS) with a block size of 4x4. Note that the blur pass is mandatory when using interleaved shading, the middle columns merely illustrates the efficiency of the presented implementation, while the last column shows the practical speedup that is achieved.}
+        \label{tab:results:timings_interleaved_shading}
+    \end{center}
+\end{table}
+
+
+\Cref{tab:results:timings_interleaved_shading} shows timings of the presented implementation. Surprisingly, the measurements show a speedup of 16.4 when not considering the additional blur phase. Most notably, the interleaved shading technique introduces overhead, as indicated by the speedup of 14.91, which is considerably lower than the theoretical maximum of 16. In absolute terms, a speedup of 16 would require the final gathering phase to take 3.15\,ms. As a result, the technique introduces 0.23\,ms of overhead.
+
+When considering the blur phase, the overhead adds up to 0.86\,ms and the speedup is lowered to 12.57. Of course this is still a substantial improvement, especially considering the negligible quality impact.
+
+
+\begin{figure}[htb]
+    \centering
+    \begin{subfigure}[b]{0.20\textwidth}
+        \centering
+        \includegraphics[width=.95\textwidth]{screenshots/interleaved_before}
+        \caption{}
+        \label{fig:results:interleaved_before}
+    \end{subfigure}%
+    \begin{subfigure}[b]{0.20\textwidth}
+        \centering
+        \includegraphics[width=.95\textwidth]{screenshots/interleaved_horizontal_blur}
+        \caption{}
+        \label{fig:results:interleaved_horizontal_blur}
+    \end{subfigure}%
+    \begin{subfigure}[b]{0.20\textwidth}
+        \centering
+        \includegraphics[width=.95\textwidth]{screenshots/interleaved_final}
+        \caption{}
+        \label{fig:results:interleaved_final}
+    \end{subfigure}%
+    \begin{subfigure}[b]{0.20\textwidth}
+        \centering
+        \includegraphics[width=.95\textwidth]{screenshots/interleaved_without}
+        \caption{}
+        \label{fig:results:interleaved_without}
+    \end{subfigure}%
+    \begin{subfigure}[b]{0.20\textwidth}
+        \centering
+        \includegraphics[width=.95\textwidth]{screenshots/interleaved_difference_gi}
+        \caption{}
+        \label{fig:results:interleaved_difference_gi}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \includegraphics[width=.95\textwidth]{screenshots/interleaved_without_textured}
+        \caption{}
+        \label{fig:results:interleaved_without_textured}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \includegraphics[width=.95\textwidth]{screenshots/interleaved_with_textured}
+        \caption{}
+        \label{fig:results:interleaved_with_textured}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \includegraphics[width=.95\textwidth]{screenshots/interleaved_difference_shaded}
+        \caption{}
+        \label{fig:results:interleaved_difference_shaded}
+    \end{subfigure}
+
+      \caption{Interleaved shading results. Top row shows indirect light only. From left to right: (a) Result of the final gathering phase without the geometry-aware blur, (b) with the horizontal phase of the blur applied, (c) with both phases applied, (d) result of the final gathering phase without using interleaved shading, (e) difference between the (c) and (d). Bottom row: (f) final result after shading when using interleaved shading, (g) whithout interleaved shading, (h) difference between (f) and (g). Difference values are multiplied by four.}
+      \label{fig:results:uiaeuiae}
+\end{figure}
+
+This technique uses an additional buffer for storing the intermediate result of the blur phase, while the final result can be written into the same texture that was used for final gathering. The texture format \texttt{GL\_R11F\_G11F\_B10F} is used here, resulting in roughly 2\,MB additional storage at full HD. The presented implementation does not re-use the final gathering texture to keep the results of all stages available for debugging purposes.
+
+
+\subsubsection{Discussion}
+Interleaved shading is an obvious win for many-light global illumination methods. Paying the full cost of evaluating all VPLs per shading point is simply unnecessary due to the low-frequency nature of global illumination. Adapting the shading frequency to a similarly low level is the only reasonable choice for real-time applications.
+
+In fact, given the unnoticable quality impact of interleaved shading when using a 4x4 block size, larger block sizes, e.\,g., 8x8 as used by \citet{hedman2016sequential} should be considered. Especially with the advent of high-resolution displays, lowering the shading frequency of global illumination effect even further might be necessary to keep the costs down to a reasonable level.
+
+Going further, this technique is limited by how well the blur phase will be able to mask the noise in more difficult areas with lots of depth discontinuities like vegetation. It seems imaginable to extend interleaved shading with ???, which collect fragments that receive too few information during shading and blurring with the purpose to perform a second pass on those fragments, enhancing the problematic areas. Temporal reprojection methods thar re-use information from previous frames and use different sets of VPLs per frame would be another natural extension of interleaved shading. 
+
+\todo{that fragment collecting reference}
+
+\todo{put VPL shuffling comparison anywhere}
+
 
 
 \section{Clustered Deferred Shading}
