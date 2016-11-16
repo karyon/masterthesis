@@ -306,18 +306,14 @@ Interleaved shading substantially reduces the number of lights that are processe
         \begin{tabulary}{0.98\textwidth}{| L | L | L | L | L |}
             \hline
             Without IS & With IS & Speedup & Blur Pass & Speedup with blur\\ \hline
-            50.4\,ms & 3.38\,ms & 14.91 & 0.63\,ms & 12.57\\
+            40.24\,ms & 2.61\,ms & 15.42 & 0.63\,ms & 12.42\\
             \hline
         \end{tabulary}
-        \caption{Timings of interleaved shading (IS) with a block size of 4x4. Note that the blur pass is mandatory when using interleaved shading, the middle columns merely illustrates the efficiency of the presented implementation, while the last column shows the practical speedup that is achieved.}
+        \caption{Timings of interleaved shading (IS) with a block size of 4x4. Note that the blur pass is mandatory when using interleaved shading, the middle column merely illustrates the efficiency of the presented implementation, while the last column shows the practical speedup that is achieved.}
         \label{tab:results:timings_interleaved_shading}
     \end{center}
 \end{table}
 
-
-\Cref{tab:results:timings_interleaved_shading} shows timings of the presented implementation. Surprisingly, the measurements show a speedup of 16.4 when not considering the additional blur phase. Most notably, the interleaved shading technique introduces overhead, as indicated by the speedup of 14.91, which is considerably lower than the theoretical maximum of 16. In absolute terms, a speedup of 16 would require the final gathering phase to take 3.15\,ms. As a result, the technique introduces 0.23\,ms of overhead.
-
-When considering the blur phase, the overhead adds up to 0.86\,ms and the speedup is lowered to 12.57. Of course this is still a substantial improvement, especially considering the negligible quality impact.
 
 
 \begin{figure}[htb]
@@ -371,9 +367,14 @@ When considering the blur phase, the overhead adds up to 0.86\,ms and the speedu
         \label{fig:results:interleaved_difference_shaded}
     \end{subfigure}
 
-      \caption{Interleaved shading results. Top row shows indirect light only. From left to right: (a) Result of the final gathering phase without the geometry-aware blur, (b) with the horizontal phase of the blur applied, (c) with both phases applied, (d) result of the final gathering phase without using interleaved shading, (e) difference between the (c) and (d). Bottom row: (f) final result after shading when using interleaved shading, (g) whithout interleaved shading, (h) difference between (f) and (g). Difference values are multiplied by four.}
-      \label{fig:results:uiaeuiae}
+      \caption{Interleaved shading results. Top row shows indirect light only. From left to right: (a) Result of the final gathering phase without the geometry-aware blur, (b) with the horizontal phase of the blur applied, (c) with both phases applied, (d) result of the final gathering phase without using interleaved shading, (e) difference between the (c) and (d). Bottom row: (f) final result after blending when using interleaved shading, (g) whithout interleaved shading, (h) difference between (f) and (g). Difference values are multiplied by four.}
+      \label{fig:results:interleaved_quality}
 \end{figure}
+
+
+\Cref{tab:results:timings_interleaved_shading} shows timings of the presented implementation. Most notably, the interleaved shading technique introduces very little overhead, as indicated by the speedup of 15.42 compared to the theoretical maximum of 16. In absolute terms, a speedup of 16 would require the final gathering phase to take 2.51\,ms. As a result, the technique introduces 0.1\,ms of overhead.
+
+When considering the blur phase, the overhead adds up to 0.73\,ms and the speedup is lowered to 12.42. Of course this is still a substantial improvement, especially considering the negligible quality impact.
 
 This technique uses an additional buffer for storing the intermediate result of the blur phase, while the final result can be written into the same texture that was used for final gathering. The texture format \texttt{GL\_R11F\_G11F\_B10F} is used here, resulting in roughly 2\,MB additional storage at full HD. The presented implementation does not re-use the final gathering texture to keep the results of all stages available for debugging purposes.
 
@@ -381,9 +382,9 @@ This technique uses an additional buffer for storing the intermediate result of 
 \subsubsection{Discussion}
 Interleaved shading is an obvious win for many-light global illumination methods. Paying the full cost of evaluating all VPLs per shading point is simply unnecessary due to the low-frequency nature of global illumination. Adapting the shading frequency to a similarly low level is the only reasonable choice for real-time applications.
 
-In fact, given the unnoticable quality impact of interleaved shading when using a 4x4 block size, larger block sizes, e.\,g., 8x8 as used by \citet{hedman2016sequential} should be considered. Especially with the advent of high-resolution displays, lowering the shading frequency of global illumination effect even further might be necessary to keep the costs down to a reasonable level.
+In fact, given the unnoticable quality impact (\Cref{fig:results:interleaved_quality}) of interleaved shading when using a 4x4 block size, larger block sizes, e.\,g., 8x8 as used by \citet{hedman2016sequential} should be considered. Especially with the advent of high-resolution displays, lowering the shading frequency of global illumination effect even further might be necessary to keep the costs down to a reasonable level. However, the performance gains from lower sample counts will be offset in part by larger blur radii that come with larger block sizes.
 
-Going further, this technique is limited by how well the blur phase will be able to mask the noise in more difficult areas with lots of depth discontinuities like vegetation. It seems imaginable to extend interleaved shading with ???, which collect fragments that receive too few information during shading and blurring with the purpose to perform a second pass on those fragments, enhancing the problematic areas. Temporal reprojection methods thar re-use information from previous frames and use different sets of VPLs per frame would be another natural extension of interleaved shading. 
+Going further, this technique is limited by how well the blur phase will be able to mask the noise in more difficult areas with lots of depth discontinuities like vegetation. It seems imaginable to extend interleaved shading with ???, which collect fragments that receive too few information during shading and blurring with the purpose to perform a second pass on those fragments, enhancing the problematic areas. Temporal reprojection methods that re-use information from previous frames and use different sets of VPLs per frame would be another natural extension of interleaved shading.
 
 \todo{that fragment collecting reference}
 
@@ -394,17 +395,35 @@ Going further, this technique is limited by how well the blur phase will be able
 \section{Clustered Deferred Shading}
 \label{sec:results:clusteredShading}
 
-\begin{outline}
-\1 parameters: cluster size
-\1 performance: time used by additional steps vs saved in GI step
-\1 quality: exactly the same
-\1 memory usage for the one intermediate result and the light lists buffer
-\1 performance of tiled shading. comparable, no memory usage, easier to implement, but less flexible.
-\1 discussion
-\end{outline}
+Clustered Deferred Shading and Tiled Deferred Shading reduce the number of light calculation operations by clustering fragments and culling lights against those clusters. As such, if implemented correctly, they do not affect quality at all, but are purely performance optimizations.
+
+\begin{table}[h]
+    \begin{center}
+        \begin{tabulary}{0.98\textwidth}{| L | L | L | L | L |}
+            \hline
+            Scene & Without CS/TS & With CS & With TS \\ \hline
+            Sponza 1 & 3.41\,ms & 2.80\,ms & 2.40\\
+            Sponza 2 & 3.94\,ms & 3.63\,ms & 3.09\\
+            Sponza 3 & 2.68\,ms & 1.64\,ms & 1.34\\
+            San Miguel & 4.75\,ms & 5.21\,ms & 4.43\\
+            \hline
+        \end{tabulary}
+        \caption{Timings of the final gathering stage without optimizations, with clustered shading (CS) and with tiled shading (TS). Each line is a different camera position. Note that the timing ``With CS'' includes roughly 0.06\,ms for the clustering phase and 0.13\,ms for the light list phase.}
+        \label{tab:results:timings_clustered_shading}
+    \end{center}
+\end{table}
+
+As visible in \Cref{tab:results:timings_clustered_shading}, both clustered shading and tiled deferred shading can improve the performance of the final gathering phase considerably, in one of the measurements 50\,\% of the computation time is saved with tiled shading.
 
 
-\todo[color=blue]{clustered deferred shading results}
+clustered shading advantage is primarily depth discontinuities
 
+What is interesting though is that clustered shading, being the successor of tiled shading, performs noticeably worse in the context of many-light methods. This is true even for the San Miguel scene, in which the higher amount of depth discontinuities should be favorable to clustered shading. While these performance characteristics might be specific to the presented implementation, there are plausible reasons that they might apply generally. Due to the infinite light radii used, the percentage of culled lights is generally low. Therefore it might be the better choice to optimize for the worst case and implement a low overhead solution like tiled shading, instead of a more accurate solution like clustered shading that might improve the culling rate, but comes with more overhead.
 
-- one 4k test?
+An impression of the amount of overhead introduced by clustered shading is given by the San Miguel scene, from which the last line of measurements is taken. This scene runs much slower even when only considering the final gathering phase, because most VPLs are placed on the walls and floor, pointing inwards or upwards respectively. Therefore much of the geometry lies on the illuminated side of most VPLs, resulting in very little performance gains from culling.
+
+With a low culling rate, clustered shading actually slows down the final gathering phase by 0.46\,ms. While 0.19\,ms of these are fixed costs added by the clustering and light list calculation phases, the final gathering shader itself got 0.27\,ms slower as well. This might be caused by the indirection when accessing lights, since instead of reading from the light buffer directly, the light list with indices is accessed first before reading the light buffer with a dynamic index. Another explanation might be the divergent data flow, since threads from the same work group can access different light lists and thus different light data and shadow maps, possibly hurting cache efficiency.
+
+As discussed in section \Cref{sec:impl:clusteredShading}, clustered shading consumes about 2\,MB of memory. The tiled shading algorithm however, being integrated into the final gathering shader, uses no additional VRAM at all.
+
+The presented measurements make tiled shading seem like a clear winner, but as so often the situation is more complicated. The integration of tiled shading into the final gathering shader, while an efficient and easy to implement solution, is inherently less flexible than clustered shading. For instance, \citet{olsson2012clustered} propose to use normals as another dimension besides the three spatial ones, further improving culling efficiency. While this is likely easy to integrate into the more flexible approach taken with clustered shading, the integrated tiled shading is constrained by the amount of available shared memory, which makes it challenging to take additional dimensions into account.
