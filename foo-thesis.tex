@@ -17,10 +17,10 @@
 \AtEveryCitekey{\addtocategory{cited}{\thefield{entrykey}}}
 \newcommand{\citesupplementary}[1]{\nocite{#1}\addtocategory{supplementary}{#1}}
 \DefineBibliographyStrings{ngerman}{
-  andothers = {\emph{et~al.}}
+  andothers = {\emph{et~al\adddot}}
 }
 \DefineBibliographyStrings{english}{
-  andothers = {\emph{et~al.}}
+  andothers = {\emph{et~al\adddot}}
 }
 \addbibresource{foo-thesis.bib}
 
@@ -140,7 +140,6 @@
 \todo{daniel's pipeline visualizations, see emails}
 \todo{4k tests}
 \todo[color=yellow]{fixed blue noise pattern when sampling RSM?}
-\todo{no additional space after et al.}
 
 % \include{chap-examples}
 % \include{chap-moreexamples}
