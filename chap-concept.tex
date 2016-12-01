@@ -132,6 +132,64 @@ Since the input and output pixel's location do not match the way they do during 
 
 
 
+ \section{Interleaved Sampling}
+ \label{sec:concept:interleavedSampling}
+ Interleaved sampling \citep{Keller:2001:InterleavedSampling} is often used to tremendously improve the performance of GI methods with a negligible quality impact.
+
+ The general idea is as follows: Instead of calculating all samples per pixel, the samples are distributed over a block of pixels. Now, since each pixel processes only part of all samples, there is obviously information missing per pixel. Visually, this becomes apparent in the form of structured noise. To this end, a geometry-aware blur similar to \citet{laine2007incremental} is used to spread the information and thereby even out the noise. The blur is often implemented in a separated fashion, although it is, strictly speaking, not a separable one due to its geometry-awareness.
+
+ Since adjacent pixels now access disjoint sets of samples, naive implementations of this technique usually show bad cache coherence. To improve on this, \citet{segovia2006non} proposed ``non-interleaved shading of interleaved sample patterns'', or for short ``de-interleaving''. They group those pixels that use the same sample set into smaller sub-buffers, coherently process each buffer, and then merge the sub-buffers to one large buffer again. See \Cref{fig:concept:interleaved_segovia} for the intermediate results of this algorithm.
+
+
+ \begin{figure}[htb]
+     \centering
+     \begin{subfigure}[b]{0.33\textwidth}
+         \centering
+         \includegraphics[width=0.95\textwidth]{graphics/interleaved_segovia_1}
+         \caption{}
+         \label{fig:concept:interleaved_segovia_1}
+         \end{subfigure}%
+         \begin{subfigure}[b]{0.33\textwidth}
+             \centering
+             \includegraphics[width=0.95\textwidth]{graphics/interleaved_segovia_2}
+             \caption{}
+             \label{fig:concept:interleaved_segovia_2}
+             \end{subfigure}%
+             \begin{subfigure}[b]{0.33\textwidth}
+                 \centering
+                 \includegraphics[width=0.95\textwidth]{graphics/interleaved_segovia_3}
+                 \caption{}
+                 \label{fig:concept:interleaved_segovia_3}
+             \end{subfigure}
+             \begin{subfigure}[b]{0.33\textwidth}
+                 \centering
+                 \includegraphics[width=0.95\textwidth]{graphics/interleaved_segovia_4}
+                 \caption{}
+                 \label{fig:concept:interleaved_segovia_4}
+                 \end{subfigure}%
+                 \begin{subfigure}[b]{0.33\textwidth}
+                     \centering
+                     \includegraphics[width=0.95\textwidth]{graphics/interleaved_segovia_5}
+                     \caption{}
+                     \label{fig:concept:interleaved_segovia_5}
+                     \end{subfigure}%
+                     \begin{subfigure}[b]{0.33\textwidth}
+                         \centering
+                         \includegraphics[width=0.95\textwidth]{graphics/interleaved_segovia_6}
+                         \caption{}
+                         \label{fig:concept:interleaved_segovia_6}
+                     \end{subfigure}
+                     \caption{Visualization of the de-interleaving process. (a) The original G-buffer. (b) The G-buffer is split into multiple smaller sub-buffers. (c) Each sub-buffer is processed using a different set of lights. (d) The sub-buffers are re-interleaved to one large buffer. (e) A depth discontinuity buffer is computed for the next step. This is usually omitted in modern implementations. (f) An geometry-aware blur is applied to mask the noise visible in (d). Figures reprinted from \citet{segovia2006non}.}
+                     \label{fig:concept:interleaved_segovia}
+                 \end{figure}
+
+
+                 Effectively, when applied to blocks of $n^2$ pixels, this technique cuts down the cost of sampling to $ 1 / n^2 $ at the expense of smoothing high-frequency changes in the samples over $n$ pixels. Since global illumination is usually of low frequency, i.\,e., adjacent pixels usually receive a similar amount of indirect light, interleaved shading does not significantly affect quality when applied to global illumination. However, this approach falls short near depth and normal discontinuities, where the geometry-aware blur has to ignore several pixels. Nevertheless, even in this case the quality degradation is hardly noticeable as soon as the global illumination results are blended over the rendered image, see \Cref{sec:results:interleavedShading}.
+
+                 In most aspects we follow the standard approach for interleaved shading. The only notable deviation is the implementation of de-interleaving that does not use any separate splitting and merging passes. For details, see \Cref{sec:impl:interleavedShading}.
+
+
+
 \section{Clustered Deferred Shading}
 \label{sec:concept:clusteredShading}
 
@@ -161,62 +219,5 @@ Clustered shading is an extension and improvement to \textit{tiled shading} \cit
 We implemented tiled shading as well and will compare it to clustered shading in \Cref{sec:results:clusteredShading}.
 
 
-\section{Interleaved Sampling}
-\label{sec:concept:interleavedSampling}
-Interleaved sampling \citep{Keller:2001:InterleavedSampling} is often used to tremendously improve the performance of GI methods with a negligible quality impact.
-
-The general idea is as follows: Instead of calculating all samples per pixel, the samples are distributed over a block of pixels. Now, since each pixel processes only part of all samples, there is obviously information missing per pixel. Visually, this becomes apparent in the form of structured noise. To this end, a geometry-aware blur similar to \citet{laine2007incremental} is used to spread the information and thereby even out the noise. The blur is often implemented in a separated fashion, although it is, strictly speaking, not a separable one due to its geometry-awareness.
-
-Since adjacent pixels now access disjoint sets of samples, naive implementations of this technique usually show bad cache coherence. To improve on this, \citet{segovia2006non} proposed ``non-interleaved shading of interleaved sample patterns'', or for short ``de-interleaving''. They group those pixels that use the same sample set into smaller sub-buffers, coherently process each buffer, and then merge the sub-buffers to one large buffer again. See \Cref{fig:concept:interleaved_segovia} for the intermediate results of this algorithm.
-
-
-\begin{figure}[htb]
-  \centering
-  \begin{subfigure}[b]{0.33\textwidth}
-    \centering
-    \includegraphics[width=0.95\textwidth]{graphics/interleaved_segovia_1}
-    \caption{}
-    \label{fig:concept:interleaved_segovia_1}
-  \end{subfigure}%
-  \begin{subfigure}[b]{0.33\textwidth}
-    \centering
-    \includegraphics[width=0.95\textwidth]{graphics/interleaved_segovia_2}
-    \caption{}
-    \label{fig:concept:interleaved_segovia_2}
-  \end{subfigure}%
-  \begin{subfigure}[b]{0.33\textwidth}
-    \centering
-    \includegraphics[width=0.95\textwidth]{graphics/interleaved_segovia_3}
-    \caption{}
-    \label{fig:concept:interleaved_segovia_3}
-  \end{subfigure}
-  \begin{subfigure}[b]{0.33\textwidth}
-    \centering
-    \includegraphics[width=0.95\textwidth]{graphics/interleaved_segovia_4}
-    \caption{}
-    \label{fig:concept:interleaved_segovia_4}
-  \end{subfigure}%
-  \begin{subfigure}[b]{0.33\textwidth}
-    \centering
-    \includegraphics[width=0.95\textwidth]{graphics/interleaved_segovia_5}
-    \caption{}
-    \label{fig:concept:interleaved_segovia_5}
-  \end{subfigure}%
-  \begin{subfigure}[b]{0.33\textwidth}
-    \centering
-    \includegraphics[width=0.95\textwidth]{graphics/interleaved_segovia_6}
-    \caption{}
-    \label{fig:concept:interleaved_segovia_6}
-  \end{subfigure}
-  \caption{Visualization of the de-interleaving process. (a) The original G-buffer. (b) The G-buffer is split into multiple smaller sub-buffers. (c) Each sub-buffer is processed using a different set of lights. (d) The sub-buffers are re-interleaved to one large buffer. (e) A depth discontinuity buffer is computed for the next step. This is usually omitted in modern implementations. (f) An geometry-aware blur is applied to mask the noise visible in (d). Figures reprinted from \citet{segovia2006non}.}
-  \label{fig:concept:interleaved_segovia}
-\end{figure}
-
-
-Effectively, when applied to blocks of $n^2$ pixels, this technique cuts down the cost of sampling to $ 1 / n^2 $ at the expense of smoothing high-frequency changes in the samples over $n$ pixels. Since global illumination is usually of low frequency, i.\,e., adjacent pixels usually receive a similar amount of indirect light, interleaved shading does not significantly affect quality when applied to global illumination. However, this approach falls short near depth and normal discontinuities, where the geometry-aware blur has to ignore several pixels. Nevertheless, even in this case the quality degradation is hardly noticeable as soon as the global illumination results are blended over the rendered image, see \Cref{sec:results:interleavedShading}.
-
-In most aspects we follow the standard approach for interleaved shading. The only notable deviation is the implementation of de-interleaving that does not use any separate splitting and merging passes. For details, see \Cref{sec:impl:interleavedShading}.
-
-\todo{clustered or interleaved shading first?}
 \todo{interleaved shading vs interleaved sampling}
 \todo{bilateral vs geometry-aware}
