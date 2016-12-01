@@ -36,7 +36,7 @@ Additionally, \textit{assimp}\footnote{\url{http://www.assimp.org/}} is used to 
 
 To provide some context, \Cref{fig:RenderingPipelineOverview} visualizes the complete rendering pipeline of the implemented application. It follows a standard deferred shading approach as it first renders geometry buffers with depth, normal and albedo information and uses these buffers to perform shading in a later stage. In the presented implementation, this stage is simply called ``combine pass'' and computes direct lighting, blends in the results of the SSAO postprocessing and performs tonemapping that is necessary for HDR rendering. The result of the global illumination is a texture that contains indirect lighting, which is added to the direct lighting in the combine pass.
 
-Most algorithms in this thesis are implemented using OpenGL compute shaders, while the G-Buffer, RSM, and the first stages of the ISM rendering use the regular fixed-function pipeline. The blur pass, SSAO and the combine pass use traditional screen-aligned triangles, since compute shaders would provide little benefit for their tasks.
+Most algorithms in this thesis are implemented using OpenGL compute shaders, while the G-Buffer, RSM, and the first stages of the ISM rendering use the regular fixed-function pipeline. The blur pass, SSAO and the combine pass use traditional screen-aligned triangles, since compute shaders would provide little benefit for their tasks. Due to the extensive use of compute shaders, OpenGL 4.3 is required to run the application.
 
 
 \section{RSM Generation and VPL Sampling}

@@ -112,8 +112,7 @@ This section presents the results for visibility testing using imperfect shadow 
   \label{fig:results:isms}
 \end{figure}
 
-\Cref{fig:results:isms} shows a few ISMs rendered with the splat and single-pixel renderer. The imperfections do show, and not only through the low resolutions. The distortion of the surface silhouettes by the splat renderer or postprocessing contribute their part, making it hard to identify which part of the Crytek Sponza is shown. However, keep in mind that ???
-\todo{???}
+\Cref{fig:results:isms} shows a few ISMs rendered with the splat and single-pixel renderer. The imperfections do show, and not only through the low resolutions. The distortion of the surface silhouettes by the splat renderer or postprocessing contribute their part, making it hard to identify which part of the Crytek Sponza is shown. However, keep in mind that the imperfections, while being noticeable in each individual ISM, are expected to partly cancel each other out and result in an acceptable average error in the final rendering.
 
 \begin{figure}[htb]
 \centering
@@ -402,11 +401,9 @@ Interleaved sampling is an obvious win for many-light global illumination method
 
 In fact, given the unnoticable quality impact (\Cref{fig:results:interleaved_quality}) of interleaved sampling when using a 4x4 block size, larger block sizes, e.\,g., 8x8 as used by \citet{hedman2016sequential} should be considered. Especially with the advent of high-resolution displays, lowering the shading frequency of global illumination effect even further might be necessary to keep the costs down to a reasonable level. However, the performance gains from lower sample counts will be offset in part by larger blur radii that come with larger block sizes.
 
-Going further, this technique is limited by how well the blur phase will be able to mask the noise in more difficult areas with lots of depth discontinuities like vegetation. It seems imaginable to extend interleaved sampling with ???, which collect fragments that receive too few information during shading with the purpose to perform a second pass on those fragments, enhancing the problematic areas. Temporal reprojection methods that re-use information from previous frames and use different sets of VPLs per frame would be another natural extension of interleaved sampling.
-
-\todo{that fragment collecting reference}
 
 \todo{put VPL shuffling comparison anywhere}
+Going further, this technique is limited by how well the blur phase will be able to mask the noise in more difficult areas with lots of depth discontinuities like vegetation. To this end, one option might be to collect fragments that receive too few information during shading and blurring, and re-process them with larger sets of VPLs in a second pass. Temporal reprojection methods \citep{Jimenez:2016:FilmicSMAA} that re-use information from previous frames and use different sets of VPLs per frame would be another natural extension of interleaved sampling.
 
 
 
