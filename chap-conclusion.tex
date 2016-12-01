@@ -8,7 +8,7 @@ In this thesis we have presented a rendering system that simulates global illumi
 
 Imperfect shadow maps have been implemented and extended by a high-quality postprocessing. They show improved results compared to conventional point splatting, but the resulting quality is limited by the input data, a sparse set of points representing the scene. Using compute shaders for rendering single-pixel points into multiple shadow maps is a clear efficiency gain compared to using geometry shaders.
 
-Performing interleaved shading with compute shaders instead of splitting buffers seems like a definitive improvement. While we have not made an explicit comparison, its near-perfect efficiency, ease of implementation, and the fact that it requires no additional memory make it the obvious choice when compute shaders are available on the given platform.
+Performing interleaved sampling with compute shaders instead of splitting buffers seems like a definitive improvement. While we have not made an explicit comparison, its near-perfect efficiency, ease of implementation, and the fact that it requires no additional memory make it the obvious choice when compute shaders are available on the given platform.
 
 Clustered deferred shading has been shown to have a relatively high overhead and thus is not the perfect candidate for light culling in a global illumination context using many-light methods. There are extensions, however, that could improve its culling efficiency to the point where it causes no slowdown in the worst case. Tiled deferred shading, on the other hand, is a clear performance win and again, rather easy to implement, but limited in its maximum culling efficiency.
 
@@ -16,7 +16,7 @@ Clustered deferred shading has been shown to have a relatively high overhead and
 
 Going beyond random point sampling for creating imperfect shadow maps is desirable, since the randomness is limiting their quality. Implementing more advanced surface reconstruction techniques, starting with the full extent of the algorithm presented by \citet{Marroquim:2007:reconstruction}, would likely further enhance the ISM's quality.
 
-Given how common the usage of interleaved shading is, it is surprising that little work has been done to maximize the technique's impact. For instance, thoroughly investigating the correlation between performance and quality when changing the block size would give implementers a guideline on which block sizes to choose in which scenarios.
+Given how common the usage of interleaved sampling is, it is surprising that little work has been done to maximize the technique's impact. For instance, thoroughly investigating the correlation between performance and quality when changing the block size would give implementers a guideline on which block sizes to choose in which scenarios.
 
 There is still potential in the clustered deferred shading technique, for instance by using surface normals for more efficient culling. Mipmapping the ISMs and using them for culling, performing an early shadow lookup for entire clusters of fragments, would be interesting as well.
 

@@ -18,7 +18,7 @@ Being both important for realism and expensive to compute, global illumination h
 In this thesis, we present an implementation of a rendering system using the many-light approach to simulate global illumination. The system uses no precomputation and needs only several milliseconds for its computations, making it suitable for real-time applications. For indirect shadowing, the software renders a thousand imperfect shadow maps \citep{ritschel2008ism} each frame. Our main contributions are
 \begin{itemize}
     \item Application of a high-quality postprocessing to imperfect shadow maps
-    \item An efficient algorithm for interleaved shading \citep{Keller:2001:InterleavedSampling} using compute shaders
+    \item An efficient algorithm for interleaved sampling \citep{Keller:2001:InterleavedSampling} using compute shaders
     \item Application of clustered deferred shading \citep{olsson2012clustered} as a performance optimization to many-light methods
 \end{itemize}
 
