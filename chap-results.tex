@@ -10,6 +10,7 @@ This chapter details the performance and rendering quality characteristics of th
 \label{sec:results:settings}
 
 The implementation is tested in the Crytek Sponza and San Miguel scene, with 260k and 7.9M triangles respectively, both provided by \citet{McGuire2011Data}. Unless otherwise noted, the parameters used for the measurements and screenshots are:
+
 \begin{outline}
     \1 1920x1080\,px output resolution
     \1 1024 VPLs
@@ -21,11 +22,15 @@ The implementation is tested in the Crytek Sponza and San Miguel scene, with 260
 
 \noindent
 The hardware specification of the testing system is as follows:
+
 \begin{outline}
     \1 Intel Xeon W3530 with four cores at 2.8\,Ghz
     \1 NVIDIA GeForce GTX 980 factory-overclocked by ca. 4\%, driver version 375.57
 \end{outline}
 
+The GTX 980 has been locked to its base clock rate of 1164\,Mhz using SetStablePowerState.exe\footnote{\url{https://developer.nvidia.com/setstablepowerstateexe-\%20disabling\%20-gpu-boost-windows-10-getting-more-deterministic-timestamp-queries}}, preventing its GPU Boost feature\footnote{\url{http://www.geforce.com/hardware/technology/gpu-boost-2}} from altering the results depending on the GPUs temperature and power draw. This comes at the cost of preventing the GPU from using its maximum potential, but combined with the factory-overclocking, the results should be close to the real-world performance.
+
+\pagebreak
 
 \section{RSM Generation and VPL Sampling}
 \label{sec:results:RsmAndVplSampling}
