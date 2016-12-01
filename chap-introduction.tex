@@ -15,11 +15,11 @@ Unfortunately, large-scale and indirect lighting is inherently expensive to comp
 
 Being both important for realism and expensive to compute, global illumination has become a particularly large research area and generated a lot of different approaches for simulating or approximating it, each with different application areas, advantages and disadvantages. One of these approaches is Instant Radiosity \citep{Keller:1997:InstantRadiosity}, also called many-light methods, a well-known family of algorithms that scale from real-time applications to offline rendering. They use a rather intuitive model to approximate lighting and can be used to simulate other lighting effects besides global illumination as well.
 
-In this thesis, we present an implementation of a rendering system using the many-light approach to simulate global illumination. The system uses no precomputation and needs only several milliseconds for its computations, making it suitable for real-time applications. For indirect shadowing, the software renders a thousand Imperfect Shadow Maps \citep{ritschel2008ism} each frame. Our main contributions are
+In this thesis, we present an implementation of a rendering system using the many-light approach to simulate global illumination. The system uses no precomputation and needs only several milliseconds for its computations, making it suitable for real-time applications. For indirect shadowing, the software renders a thousand imperfect shadow maps \citep{ritschel2008ism} each frame. Our main contributions are
 \begin{itemize}
-    \item Application of a high-quality postprocessing to Imperfect Shadow Maps
-    \item An efficient algorithm for Interleaved Shading \citep{Keller:2001:InterleavedSampling} using compute shaders
-    \item Application of Clustered Deferred Shading \citep{olsson2012clustered} as a performance optimization to many-light methods
+    \item Application of a high-quality postprocessing to imperfect shadow maps
+    \item An efficient algorithm for interleaved shading \citep{Keller:2001:InterleavedSampling} using compute shaders
+    \item Application of clustered deferred shading \citep{olsson2012clustered} as a performance optimization to many-light methods
 \end{itemize}
 
 While lights and geometry are allowed to move, the system does not provide temporal stability in this case. Furthermore, it simulates only one light bounce, although the approach is not inherently limited in this regard.

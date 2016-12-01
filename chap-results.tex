@@ -73,7 +73,7 @@ An additional downside of the naive sampling is the poor temporal stability when
 
 \section{ISM Rendering}
 
-This section presents the results for visibility testing using Imperfect Shadow Maps. The next three subsections will show the outcome in terms of quality, performance and memory usage. The technique does not handle high geometric complexity of the test scenes well; this is detailed in the fourth subsection. Afterwards, the two different ISM renderers are compared and the suitability of ISMs for global illumination in general is discussed.
+This section presents the results for visibility testing using imperfect shadow maps. The next three subsections will show the outcome in terms of quality, performance and memory usage. The technique does not handle high geometric complexity of the test scenes well; this is detailed in the fourth subsection. Afterwards, the two different ISM renderers are compared and the suitability of ISMs for global illumination in general is discussed.
 
 
 \subsection{Quality}
@@ -390,7 +390,7 @@ Going further, this technique is limited by how well the blur phase will be able
 \section{Clustered Deferred Shading}
 \label{sec:results:clusteredShading}
 
-Clustered Deferred Shading and Tiled Deferred Shading reduce the number of light calculation operations by clustering fragments and culling lights against those clusters. As such, if implemented correctly, they do not affect quality at all, but are purely performance optimizations.
+Clustered deferred shading and tiled deferred shading reduce the number of light calculation operations by clustering fragments and culling lights against those clusters. As such, if implemented correctly, they do not affect quality at all, but are purely performance optimizations.
 
 \begin{table}[h]
     \begin{center}

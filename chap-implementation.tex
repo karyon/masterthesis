@@ -42,7 +42,7 @@ Most algorithms in this thesis are implemented using OpenGL compute shaders, whi
 \section{RSM Generation and VPL Sampling}
 \label{sec:impl:rsmAndVplSampling}
 
-Reflective Shadow Maps (RSMs) provide a particularly efficient way to create VPLs, since they rely on regular rasterization. As such, the presented implementation of the RSM generation mostly uses the same code as the G-Buffer generation, barring a few modifications: First, normal maps are ignored and triangle normals are used instead, and instead of individual texture lookups during shading, the material's average color is used as diffuse color. Both these changes are made in order to avoid high-frequency normal and color changes in the RSM, which can only be captured correctly with a larger number of VPLs.
+Reflective shadow maps (RSMs) provide a particularly efficient way to create VPLs, since they rely on regular rasterization. As such, the presented implementation of the RSM generation mostly uses the same code as the G-Buffer generation, barring a few modifications: First, normal maps are ignored and triangle normals are used instead, and instead of individual texture lookups during shading, the material's average color is used as diffuse color. Both these changes are made in order to avoid high-frequency normal and color changes in the RSM, which can only be captured correctly with a larger number of VPLs.
 
 Additionally, the RSM is re-used as conventional shadow map. Usually, one might want to decouple RSM and conventional shadow map generation to use different resolutions or cascading schemes. It would also be possible to render the RSM with a less detailed version of the scene. Since the presented implementation uses no culling and LOD techniques, it was bottlenecked on geometry complexity. Rendering both RSM and conventional shadow map in one pass is the logical choice in this case. As a result, a variance buffer is rendered in addition to the regular G-buffers for use with the variance shadow mapping technique \citep{Donnelly:2006:VSM}.
 
@@ -55,7 +55,7 @@ Additionally, a second buffer is prepared that, instead of one three-component v
 \section{ISM Rendering}
 \label{sec:impl:ismRendering}
 
-In the previous chapter, two alternative ways to create Imperfect Shadow Maps were presented. Both the point splat renderer and the single-pixel point renderer share the first stages of their rendering pipelines, which are described here. The following subsections describe the two renderers themselves and the pull-push postprocessing.
+In the previous chapter, two alternative ways to create imperfect shadow maps were presented. Both the point splat renderer and the single-pixel point renderer share the first stages of their rendering pipelines, which are described here. The following subsections describe the two renderers themselves and the pull-push postprocessing.
 
 We make use of OpenGL's tessellation shader to subdivide triangles to make them meet a certain maximum size. The tessellation control shader determines the tessellation levels according to the triangle's size. The tessellation evaluation shader does nothing more than correctly interpolating the vertex positions.
 
