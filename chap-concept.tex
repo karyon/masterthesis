@@ -3,6 +3,8 @@
 \chapter{Concept}
 \label{chap:concept}
 
+In this chapter, the presented global illumination system is explained on a conceptual level. After giving an overview of the rendering pipeline in the next section, the chosen approaches for the different components required for global illumination are outlined. Implementation details are deferred to the next chapter.
+
 \section{Global Illumination Pipeline Overview}
 \label{sec:concept:overview}
 
@@ -13,7 +15,7 @@
 \end{figure}
 
 
-This chapter will detail the individual stages of the global illumination pipeline presented in this thesis. \Cref{fig:GIPipelineConcept} provides an overview.
+\Cref{fig:GIPipelineConcept} provides an overview of the global illumination pipeline presented in this thesis.
 Rendering the reflective shadow map and the subsequent VPL sampling (center row left in the diagram) will be covered in the following section.
 \Cref{sec:concept:ism} describes the rendering process for imperfect shadow maps (lower row) in detail.
 The final gathering step uses data from the clustered shading technique (upper row, detailed in \Cref{sec:concept:clusteredShading}) and performs interleaved sampling (right part of middle row, detailed in \Cref{sec:concept:interleavedSampling}).
@@ -28,7 +30,7 @@ In addition, the G-buffer rendering does not differ from common deferred renderi
 \begin{figure}[htb]
 \centering
     \includegraphics[width=\textwidth]{graphics/rsm_dachsbacher}
-  \caption{A reflective shadow ap as proposed by \citet{Dachsbacher:2005:RSM}. The buffers contain, from left to right, depth, world position, normal, and flux as a measure for light intensity. The flux buffer is used to account for different light intensities due to different solid angles of the pixels when using spot lights, and is not needed for directional lights. Figure reprinted from \citet{Dachsbacher:2005:RSM}.}
+  \caption{A reflective shadow map as proposed by \citet{Dachsbacher:2005:RSM}. The buffers contain, from left to right, depth, world position, normal, and flux as a measure for light intensity. The flux buffer is used to account for different light intensities due to different solid angles of the pixels when using spot lights, and is not needed for directional lights. Figure reprinted from \citet{Dachsbacher:2005:RSM}.}
   \label{fig:concept:rsm_dachsbacher}
 \end{figure}
 
