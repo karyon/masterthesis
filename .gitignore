@@ -13,3 +13,5 @@
 *.fdb_latexmk
 .tags*
 *.bcf
+chap-examples.tex
+chap-moreexamples.tex

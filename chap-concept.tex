@@ -216,3 +216,9 @@ Since adjacent pixels now access disjoint sets of samples, naive implementations
 Effectively, when applied to blocks of $n^2$ pixels, this technique cuts down the cost of sampling to $ 1 / n^2 $ at the expense of smoothing high-frequency changes in the samples over $n$ pixels. Since global illumination is usually of low frequency, i.\,e., adjacent pixels usually receive a similar amount of indirect light, interleaved shading does not significantly affect quality when applied to global illumination. However, this approach falls short near depth and normal discontinuities, where the geometry-aware blur has to ignore several pixels. Nevertheless, even in this case the quality degradation is hardly noticeable as soon as the global illumination results are blended over the rendered image, see \Cref{sec:results:interleavedShading}.
 
 In most aspects we follow the standard approach for interleaved shading. The only notable deviation is the implementation of de-interleaving that does not use any separate splitting and merging passes. For details, see \Cref{sec:impl:interleavedShading}.
+
+\todo{clustered or interleaved shading first?}
+\todo{interleaved shading vs interleaved sampling}
+\todo{capitalization of global illumination, interleaved shading, imperfect shadow maps etc}
+\todo{capitalization in captions}
+\todo{bilateral vs geometry-aware}
