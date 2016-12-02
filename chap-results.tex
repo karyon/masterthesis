@@ -59,15 +59,30 @@ The GI, SSAO and combine pass operate in screen space and are mostly dependent o
 \label{sec:results:RsmAndVplSampling}
 
 \begin{figure}[htb]
-\centering
-  \begin{tabular}{@{}cc@{}}
-    \multicolumn{2}{c}{\includegraphics[width=1.0\textwidth]{screenshots/RSM_diffuse}} \\
-    \includegraphics[width=.48\textwidth]{screenshots/RSM_normal} &
-    \includegraphics[width=.48\textwidth]{screenshots/RSM_depth}
-  \end{tabular}
-  \caption{A reflective shadow map, with its diffuse, normal and depth buffer.}
-  \label{fig:results:RSMBuffers}
-\end{figure}
+    \centering
+    \begin{subfigure}[b]{1.0\linewidth}
+        \centering
+        \includegraphics[width=1.0\linewidth]{screenshots/RSM_diffuse}%
+        \caption{}
+        \label{fig:results:interleaved_before}%
+    \end{subfigure}\\
+    \par\medskip
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=1.0\linewidth]{screenshots/RSM_normal}%
+        \caption{}
+        \label{fig:results:interleaved_before}%
+    \end{subfigure}%
+    \hfill
+    \begin{subfigure}[b]{0.49\textwidth}
+        \centering
+        \includegraphics[width=1.0\linewidth]{screenshots/RSM_depth}%
+        \caption{}
+        \label{fig:results:interleaved_before}%
+    \end{subfigure}%
+    \caption{A reflective shadow map, with its (a) diffuse, (b) normal and (c) depth buffer.}
+    \label{fig:results:RSMBuffers}%
+\end{figure}%
 
 
 As explained before, the RSM generation re-uses most of the code of the G-Buffer generation; see \Cref{fig:results:RSMBuffers} for an impression on the rendered result. Accordingly, the performance characteristics are similar to the regular geometry pass of deferred renderers.
@@ -270,8 +285,6 @@ The single-pixel renderer provides numerous advantages over the splat renderer: 
 
 The drawbacks obviously include the additional rendering time and memory. Besides, the added complexity should not be underestimated. Specifically, we found it hard to fine-tune the pull-push algorithm to produce satisfactory results, especially in the face of the low resolutions of ISMs and the limited data available for reconstruction after selecting a random and sparse set of points.
 
-\todo{Add notes about scaling when i have point counts}
-
 
 
 \subsection{Discussion}
@@ -320,50 +333,51 @@ Interleaved sampling substantially reduces the number of lights that are process
         \centering
         \includegraphics[width=.95\textwidth]{screenshots/interleaved_before}
         \caption{}
-        \label{fig:results:interleaved_before}
+        \label{fig:results:interleaved_before}%
     \end{subfigure}%
     \begin{subfigure}[b]{0.20\textwidth}
         \centering
-        \includegraphics[width=.95\textwidth]{screenshots/interleaved_horizontal_blur}
+        \includegraphics[width=.95\textwidth]{screenshots/interleaved_horizontal_blur}%
         \caption{}
-        \label{fig:results:interleaved_horizontal_blur}
+        \label{fig:results:interleaved_horizontal_blur}%
     \end{subfigure}%
     \begin{subfigure}[b]{0.20\textwidth}
         \centering
-        \includegraphics[width=.95\textwidth]{screenshots/interleaved_final}
+        \includegraphics[width=.95\textwidth]{screenshots/interleaved_final}%
         \caption{}
-        \label{fig:results:interleaved_final}
+        \label{fig:results:interleaved_final}%
     \end{subfigure}%
     \begin{subfigure}[b]{0.20\textwidth}
         \centering
-        \includegraphics[width=.95\textwidth]{screenshots/interleaved_without}
+        \includegraphics[width=.95\textwidth]{screenshots/interleaved_without}%
         \caption{}
-        \label{fig:results:interleaved_without}
+        \label{fig:results:interleaved_without}%
     \end{subfigure}%
     \begin{subfigure}[b]{0.20\textwidth}
         \centering
-        \includegraphics[width=.95\textwidth]{screenshots/interleaved_difference_gi}
+        \includegraphics[width=.95\textwidth]{screenshots/interleaved_difference_gi}%
         \caption{}
-        \label{fig:results:interleaved_difference_gi}
-    \end{subfigure}
-    \begin{subfigure}[b]{0.32\textwidth}
+        \label{fig:results:interleaved_difference_gi}%
+    \end{subfigure}\\
+    \par\medskip
+    \begin{subfigure}[b]{0.333\textwidth}
         \centering
-        \includegraphics[width=.95\textwidth]{screenshots/interleaved_without_textured}
+        \includegraphics[width=.95\textwidth]{screenshots/interleaved_without_textured}%
         \caption{}
-        \label{fig:results:interleaved_without_textured}
-    \end{subfigure}
-    \begin{subfigure}[b]{0.32\textwidth}
+        \label{fig:results:interleaved_without_textured}%
+    \end{subfigure}%
+    \begin{subfigure}[b]{0.333\textwidth}
         \centering
-        \includegraphics[width=.95\textwidth]{screenshots/interleaved_with_textured}
+        \includegraphics[width=.95\textwidth]{screenshots/interleaved_with_textured}%
         \caption{}
-        \label{fig:results:interleaved_with_textured}
-    \end{subfigure}
-    \begin{subfigure}[b]{0.32\textwidth}
+        \label{fig:results:interleaved_with_textured}%
+    \end{subfigure}%
+    \begin{subfigure}[b]{0.333\textwidth}
         \centering
-        \includegraphics[width=.95\textwidth]{screenshots/interleaved_difference_shaded}
+        \includegraphics[width=.95\textwidth]{screenshots/interleaved_difference_shaded}%
         \caption{}
-        \label{fig:results:interleaved_difference_shaded}
-    \end{subfigure}
+        \label{fig:results:interleaved_difference_shaded}%
+    \end{subfigure}%
 
       \caption{Interleaved sampling results. Top row shows indirect light only. From left to right: (a) Result of the final gathering phase without the bilateral blur, (b) with the horizontal phase of the blur applied, (c) with both phases applied, (d) result of the final gathering phase without using interleaved sampling, (e) difference between (c) and (d). Bottom row: (f) final result after blending when using interleaved sampling, (g) whithout interleaved sampling, (h) difference between (f) and (g). Difference values are multiplied by four.}
       \label{fig:results:interleaved_quality}
