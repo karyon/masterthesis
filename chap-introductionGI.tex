@@ -144,7 +144,7 @@ There are two more essential design decisions to be made:
 To prevent light from incorrectly shining through objects or walls, the visibility term in \Cref{eq:renderWithVisibility} needs to be solved. Since brute-force ray casting is prohibitively slow, it requires special acceleration structures or alternative approximations, like replacing ray casts with (a moderate amount of) shadow maps. As mentioned previously, this component uses a substantial if not most of the computation time for many of the global illumination approaches presented in the next section.
 
 \paragraph{Choice of receiving elements.}
-The final gathering step collects light into areas that are visible to the camera. These areas can be represented by several forms of \textit{receiving elements}. Besides directly using pixels in screen-space, other choices are texels in texture-space, surfels or voxels in world or view space or other virtual objects placed in the scene, e.\,g., in the form of spherical harmonics, which are then interpolated for shading individual pixels.
+The final gathering step collects light into areas that are visible to the camera. These areas can be represented by several forms of \textit{receiving elements}. Besides directly using pixels in screen space, other choices are texels in texture space, surfels or voxels in world or view space or other virtual objects placed in the scene, e.\,g., in the form of spherical harmonics, which are then interpolated for shading individual pixels.
 
 Technically, the light propagation step also necessarily stores its results in some form of receiving elements, which might differ from the ones that are used during final gathering. In this thesis however, the term describes those data structures that are used to perform the actual per-pixel shading.
 \\
@@ -178,7 +178,7 @@ Initially proposed by \citet{Kaplanyan:2010:LPV} and extended by \citet{Kaplanya
 
 \subsection{Voxel Cone Tracing}
 
-Similar to light propagation volumes, the scene is first reduced to voxels and light from primary sources is injected. However, instead of propagating the light through the grid, the light is collected starting at receiving elements, usually pixels in screen-space, by tracing cones through the grid.
+Similar to light propagation volumes, the scene is first reduced to voxels and light from primary sources is injected. However, instead of propagating the light through the grid, the light is collected starting at receiving elements, usually pixels in screen space, by tracing cones through the grid.
 While the original proposal \citep{Crassin:2012:OctreeVCT} uses a sparse voxel octree to represent the scene, \citet{Panteleev:2015:VXGI} introduces clip-maps that use several levels of equally-sized voxel grids to represent the scene with varying resolution depending on the distance to the camera.
 Both approaches can compute specular reflections for moderately glossy surfaces. While the voxel octree is expensive to update with dynamic objects, the clip-maps are faster in this regard, but still need relatively large amounts of VRAM for higher quality levels. Lower quality levels result in noticeable voxelization artifacts.
 
@@ -193,7 +193,7 @@ Several attempts have been made to adapt ray-tracing to be usable in real-time c
 
 \subsection{Radiance Caching}
 
-Partly orthogonal to the previous sections, radiance caches are a different form of receiving elements that are placed in world- or screen-space and capture the incoming radiance. During actual shading, the nearest caches are interpolated. The major advantage is the reduction of the number of receiving elements for which incoming light needs to be gathered.
+Partly orthogonal to the previous sections, radiance caches are a different form of receiving elements that are placed in world or screen space and capture the incoming radiance. During actual shading, the nearest caches are interpolated. The major advantage is the reduction of the number of receiving elements for which incoming light needs to be gathered.
 The original proposal cached irradiance values \citep{Ward:1988:IrradianceCaching}. The resulting loss of detail during interpolation and inability to compute specular reflections was overcome by radiance caching \citep{Krivanek:2005:RadianceCaching} at a performance loss. \citet{Scherzer:2012:PreconvolvedRadianceCaching} achieved real-time frame rates for static geometry and another improvement in efficiency was proposed by \citet{Rehfeld:2014:ClusteredPreconvolvedRadianceCaching}.
 Radiance caching is orthogonal to the other techniques in so far as visibility still needs to be solved by other means, and using it introduces new problems such as temporal stability of the cache placement.
 
