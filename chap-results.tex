@@ -50,7 +50,7 @@ The GTX 980 has been locked to its base clock rate of 1164\,Mhz using SetStableP
 \end{center}
 \end{table}
 
-\Cref{tab:results:timing_breakdown_frame} gives an overview of the time needed for rendering a single frame. The Crytek Sponza scene and default settings have been used. All timings measure GPU time only, there are no noteworthy calculations done on the CPU. With a total of 8.7\,ms, the application achieves real-time framerates while leaving room for more expensive calculations, higher output resolutions or more detailed scenes. 
+\Cref{tab:results:timing_breakdown_frame} gives an overview of the time needed for rendering a single frame. The Crytek Sponza scene and default settings have been used. All timings measure GPU time only, there are no noteworthy calculations done on the CPU. With a total of 8.7\,ms, the application achieves real-time framerates while leaving room for more expensive calculations, higher output resolutions or more detailed scenes.
 
 The GI, SSAO and combine pass operate in screen space and are mostly dependent on the screen size (and, of course, on light and sample count in the case of GI and SSAO, respectively). The G-Buffer and RSM generation follow the usual performance characteristics and are mainly dependent on output resolution and geometric complexity. The performance behavior of the ISM rendering heavily depends on the settings and is further detailed below. The blit phase copies a texture to the back buffer and exists for debugging purposes only.
 
@@ -89,12 +89,11 @@ The VPL sampling itself takes only several microseconds and is negligible. Bear 
 
 The sampling does not take the relevance of the sampled VPLs to the current frame into account and causes the entire system to be rather inefficient by choosing lights that might contribute little or nothing to the rendered output. See \Cref{fig:results:RSMUnfavorable} for an example of unfavorable VPL locations.
 
-An additional downside of the naive sampling is the poor temporal stability when the scene light moves. This is due to each VPL staying at the exact same position in the light's viewport, so they strictly ``follow'' the light's movement, jumping over depth discontinuities along the way. See \Cref{???} for a figure visualizing the frame-to-frame coherency.
-
-\todo{frame-to-frame coherencey screenshots/visualization}
+An additional downside of the naive sampling is the poor temporal stability when the scene light moves. This is due to each VPL staying at the exact same position in the light's viewport, so they strictly ``follow'' the light's movement, jumping over depth discontinuities along the way.
 
 
 \section{ISM Rendering}
+\label{sec:results:ism}
 
 This section presents the results for visibility testing using imperfect shadow maps. The next three subsections will show the outcome in terms of quality, performance and memory usage. The technique does not handle high geometric complexity of the test scenes well; this is detailed in the fourth subsection. Afterwards, the two different ISM renderers are compared and the suitability of ISMs for global illumination in general is discussed.
 
@@ -161,17 +160,6 @@ As the single-pixel renderer does not use splats, it does not have this problem.
 Our implementation hides some of the inaccuracies of ISMs by using a relatively large shadow bias. The resulting light leaks are shown in \Cref{fig:results:bias}. While the splat renderer fares better here, it does so mainly by darkening the whole image since it uses rather large points. The single-pixel renderer on the other hand correctly lets light illuminate the left wall through the columns, but shows a rather noisy result.
 
 
-\todo{Screenshots when enlarging the points / making them smaller. Discuss.}
-
-\todo{Screenshots when doing more points. either by tessellation or by collecting more. Discuss.}
-
-\todo[color=yellow]{count point for splat renderer and output them somehow.}
-
-\todo{Compare to max quality}
-
-\todo[color=yellow]{implement max quality. every point into every ISM. likely render everything once for each ISM. a checkbox: when checked, compute high-quality once and do not change. back to normal when unchecked.}
-
-\todo{for single-pixel-renderer: maybe show one full-size shadow map to show this *can* work}
 
 
 \subsection{Performance}
@@ -197,10 +185,6 @@ Note that the comparison between the two renderers with default settings is not 
 Conversely, if the single-pixel renderer does not perform clamping, the push phase needs 0.07\,ms less (0.85\,ms to 0.78\,ms), and when it considers only one VPL per point, the point renderer uses 0.41\,ms less (0.65\,ms to 0.24\,ms).
 
 Since the presented implementation uses no adaptivity, these numbers are independent from the viewport. They are however slightly affected by VPL placement, since it influences culling. In a second scenario, where the sunlight shines directly from above, all VPLs are placed on the floor facing up. As a result, much fewer points are culled during ISM rendering, resulting in slightly higher timings. Both renderers need about 0.1\,ms more in this case.
-
-\todo{Numbers when enlarging the points / making them smaller. Discuss. Note how the single-pixel renderer is (hopefully) not affected by point size.}
-
-\todo{Numbers when doing more points. either by tessellation or by collecting more. Discuss.}
 
 
 \subsubsection{Detailed Performance Measurements for the Single-Pixel Point Renderer}
@@ -236,7 +220,6 @@ Since the presented implementation uses no adaptivity, these numbers are indepen
 
 \Cref{tab:results:timing_breakdown_single_pixel} gives more detailed performance measurements of the single-pixel renderer, while \cref{tab:results:timing_breakdown_pull_push} further breaks down the individual steps of the pull and push phase. Note how the timings scale roughly as expected (PL 3 and PS 2 are taking roughly 4 times longer than PL 2 and PS 1, respectively), but not so the first and last step. This is due to the reduced input data size (or output size, respectively), as explained in \cref{sec:impl:pullPushPostprocessing}. Also note how the push phase does take roughly the time of the pull phase if it were not for the last phase, where it writes to the full 2048\,px² of miplevel zero, whereas the largest miplevel written to by the pull phase is level one with 1024\,px².
 
-\todo{Impact of packing?}
 
 
 \subsection{Memory Usage}
@@ -308,8 +291,6 @@ As for most global illumination algorithms, a massive improvement would be to di
 
 The San Miguel scene is a good example for this: While the small detail work like dishes and small plants make up most of the geometry and thus most of the rendering time, they contribute only very little to global illumination. This is where the presented implementation suffers most from the lack of level-of-detail methods.
 
-
-\todo[color=yellow]{implement some moving object. show temporal coherency when it moves. or even moving spherical light.}
 
 
 \section{Interleaved Sampling with Compute Shaders}
@@ -401,8 +382,6 @@ Interleaved sampling is an obvious win for many-light global illumination method
 
 In fact, given the unnoticable quality impact (\Cref{fig:results:interleaved_quality}) of interleaved sampling when using a 4x4 block size, larger block sizes, e.\,g., 8x8 as used by \citet{hedman2016sequential} should be considered. Especially with the advent of high-resolution displays, lowering the shading frequency of global illumination effect even further might be necessary to keep the costs down to a reasonable level. However, the performance gains from lower sample counts will be offset in part by larger blur radii that come with larger block sizes.
 
-
-\todo{put VPL shuffling comparison anywhere}
 Going further, this technique is limited by how well the blur phase will be able to mask the noise in more difficult areas with lots of depth discontinuities like vegetation. To this end, one option might be to collect fragments that receive too few information during shading and blurring, and re-process them with larger sets of VPLs in a second pass. Temporal reprojection methods \citep{Jimenez:2016:FilmicSMAA} that re-use information from previous frames and use different sets of VPLs per frame would be another natural extension of interleaved sampling.
 
 

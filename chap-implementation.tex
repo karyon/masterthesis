@@ -32,8 +32,6 @@ Additionally, \textit{assimp}\footnote{\url{http://www.assimp.org/}} is used to 
     \label{fig:RenderingPipelineOverview}
 \end{figure}
 
-\todo{implementation pipeline adds little value over concept pipeline.}
-
 To provide some context, \Cref{fig:RenderingPipelineOverview} visualizes the complete rendering pipeline of the implemented application. It follows a standard deferred shading approach as it first renders geometry buffers with depth, normal and albedo information and uses these buffers to perform shading in a later stage. In the presented implementation, this stage is simply called ``combine pass'' and computes direct lighting, blends in the results of the SSAO postprocessing and performs tonemapping that is necessary for HDR rendering. The result of the global illumination is a texture that contains indirect lighting, which is added to the direct lighting in the combine pass.
 
 Most algorithms in this thesis are implemented using OpenGL compute shaders, while the G-Buffer, RSM, and the first stages of the ISM rendering use the regular fixed-function pipeline. The blur pass, SSAO and the combine pass use traditional screen-aligned triangles, since compute shaders would provide little benefit for their tasks. Due to the extensive use of compute shaders, OpenGL 4.3 is required to run the application.
@@ -50,8 +48,6 @@ Following the RSM generation, a compute shader samples the RSM in a regular patt
 
 Additionally, a second buffer is prepared that, instead of one three-component vector for position, normal and color respectively, stores only one four-component vector in total, holding the VPL's position in the first three components and the normal packed into the last component (\citet{Cigolle:2014:NormalPacking}). This is done since the ISM rendering (\Cref{sec:impl:ismRendering}) and light list calculation (\Cref{sec:impl:clusteredShading}) do not need the color information and especially the ISM rendering reads several VPLs per point, using a lot of bandwidth.
 
-\todo{A pipeline figure, containing the RSM, which is then sampled, and the sampes are put into two buffers.}
-
 \section{ISM Rendering}
 \label{sec:impl:ismRendering}
 
@@ -61,7 +57,6 @@ We make use of OpenGL's tessellation shader to subdivide triangles to make them 
 
 The geometry shader, which now recieves the smaller, tessellated triangles, converts each triangle to a point. The point's center equals the triangle's center, and the radius is chosen so the areas of the point and triangle match.
 
-\todo[color=yellow]{implement that area thing}
 
 While a random subset of all points needs to be chosen for each ISM, special care must be taken to make sure that each individual ISM uses the same subset of points across different frames. Otherwise, the ISMs will be temporally incoherent and cause flickering in the final rendering. To this end, each point's barycentric coordinate inside its triangle and the triangle's \texttt{gl\_PrimitiveID} are passed to a fast hashing algorithm. The result is used to determine an ISM ID (or, equivalently, a VPL ID) per point for use in the next step.
 
@@ -136,9 +131,7 @@ The presented implementation performs interleaved sampling, that is, it processe
 
 Often, de-interleaving is implemented by splitting the G-buffer into several smaller buffers, each containing all pixels with the same sample set. Each buffer is processed with its respective sample set, and then the buffers are re-interleaved into a large G-Buffer again.
 
-We propose to perform de-interleaving, sample processing and re-interleaving in a single pass using compute shaders. Just like the original method, this approach allows for cache-efficient processing since each work group processes a set of pixels that use the same set of VPLs. However, instead of splitting the G-Buffer and then re-interleaving it to perform coherent reads and writes, we propose to let the compute shader read and write directly to the respective pixels in the G-Buffer. See \Cref{???} for a comparison of the two approaches.
-
-\todo{Figure: interleaved sampling: Compare buffer splitting vs compute shaders}
+We propose to perform de-interleaving, sample processing and re-interleaving in a single pass using compute shaders. Just like the original method, this approach allows for cache-efficient processing since each work group processes a set of pixels that use the same set of VPLs. However, instead of splitting the G-Buffer and then re-interleaving it to perform coherent reads and writes, we propose to let the compute shader read and write directly to the respective pixels in the G-Buffer.
 
 There are several reasons for this approach: First, implementation complexity is reduced, since the buffer splitting and re-interleaving phases are not needed as separate shader passes anymore. Second, as another consequence of eliminating these phases, the total amount of memory read and written is greatly reduced, potentially saving bandwidth. And third, no additional storage is needed.
 
