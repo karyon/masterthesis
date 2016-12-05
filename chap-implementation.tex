@@ -48,10 +48,14 @@ Following the RSM generation, a compute shader samples the RSM in a regular patt
 
 Additionally, a second buffer is prepared that, instead of one three-component vector for position, normal and color respectively, stores only one four-component vector in total, holding the VPL's position in the first three components and the normal packed into the last component (\citet{Cigolle:2014:NormalPacking}). This is done since the ISM rendering (\Cref{sec:impl:ismRendering}) and light list calculation (\Cref{sec:impl:clusteredShading}) do not need the color information and especially the ISM rendering reads several VPLs per point, using a lot of bandwidth.
 
+
 \section{ISM Rendering}
 \label{sec:impl:ismRendering}
 
-In the previous chapter, two alternative ways to create imperfect shadow maps were presented. Both the point splat renderer and the single-pixel point renderer share the first stages of their rendering pipelines, which are described here. The following subsections describe the two renderers themselves and the pull-push postprocessing.
+For rendering imperfect shadow maps, a set of points is first generated from the scene geometry. This process is detailed in the next subsection. Subsequently, for each imperfect shadow map a random subset of points is chosen and rendered using a paraboloid projection. To this end, two different approaches, the splat and single-pixel renderer, have been presented in the previous chapter. Their implementation is described in \Cref{sec:impl:splatting,sec:impl:singlePixelRendering}. Subsequently, the pull-push postprocessing required by the single-pixel renderer is detailed.
+
+\subsection{Point Generation}
+\label{sec:impl:pointGeneration}
 
 We make use of OpenGL's tessellation shader to subdivide triangles to make them meet a certain maximum size. The tessellation control shader determines the tessellation levels according to the triangle's size. The tessellation evaluation shader does nothing more than correctly interpolating the vertex positions.
 
