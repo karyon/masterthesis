@@ -86,7 +86,7 @@ As an alternative to point splat rendering, this subsection proposes a second ap
 \end{figure}
 
 
-To provide a rough overview, the pull-push algorithm proposed by \citet{Marroquim:2007:reconstruction} is a ``pyramid-method'' (see \cite{Strengert:2006:Pyramid}) that uses the mipmap levels of a texture to first condense and then spread the data in the texture, in this case the sparse point set representing the scene. During the pull phase, it aggregates the information from four pixels of a finer level to one pixel of a coarser level. The subsequent push phase aggregates four pixels of a coarser level to one pixel of a finer level, but only if the pixel of the finer level contains no data or is determined to belong to an occluded surface. This way, closed surfaces are derived from single-pixel points.
+To provide a rough overview, the pull-push algorithm proposed by \citet{Marroquim:2007:reconstruction} is a ``pyramid-method'' (\cite{Strengert:2006:Pyramid}) that uses the mipmap levels of a texture to first condense and then spread the data in the texture, in this case the sparse point set representing the scene. During the pull phase, it aggregates the information from four pixels of a finer level to one pixel of a coarser level. The subsequent push phase aggregates four pixels of a coarser level to one pixel of a finer level, but only if the pixel of the finer level contains no data or is determined to belong to an occluded surface. This way, closed surfaces are derived from single-pixel points.
 
 
 \subsubsection{Pull Phase}
@@ -126,7 +126,7 @@ Analogous to the pull phase, the push phase reads four pixels of the coarser lev
 
 The target output location in the finer level might already contain data that was computed during the pull phase. This data is overwritten if its depth is behind the interpolated point's depth interval, i.\,e., if the original data is considered to be occluded. Otherwise, the original point is left untouched, as it is likely more accurate than the previously computed, interpolated point.
 
-Since the input and output pixel's location do not match the way they do during the pull phase, the weights used for interpolation during the push phase are not uniform, see \Cref{fig:concept:weights_marroquim} (c) and (d).
+Since the input and output pixel's location do not match the way they do during the pull phase, the weights used for interpolation during the push phase are not uniform (\Cref{fig:concept:weights_marroquim} (c) and (d)).
 
  \citet{Marroquim:2007:reconstruction} also use each point's normal to correctly limit the point's size, and \citet{Marroquim:2008:reconstruction2} propose Gaussian weights based on the pixel's distance to the point's location, instead of constant weights solely based on pixel locations. Both of these additions we have not implemented yet.
 

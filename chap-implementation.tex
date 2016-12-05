@@ -4,7 +4,7 @@
 \chapter{Implementation}
 \label{chap:implementation}
 
-This chapter will detail the implementation of the presented techniques. The next two sections will give an overview over the software as a whole and on the rendering pipeline, while the subsequent four sections describe the implementation of the RSM generation, ISM rendering, interleaved sampling and clustered deferred shading.
+This chapter will detail the implementation of the presented techniques. The next two sections will give an overview of the software as a whole and on the rendering pipeline, while the subsequent four sections describe the implementation of the RSM generation, ISM rendering, interleaved sampling and clustered deferred shading.
 
 The full source code is available in the project's repository\footnote{\url{https://github.com/karyon/multiframesampling}} under the MIT licence.
 
@@ -124,7 +124,7 @@ In the pull phase, one compute shader invocation calculates one output pixel. It
 
 During the push phase, groups of four output pixels share the same input pixels. This can be exploited by letting each shader invocation compute four output pixels while still reading only four input pixels. Naturally, the weights applied to the input pixels need to be adjusted per output pixel. For invalidating input pixels, their weights can simply be set to zero instead of separately marking them as invalid.
 
-Note that there is still lots of room for optimization. Especially the pull phase is basically a parallel reduction which is well-researched and for which optimized algorithms on the GPU exist, see  \citet{Harris:2007:ParallelReduction}. Several optimizations from that field might be applicable here.
+Note that there is still lots of room for optimization. Especially the pull phase is basically a parallel reduction which is well-researched and for which optimized algorithms on the GPU exist (\cite{Harris:2007:ParallelReduction}). Several optimizations from that field might be applicable here.
 
 
 
