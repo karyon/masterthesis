@@ -8,7 +8,7 @@ In this thesis we have presented a rendering system that simulates global illumi
 
 Imperfect shadow maps have been implemented and extended by a high-quality postprocessing. They show improved results compared to conventional point splatting, but the resulting quality is limited by the input data, a sparse set of points representing the scene. Using compute shaders for rendering single-pixel points into multiple shadow maps is a clear efficiency gain compared to using geometry shaders.
 
-Performing interleaved sampling with compute shaders instead of splitting buffers seems like a definitive improvement. While we have not made an explicit comparison, its near-perfect efficiency, ease of implementation, and the fact that it requires no additional memory make it the obvious choice when compute shaders are available on the given platform.
+Performing interleaved sampling using compute shaders instead of splitting buffers seems like a definitive improvement. While we have not made an explicit comparison, its near-perfect efficiency, ease of implementation, and the fact that it requires no additional memory make it the obvious choice when compute shaders are available on the given platform.
 
 Clustered deferred shading has been shown to have a relatively high overhead and thus is not the perfect candidate for light culling in a global illumination context using many-light methods. There are extensions, however, that could improve its culling efficiency to the point where it causes no slowdown in the worst case. Tiled deferred shading, on the other hand, is a clear performance win and again, rather easy to implement, but limited in its maximum culling efficiency.
 

@@ -94,7 +94,7 @@ As an optimization, the compute shader renders each point into several ISMs. To 
 
 % In practice it turned out to be more efficient to limit the number of slots in the local array to a constant maximum (e.\,g., 4), possibly because this ensures that the rendering loop is not diverging and enables compiler optimizations like loop unrolling.
 
-An attempt to do this optimization in the splat renderer by emitting multiple vertices in the geometry shader resulted in a significant performance hit, see \Cref{sec:results:ism:performance}.
+An attempt to do this optimization in the splat renderer by emitting multiple vertices in the geometry shader resulted in a significant performance hit (\Cref{sec:results:ism:performance}).
 
 
 \subsubsection{Issues when using a second render target}
@@ -128,7 +128,7 @@ Note that there is still lots of room for optimization. Especially the pull phas
 
 
 
-\section{Interleaved Sampling with Compute Shaders}
+\section{Interleaved Sampling using Compute Shaders}
 \label{sec:impl:interleavedShading}
 
 The presented implementation performs interleaved sampling, that is, it processes only a fraction of all VPLs per pixel and uses a blur pass to mask the resulting noise. Since adjacent pixels now process different sets of VPLs, this approach results in low cache coherence. To this end, de-interleaving is used \citep{segovia2006non}.
@@ -161,7 +161,7 @@ The presented implementation uses 128 pixels as screen-space tile width and 16 d
 For global illumination, however, infinite light radii are preferred, resulting in higher number of clusters that are reached by each light. Therefore, starting with all clusters that contain fragments and iterating over all lights for each cluster becomes viable, as opposed to determining the set of reached clusters per light. The more uniform control flow of this approach makes it a reasonable choice to use GPUs for the light assignment step. Additionally, since the lights are already generated on the GPU during the RSM sampling phase, CPU-side culling would require copying light data to the CPU and culling results back; performing culling on the GPU eliminates these data transfers.
 
 
-The clustered shading technique is divided into three phases, each corresponding to one compute shader dispatch call.
+The clustered shading technique is divided into three phases, clustering, light assignment and shading, each corresponding to one compute shader dispatch call.
 
 \paragraph{Clustering.}
 In this step, each work group processes one 128\,px² screen-space tile. Since the number of threads in a work group is limited, each thread in the work group iterates over several fragments. For each fragment, the corresponding depth slice is determined and marked as used in a shared array of 16 booleans. Since no thread writes False or reads from the shared array, no data races can occur and no synchronization is needed in this step.
@@ -184,7 +184,7 @@ The light lists are stored in a 2D texture with a height of the maximum amount o
     \label{fig:impl:light_lists}
 \end{figure}
 
-As a simplified example, suppose that only four lights are used and the interleaving block size is 2x1, i.\,e., contains only two pixels. As described in the interleaved sampling algorithm, in this case the first pixel will process the first half of its light list, while the second pixel will process the second half of its respective light list. If the first pixel's light list contains lights 3 and 4, while the other pixel is in a different cluster whose light list contains lights 2 and 3, both lights will end up processing only light 3. As a result, one light will have been accounted for twice, while two other lights have not been considered at all. This was visible as darkened or brightened lines along the screen-space tiles used by the clustered shading algorithm. The partitioning scheme completely fixes this by guaranteeing that the first pixel always processes lights 1 and 2, while the second pixel always processes lights 3 and 4, minus culling results respectively.
+As a simplified example, suppose that only four lights are used and the interleaving block size is 2x1, i.\,e., contains only two pixels. As described in the interleaved sampling algorithm, in this case the first pixel will process the first half of its light list, while the second pixel will process the second half of its respective light list. If the first pixel's light list contains lights 3 and 4, while the other pixel is in a different cluster whose light list contains lights 2 and 3, then for both pixels only light 3 will be processed. As a result, one light will have been accounted for twice, while two other lights have not been considered at all. This was visible as darkened or brightened lines along the screen-space tiles used by the clustered shading algorithm. The partitioning scheme completely fixes this by guaranteeing that the first pixel always processes lights 1 and 2, while the second pixel always processes lights 3 and 4, minus culling results respectively.
 
 While the partitions cannot reasonably be shrinked much, one could use estimates on how much depth slices per tile are used to reduce memory consumption. Since the list of used clusters is stored in a compacted list as discussed previously, individual tiles can still use more depth slices than estimated and not break the algorithm. An average of 4 out of 16 depth slices is likely enough for most scenes and would cut down the memory consumption of the light list texture by 75\,\%. To provide a reference: Since each partition contains only 64 lights, 8-bit indices are sufficient. The light list of each cluster thus needs 1\,KB. For a full HD resolution and screen-space tiles of 128\,px, the maximum number of clusters is 2160, so a little over 2\,MB of memory is used. Using the discussed estimate of 4 used clusters per tile, this can be cut down to 540\,KB.
 

@@ -3,7 +3,7 @@
 \chapter{Concept}
 \label{chap:concept}
 
-In this chapter, the presented global illumination system is explained on a conceptual level. After giving an overview of the rendering pipeline in the next section, the chosen approaches for the different components required for global illumination are outlined. Implementation details are deferred to the next chapter.
+In this chapter, the presented global illumination system is explained on a conceptual level. After providing an overview of the rendering pipeline in the next section, the chosen approaches for the different components required for global illumination are outlined. Implementation details are deferred to the next chapter.
 
 \section{Global Illumination Pipeline Overview}
 \label{sec:concept:overview}
@@ -40,7 +40,7 @@ Just like conventional shadow maps, RSMs render the scene from the viewpoint of 
 
 The result can be sampled to create VPLs with a certain position reconstructed from the depth buffer, and normal and color taken from the additional buffers.
 
-VPL sampling has not been the focus of this thesis, therefore we use a rather basic approach by creating an RSM and sampling it with a regular pattern. More advanced approaches are available (see \Cref{sec:intro:relatedWorkManyLight:vplSampling}), some of which do not use RSMs (e.\,g., \cite{hedman2016sequential})
+VPL sampling has not been the focus of this thesis, therefore we use a rather basic approach by creating an RSM and sampling it with a regular pattern. More advanced approaches are available (\Cref{sec:intro:relatedWorkManyLight:vplSampling}), some of which do not use RSMs (e.\,g., \cite{hedman2016sequential})
 
 
 \section{Visibility Computation with Imperfect Shadow Maps}
@@ -138,7 +138,7 @@ Since the input and output pixel's location do not match the way they do during 
 
  The general idea is as follows: Instead of calculating all samples per pixel, the samples are distributed over a block of pixels. Now, since each pixel processes only part of all samples, there is obviously information missing per pixel. Visually, this becomes apparent in the form of structured noise. To this end, a bilateral blur that preserves geometry edges similar to \citet{laine2007incremental} is used to spread the information and thereby even out the noise. The blur is often implemented in a separated fashion for performance reasons, although strictly speaking, bilateral filters are not separable.
 
- Since adjacent pixels now access disjoint sets of samples, naive implementations of this technique usually show bad cache coherence. To improve on this, \citet{segovia2006non} proposed ``non-interleaved shading of interleaved sample patterns'', or for short ``de-interleaving''. They group those pixels that use the same sample set into smaller sub-buffers, coherently process each buffer, and then merge the sub-buffers to one large buffer again. See \Cref{fig:concept:interleaved_segovia} for the intermediate results of this algorithm.
+ Since adjacent pixels now access disjoint sets of samples, naive implementations of this technique usually show bad cache coherence. To improve on this, \citet{segovia2006non} proposed \textit{non-interleaved shading of interleaved sample patterns}, or for short \textit{de-interleaving}. They group those pixels that use the same sample set into smaller sub-buffers, coherently process each buffer, and then merge the sub-buffers to one large buffer again. See \Cref{fig:concept:interleaved_segovia} for the intermediate results of this algorithm.
 
 
  \begin{figure}[htb]
@@ -184,7 +184,7 @@ Since the input and output pixel's location do not match the way they do during 
                  \end{figure}
 
 
-                 Effectively, when applied to blocks of $n^2$ pixels, this technique cuts down the cost of sampling to $ 1 / n^2 $ at the expense of smoothing high-frequency changes in the samples over $n$ pixels. Since global illumination is usually of low frequency, i.\,e., adjacent pixels usually receive a similar amount of indirect light, interleaved sampling does not significantly affect quality when applied to global illumination. However, this approach falls short near depth and normal discontinuities, where the bilateral blur has to ignore several pixels. Nevertheless, even in this case the quality degradation is hardly noticeable as soon as the global illumination results are blended over the rendered image, see \Cref{sec:results:interleavedShading}.
+                 Effectively, when applied to blocks of $n^2$ pixels, this technique cuts down the cost of sampling by $ 1 / n^2 $ at the expense of smoothing high-frequency changes in the samples over $n$ pixels. Since global illumination is usually of low frequency, i.\,e., adjacent pixels usually receive a similar amount of indirect light, interleaved sampling does not significantly affect quality when applied to global illumination. However, this approach falls short near depth and normal discontinuities, where the bilateral blur has to ignore several pixels. Nevertheless, even in this case the quality degradation is hardly noticeable as soon as the global illumination results are blended over the rendered image (\Cref{sec:results:interleavedShading}).
 
                  In most aspects we follow the standard approach for interleaved sampling. The only notable deviation is the implementation of de-interleaving that does not use any separate splitting and merging passes. For details, see \Cref{sec:impl:interleavedShading}.
 
@@ -196,7 +196,7 @@ Since the input and output pixel's location do not match the way they do during 
 In real-time graphics applications, primarily video games, a technique called \textit{clustered shading} \citep{olsson2012clustered}, has seen increased usage. Its goal is to increase the efficiency of lighting a scene with multiple light sources.
 The effectiveness of clustered shading in the context of many-light global illumination has not been studied so far to our knowledge, and this thesis aims to contribute a few data points to this end.
 
-The clustered shading technique works as follows: First, the view frustum is divided into a fixed number of three-dimensional clusters. For each fragment, the respective cluster is determined with the purpose of ignoring all clusters with no fragments in them. Then, each cluster is ``assigned'' a list of all lights that potentially illuminate fragments in that cluster, i.\,e., whose illuminated region is intersecting with a bounding volume of the cluster (\Cref{fig:concept:clustered_olsson}). All lights not intersecting a cluster are ``culled'', i.\,e., not added to the cluster's light list.
+The clustered shading technique works as follows: First, the view frustum is divided into a fixed number of three-dimensional clusters. For each fragment, the respective cluster is determined with the purpose of ignoring all clusters with no fragments in them. Then, each cluster is ``assigned'' a list of all lights that potentially illuminate fragments in that cluster, i.\,e., whose illuminated region is intersecting with a bounding volume of the cluster (\Cref{fig:concept:clustered_olsson}). All lights not intersecting a cluster are culled, i.\,e., not added to the cluster's light list.
 
 \begin{figure}[htb]
 \centering
