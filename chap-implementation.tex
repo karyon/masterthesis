@@ -17,11 +17,7 @@ The full source code is available in the project's repository\footnote{\url{http
   \caption{An overview of the frameworks, libraries and APIs the presented software depends upon.}
 \end{figure}
 
-The implementation was built using C++ and OpenGL. It uses \textit{gloperate}\footnote{\url{https://github.com/cginternals/gloperate}} as framework, which provides some basic functionality like navigation and resource handling. \textit{gloperate} in turn is based on \textit{Qt}\footnote{\url{https://www.qt.io/}}, which is used for creating an OpenGL context and the UI. \textit{libzeug}\footnote{\url{https://github.com/cginternals/libzeug}} is used to provide GUI widgets for quick manipulation of the rendering parameters.
-
-\textit{globjects}\footnote{\url{https://github.com/cginternals/globjects}} provides a convenience abstraction layer around the OpenGL API, which is in some places directly accessed using \textit{glbinding}\footnote{\url{https://github.com/cginternals/glbinding}}. For math functions and interaction with \textit{globjects}, \textit{glm}\footnote{\url{http://glm.g-truc.net}} is used.
-
-Additionally, \textit{assimp}\footnote{\url{http://www.assimp.org/}} is used to load the test scenes.
+The implementation was built using C++ and OpenGL. It uses \textit{gloperate}\footnote{\url{https://github.com/cginternals/gloperate}} as framework, which provides some basic functionality like navigation and resource handling. \textit{gloperate} in turn is based on \textit{Qt}\footnote{\url{https://www.qt.io/}}, which is used for creating an OpenGL context and the UI. \textit{libzeug}\footnote{\url{https://github.com/cginternals/libzeug}} is used to provide GUI widgets for quick manipulation of the rendering parameters. \textit{globjects}\footnote{\url{https://github.com/cginternals/globjects}} provides a convenience abstraction layer around the OpenGL API, which is in some places directly accessed using \textit{glbinding}\footnote{\url{https://github.com/cginternals/glbinding}}. For math functions and interaction with \textit{globjects}, \textit{glm}\footnote{\url{http://glm.g-truc.net}} is used. Additionally, \textit{assimp}\footnote{\url{http://www.assimp.org/}} is used to load the test scenes.
 
 
 \section{Rendering Pipeline Overview}
@@ -44,9 +40,7 @@ Reflective shadow maps (RSMs) provide a particularly efficient way to create VPL
 
 Additionally, the RSM is re-used as conventional shadow map. Usually, one might want to decouple RSM and conventional shadow map generation to use different resolutions or cascading schemes. It would also be possible to render the RSM with a less detailed version of the scene. Since the presented implementation uses no culling and LOD techniques, it was bottlenecked on geometry complexity. Rendering both RSM and conventional shadow map in one pass is the logical choice in this case. As a result, a variance buffer is rendered in addition to the regular G-buffers for use with the variance shadow mapping technique \citep{Donnelly:2006:VSM}.
 
-Following the RSM generation, a compute shader samples the RSM in a regular pattern and writes the world-space position, normal and color of the sample points into a separate buffer. These information form the VPLs.
-
-Additionally, a second buffer is prepared that, instead of one three-component vector for position, normal and color respectively, stores only one four-component vector in total, holding the VPL's position in the first three components and the normal packed into the last component (\citet{Cigolle:2014:NormalPacking}). This is done since the ISM rendering (\Cref{sec:impl:ismRendering}) and light list calculation (\Cref{sec:impl:clusteredShading}) do not need the color information and especially the ISM rendering reads several VPLs per point, using a lot of bandwidth.
+Following the RSM generation, a compute shader samples the RSM in a regular pattern and writes the world-space position, normal and color of the sample points into a separate buffer. These information form the VPLs. Additionally, a second buffer is prepared that, instead of one three-component vector for position, normal and color respectively, stores only one four-component vector in total, holding the VPL's position in the first three components and the normal packed into the last component (\citet{Cigolle:2014:NormalPacking}). This is done since the ISM rendering (\Cref{sec:impl:ismRendering}) and light list calculation (\Cref{sec:impl:clusteredShading}) do not need the color information and especially the ISM rendering reads several VPLs per point, using a lot of bandwidth.
 
 
 \section{ISM Rendering}
@@ -57,25 +51,16 @@ For rendering imperfect shadow maps, a set of points is first generated from the
 \subsection{Point Generation}
 \label{sec:impl:pointGeneration}
 
-We make use of OpenGL's tessellation shader to subdivide triangles to make them meet a certain maximum size. The tessellation control shader determines the tessellation levels according to the triangle's size. The tessellation evaluation shader does nothing more than correctly interpolating the vertex positions.
+We make use of OpenGL's tessellation shader to subdivide triangles to make them meet a certain maximum size. The tessellation control shader determines the tessellation levels according to the triangle's size. The tessellation evaluation shader does nothing more than correctly interpolating the vertex positions. The geometry shader, which now recieves the smaller, tessellated triangles, converts each triangle to a point. The point's center equals the triangle's center, and the radius is chosen so the areas of the point and triangle match. Note that no translation or projection has been applied yet, this happens in a later stage.
 
-The geometry shader, which now recieves the smaller, tessellated triangles, converts each triangle to a point. The point's center equals the triangle's center, and the radius is chosen so the areas of the point and triangle match.
-
-
-While a random subset of all points needs to be chosen for each ISM, special care must be taken to make sure that each individual ISM uses the same subset of points across different frames. Otherwise, the ISMs will be temporally incoherent and cause flickering in the final rendering. To this end, each point's barycentric coordinate inside its triangle and the triangle's \texttt{gl\_PrimitiveID} are passed to a fast hashing algorithm. The result is used to determine an ISM ID (or, equivalently, a VPL ID) per point for use in the next step.
-
-Note that no translation or projection has been applied yet, this happens in a later stage. As a result, the vertex shader is a simple pass-through shader.
-
-The next step depends on whether point splatting or the single-pixel renderer is enabled.
+While a random subset of all points needs to be chosen for each ISM, special care must be taken to make sure that each individual ISM uses the same subset of points across different frames. Otherwise, the ISMs will be temporally incoherent and cause flickering in the final rendering. To this end, each point's barycentric coordinate inside its triangle and the triangle's \texttt{gl\_PrimitiveID} are passed to a fast hashing algorithm. The result is used to determine an ISM ID (or, equivalently, a VPL ID) per point. How the ISM ID is used depends on whether point splatting or the single-pixel renderer is enabled.
 
 
 
 \subsection{Point Rendering with Splatting}
 \label{sec:impl:splatting}
 
-In the case of point splatting, the geometry shader itself reads the VPL with the ID it determined, projects the point according to the VPL's data, performs culling and discards the point if necessary, sets \texttt{gl\_PointSize} to the correct size after projection, and emits a vertex.
-
-The \texttt{output\_primitive} must be set to \texttt{points} in the geometry shader's \texttt{layout} definition. As explained previously, for point splatting all points are simply enlarged by a small constant factor in lieu of the pull-push postprocessing. Since only depth information are needed in this case, the fragment shader is empty.
+In the case of point splatting, the geometry shader itself reads the VPL with the ID it determined, projects the point according to the VPL's data, performs culling and discards the point if necessary, sets \texttt{gl\_PointSize} to the correct size after projection, and emits a vertex. To prevent the GPU from assembling triangles from the geometry shader output and render point splats instead, the \texttt{output\_primitive} must be set to \texttt{points} in the geometry shader's \texttt{layout} definition. As explained previously, for point splatting all points are simply enlarged by a small constant factor in lieu of the pull-push postprocessing. Since only depth information are needed in this case, the fragment shader is empty.
 
 
 
@@ -84,17 +69,11 @@ The \texttt{output\_primitive} must be set to \texttt{points} in the geometry sh
 
 This alternative approach was inspired by the fact that the surface reconstruction algorithm proposed by \citet{Marroquim:2007:reconstruction} works with single-pixel ``splats''. Since in this case the hardware rasterizer is not required to achieve good performance, this allowed for more flexibility and new optimization opportunities.
 
-The general idea is to first let the geometry shader write the generated points into a buffer, which is then used by a separate compute shader pass to perform the actual rendering.
+The general idea is to first let the geometry shader write the generated points into a buffer, which is then used by a separate compute shader pass to perform the actual rendering. However, in order to maintain temporal coherence, the points are not written into a single large buffer, as it would be hard to determine a location consistent across frames for each point in that buffer. Instead, the buffer is divided into one partition per VPL, and the points are written into the partition corresponding to the ID calculated before. An atomic counter that indicates the first free index is used per partition to sequentially fill these partitions without overwriting any data. The order of the points within each partition is undefined, but that does not change the output since they all are going to be rendered into the same ISM.
 
-In order to maintain temporal coherence, the points are not written into a single large buffer, as it would be hard to determine a location consistent across frames for each point in that buffer. Instead, the buffer is divided into one partition per VPL, and the points are written into the partition corresponding to the ID calculated before. An atomic counter that indicates the first free index is used per partition to sequentially fill these partitions without overwriting any data. The order of the points within each partition is undefined, but that does not change the output since they all are going to be rendered into the same ISM.
+After the point buffer has been prepared, a compute shader is used to render the points. For each VPL, one work group reads through the respective partition of the point buffer and performs the transformation and culling against the VPL for each point. It then uses \texttt{imageAtomicMin} to ``render'' the point with correct depth testing as a single pixel into the respective ISM. Since atomic operations require using single channel integer textures, it is not possible to use a second or third channel for additional attributes. Instead, one 32 bit channel is used, with 24 bits containing the depth, and 8 bits containing the radius. Since the depth is contained in the 24 more significant bits, the depth test still works correctly. Another version that used a 3D texture for additionally storing the normal was implemented as well, see the next subsection.
 
-Now a compute shader is used to render the points. For each VPL, one work group reads through the respective partition of the point buffer and performs the transformation and culling against the VPL for each point. It then uses \texttt{imageAtomicMin} to ``render'' the point with correct depth testing as a single pixel into the respective ISM. Since atomic operations require using single channel integer textures, it is not possible to use a second or third channel for additional attributes. Instead, one 32 bit channel is used, with 24 bits containing the depth, and 8 bits containing the radius. Since the depth is contained in the 24 more significant bits, the depth test still works correctly. Another version that used a 3D texture for additionally storing the normal was implemented as well, see the next subsection.
-
-As an optimization, the compute shader renders each point into several ISMs. To this end, each work group reads the data of a fixed number of VPLs (e.\,g., 16) into shared memory. Then, while rendering the points, culling is performed per point on all 16 VPLs, and those VPLs where the point passes the culling test are collected into a local array. Thereafter, the point is transformed for each of the collected VPLs and rendered into the respective ISM.
-
-% In practice it turned out to be more efficient to limit the number of slots in the local array to a constant maximum (e.\,g., 4), possibly because this ensures that the rendering loop is not diverging and enables compiler optimizations like loop unrolling.
-
-An attempt to do this optimization in the splat renderer by emitting multiple vertices in the geometry shader resulted in a significant performance hit (\Cref{sec:results:ism:performance}).
+As an optimization, the compute shader renders each point into several ISMs. To this end, each work group reads the data of a fixed number of VPLs (e.\,g., 16) into shared memory. Then, while rendering the points, culling is performed per point on all 16 VPLs, and those VPLs where the point passes the culling test are collected into a local array. Thereafter, the point is transformed for each of the collected VPLs and rendered into the respective ISM. While this approach made the compute shader renderer more efficient, an attempt to implement the optimization for the splat renderer by emitting multiple vertices in the geometry shader resulted in a significant performance hit (\Cref{sec:results:ism:performance}).
 
 
 \subsubsection{Issues when using a second render target}

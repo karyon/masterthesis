@@ -84,11 +84,9 @@ The GI, SSAO and combine pass operate in screen space and are mostly dependent o
 
 As explained before, the RSM generation re-uses most of the code of the G-Buffer generation; see \Cref{fig:results:RSMBuffers} for an impression on the rendered result. Accordingly, the performance characteristics are similar to the regular geometry pass of deferred renderers.
 
-Since the implemented VPL sampling distributes the samples over the entire shadow map, we simply limited the VPLs' locations to the relevant area by tuning the light's extents. As a result, an aspect ratio chosen specifically for each test scene is used.
+Since the implemented VPL sampling distributes the samples over the entire shadow map, we simply limited the VPLs' locations to the relevant area by tuning the light's extents. As a result, an aspect ratio chosen specifically for each test scene is used. Since our implementation re-uses the RSM as shadow map for direct lighting, we chose a resolution of 512\,px² (or, in the case of the Sponza scene, 1024x256\,px), which is more than required by the naive VPL sampling. The RSM is rendered in 0.17\,ms for the Sponza scene.
 
-As our implementation re-uses the RSM as shadow map for direct lighting, we chose a resolution of 512\,px² (or, in the case of the Sponza scene, 1024x256\,px), which is more than required by the naive VPL sampling. The RSM is rendered in 0.17\,ms for the Sponza scene.
-
-The VPL sampling itself takes only several microseconds and is negligible. Bear in mind that, in order to achieve high quality levels, a more elaborate sampling algorithms needs to be implemented, which can actually take most of the available time.
+The VPL sampling itself takes only several microseconds and is negligible. Bear in mind that, in order to achieve high quality levels, a more elaborate sampling algorithms needs to be implemented, which can actually take most of the available time. For instance, the implemented sampling does not take the relevance of the sampled VPLs to the current frame into account. This causes the entire system to be rather inefficient by choosing lights that might contribute little or nothing to the rendered output (\Cref{fig:results:RSMUnfavorable}. An additional downside of the naive sampling is the poor temporal stability when the scene light moves. This is due to each VPL staying at the exact same position in the light's viewport, so they strictly ``follow'' the light's movement, jumping over depth discontinuities along the way.
 
 \begin{figure}[htb]
 \centering
@@ -99,9 +97,7 @@ The VPL sampling itself takes only several microseconds and is negligible. Bear 
   \label{fig:results:RSMUnfavorable}
 \end{figure}
 
-The sampling does not take the relevance of the sampled VPLs to the current frame into account and causes the entire system to be rather inefficient by choosing lights that might contribute little or nothing to the rendered output. See \Cref{fig:results:RSMUnfavorable} for an example of unfavorable VPL locations.
 
-An additional downside of the naive sampling is the poor temporal stability when the scene light moves. This is due to each VPL staying at the exact same position in the light's viewport, so they strictly ``follow'' the light's movement, jumping over depth discontinuities along the way.
 
 
 \section{ISM Rendering}
@@ -190,9 +186,9 @@ Our implementation hides some of the inaccuracies of ISMs by using a relatively 
 \end{center}
 \end{table}
 
-\Cref{tab:results:ism_timings} shows the time needed for rendering the ISMs with both renderers and different settings.
+\Cref{tab:results:ism_timings} shows the time needed for rendering the ISMs with both renderers and different settings. Note that the comparison between the two renderers with default settings is not a fair one, since the single-pixel renderer uses more points and by default clamps each point's extents to its ISM. If the splat renderer is changed to behave similarly, it takes 0.3 additional milliseconds for clamping, and 8.66 additional milliseconds for using the same technique to collect VPLs as the single-pixel renderer does.
 
-Note that the comparison between the two renderers with default settings is not a fair one, since the single-pixel renderer uses more points and by default clamps each point's extents to its ISM. If the splat renderer is changed to behave similarly, it takes 0.3 additional milliseconds for clamping, and 8.66 additional milliseconds for using the same technique to collect VPLs as the single-pixel renderer does. There are several reasons for this heavy slowdown: First, this is implemented by emitting multiple vertices in the geometry shader, which is known to have poor performance on current GPUs. Second, the additional fillrate and overdraw became an issue when using too many points, a bottleneck that is unlikely to occur when using the single-pixel renderer. And third, while the single-pixel renderer uses shared memory to load the 16 VPLs once, the geometry shader of the splat renderer has no access to shared memory and has to load all 16 VPLs per invocation, creating high register pressure.
+There are several reasons for this heavy slowdown: First, this is implemented by emitting multiple vertices in the geometry shader, which is known to have poor performance on current GPUs. Second, the additional fillrate and overdraw became an issue when using too many points, a bottleneck that is unlikely to occur when using the single-pixel renderer. And third, while the single-pixel renderer uses shared memory to load the 16 VPLs once, the geometry shader of the splat renderer has no access to shared memory and has to load all 16 VPLs per invocation, creating high register pressure.
 
 Conversely, if the single-pixel renderer does not perform clamping, the push phase needs 0.07\,ms less (0.85\,ms to 0.78\,ms), and when it considers only one VPL per point, the point renderer uses 0.41\,ms less (0.65\,ms to 0.24\,ms).
 

@@ -38,9 +38,7 @@ In addition, the G-buffer rendering does not differ from common deferred renderi
 
 Reflective shadow maps are often preferred as basis for VPL sampling techniques due to their simplicity and efficiency. Both of these advantages come from the fact that they are generated similar to conventional shadow maps, making them easy to implement and a perfect fit for GPUs. A downside is that they are well-suited only for computing the first light bounce.
 
-Just like conventional shadow maps, RSMs render the scene from the viewpoint of a light. Besides the depth buffer used for shadow mapping, they render additional surface information, namely normal and color. As becomes apparent in \Cref{fig:concept:rsm_dachsbacher}, this is similar to the additional G-buffers created by conventional deferred rendering pipelines.
-
-The result can be sampled to create VPLs with a certain position reconstructed from the depth buffer, and normal and color taken from the additional buffers.
+Just like conventional shadow maps, RSMs render the scene from the viewpoint of a light. Besides the depth buffer used for shadow mapping, they render additional surface information, namely normal and color. As becomes apparent in \Cref{fig:concept:rsm_dachsbacher}, this is similar to the additional G-buffers created by conventional deferred rendering pipelines. The result can be sampled to create VPLs with a certain position reconstructed from the depth buffer, and normal and color taken from the additional buffers.
 
 VPL sampling has not been the focus of this thesis, therefore we use a rather basic approach by creating an RSM and sampling it with a regular pattern. More advanced approaches are available (\Cref{sec:intro:relatedWorkManyLight:vplSampling}), some of which do not use RSMs (e.\,g., \cite{hedman2016sequential})
 
@@ -212,9 +210,7 @@ When shading a fragment, the algorithm first determines the fragment's cluster a
 
 This technique yields the most gains when using lights with a limited radius. In that case, the culling is all the more effective since all lights that are farther away from a cluster than the light's radius can be culled as well. However, many-light methods often use infinite radii to enable light transport over long distances. Nonetheless, one can still expect to cull roughly half of all lights with this technique in a many-light context, since VPLs have a field of view of 180° instead of being completely spherical.
 
-As an extension, \citet{olsson2012clustered} propose to calculate explicit bounds for the fragment's position in each cluster to enable more precise culling. We expected only moderate performance gains from that and have not implemented it.
-
-Another possible extension is to use the surface normal's direction as fourth dimension after the three spatial dimensions for clustering, allowing for a kind of backface culling for even greater efficiency.
+As an extension, \citet{olsson2012clustered} propose to calculate explicit bounds for the fragment's position in each cluster to enable more precise culling. We expected only moderate performance gains from that and have not implemented it. Another possible extension is to use the surface normal's direction as fourth dimension after the three spatial dimensions for clustering, allowing for a kind of backface culling for even greater efficiency.
 
 
 Clustered shading is an extension and improvement to \textit{tiled shading} \citep{Olsson:2011:TiledShading}, which uses screen-space tiles instead of three-dimensional view-space clusters. Tiled shading has previously been combined with many-light global illumination by \citet{Tokuyoshi:2016:Stochastic}. They use an order of magnitude more lights than we do, but stochastically limit them in range. As a result, the light culling is much more effective in their case.
