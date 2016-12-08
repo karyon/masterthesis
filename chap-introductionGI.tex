@@ -236,8 +236,31 @@ This section will take the components of global illumination identified in \Cref
     \item[Final gathering.] Most many-light methods perform final gathering per screen-space pixel. There are two main approaches commonly referred to as splatting and gathering. Both are too slow to use every light to shade every pixel, therefore optimizations and approximations are used. More on this in the next section.
     \item[Visibility testing] Many-light methods provide no means of visibility computation; these need to be solved separately. The advantage of many-light methods is that each receiving element only needs to test the (bounded) number of VPLs for visibility, not an arbitrarily high number of scene elements. In contrast to other global illumination methods, this makes it possible (although not performant) to use shadow maps for visibility testing.
     \item[Choice of receiving elements] As mentioned before, screen-space pixels are most commonly used, albeit often downscaled or combined with interleaved sampling (\Cref{sec:intro:relatedWorkManyLight:finalGathering}). The other options listed in \Cref{sec:intro:gi:components} are technically possible as well, but haven't been combined with many-light methods yet.
-    \item[Mitigating singularities.] Since the entire energy of the indirect light bounces is concentrated into a few infinitely small light sources, the areas near these light sources receive too much light. This effect is distinctly visible as bright spots around the VPL's location, making it necessary for many-light methods to alleviate this artifact.
+    \item[Mitigating singularities.] Since the entire energy of the indirect light bounces is concentrated into a few infinitely small light sources, the areas near these light sources receive too much light. This effect is distinctly visible as bright spots around the VPL's location (\Cref{fig:introGI:clamping}), making it necessary for many-light methods to alleviate this artifact.
 \end{description}
+
+\begin{figure}[htb]
+    \centering
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \includegraphics[width=1.0\linewidth]{graphics/clamping1-dachsbacher}%
+        \caption{}
+    \end{subfigure}%
+    \hfill
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \includegraphics[width=1.0\linewidth]{graphics/clamping2-dachsbacher}%
+        \caption{}
+    \end{subfigure}%
+    \hfill
+    \begin{subfigure}[b]{0.32\textwidth}
+        \centering
+        \includegraphics[width=1.0\linewidth]{graphics/clamping3-dachsbacher}%
+        \caption{}
+    \end{subfigure}%
+    \caption{A rendering generated using a many-light method. (a) Naive approaches produce singularities near the VPL's location. (b) Clamping the light attenuation term makes the problem less apparent, but causes bias in the form of darkening in the corners and on the statue. (c) An unbiased rendering for comparison. Figure reprinted from \citet{Dachsbacher:2014:ManyLightsSTAR}.}
+    \label{fig:introGI:clamping}%
+\end{figure}%
 
 
 
@@ -278,7 +301,7 @@ Ray-tracing has been proposed to compute visibility as well \citep[e.\,g.,][]{se
 \subsection{Mitigating Singularities}
 \label{sec:intro:relatedWorkManyLight:singularities}
 
-In naive implementations of many-lights techniques, bright spots will appear near the VPL’s positions due to the light’s attenuation term approaching infinity. A common approach is to clamp the term. This introduces bias, which can be compensated e.\,g., in screen space \citep{novak2011screen}. Singularities can also be avoided through more advanced light representations \citep{tokuyoshi2015vsgl}.
+In naive implementations of many-lights techniques, bright spots will appear near the VPL’s positions due to the light’s attenuation term approaching infinity. A common approach is to clamp the term (\Cref{fig:introGI:clamping}). This introduces bias, which can be compensated e.\,g., in screen space \citep{novak2011screen}. Singularities can also be avoided through more advanced light representations \citep{tokuyoshi2015vsgl}.
 
 
 \cleardoublepage
