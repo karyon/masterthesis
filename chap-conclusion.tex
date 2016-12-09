@@ -1,7 +1,7 @@
 %!TEX root = foo-thesis.tex
 
 
-\chapter{Conclusion}
+\chapter{Conclusion and Future Work}
 \label{chap:conclusion}
 
 In this thesis we have presented a rendering system that simulates global illumination at real-time framerates. It uses only a few milliseconds for computing indirect lighting, making it suitable for use in real-time applications on today's hardware.
@@ -12,9 +12,8 @@ Performing interleaved sampling using compute shaders instead of splitting buffe
 
 Clustered deferred shading has been shown to have a relatively high overhead and thus is not the perfect candidate for light culling in a global illumination context using many-light methods. There are extensions, however, that could improve its culling efficiency to the point where it causes no slowdown in the worst case. Tiled deferred shading, on the other hand, is a clear performance win and again, rather easy to implement, but limited in its maximum culling efficiency.
 
-\section{Future Work}
 
-Going beyond random point sampling for creating imperfect shadow maps is desirable, since the randomness is limiting their quality. Implementing more advanced surface reconstruction techniques, starting with the full extent of the algorithm presented by \citet{Marroquim:2007:reconstruction}, would likely further enhance the ISM's quality.
+Looking forward, going beyond random point sampling for creating imperfect shadow maps is desirable, since the randomness is limiting their quality. Implementing more advanced surface reconstruction techniques, starting with the full extent of the algorithm presented by \citet{Marroquim:2007:reconstruction}, would likely further enhance the ISM's quality.
 
 Given how common the usage of interleaved sampling is, it is surprising that little work has been done to maximize the technique's impact. For instance, thoroughly investigating the correlation between performance and quality when changing the block size would give implementers a guideline on which block sizes to choose in which scenarios.
 
