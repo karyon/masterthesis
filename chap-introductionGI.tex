@@ -22,9 +22,7 @@ To determine how much and in what direction incoming light is reflected from sur
 
 \paragraph{Light Transport.}
 
-In order for light to interact with surfaces, it needs to be ``transported'' to them from light sources. The simplest case, light that hits only one surface before reaching the camera, is called \textbf{direct light}. To determine surfaces that are directly lit by a certain light source, shadow maps are commonly used in real-time computer graphics.
-
-Direct light usually has a single point as origin in the case of point lights, or consists of entirely parallel light rays in the case of directional lights. This structuredness makes it relatively easy to compute, in terms of both complexity and performance.
+In order for light to interact with surfaces, it needs to be ``transported'' to them from light sources. The simplest case, light that hits only one surface before reaching the camera, is called \textbf{direct light}. To determine surfaces that are directly lit by a certain light source, shadow maps are commonly used in real-time computer graphics. Direct light usually has a single point as origin in the case of point lights, or consists of entirely parallel light rays in the case of directional lights. This structuredness makes it relatively easy to compute, in terms of both complexity and performance.
 
 \textbf{Indirect light} on the other hand has bounced off of at least two surfaces before reaching the camera. Since each point that is directly lit now reflects light into arbitrary directions, this process is much less structured and thus harder to compute. To manage this complexity, indirect light has been separated into small-scale and large-scale indirect light. An intermediate step for medium-scale indirect lighting has also been proposed \citep{reed:2012:mediumAO}.
 
@@ -41,9 +39,7 @@ The term \textit{global illumination} (GI) has been used for varying sets of lig
 
 \section{Introduction to Global Illumination}
 
-This section introduces global illumination by outlining its advantages and describing its theoretical foundations. Thereafter it gives a brief overview of techniques used previously to simulate (non-dynamic) global illumination before detailing the more recent related work in this field, and structures the process of computing global illumination by identifying individual building blocks.
-
-For a comprehensive introduction to global illumination, see \citet{Ritschel:2012:GISTAR}.
+This section introduces global illumination by outlining its advantages and describing its theoretical foundations. Thereafter it gives a brief overview of techniques used previously to simulate (non-dynamic) global illumination before detailing the more recent related work in this field, and structures the process of computing global illumination by identifying individual building blocks. For a comprehensive introduction to global illumination, see \citet{Ritschel:2012:GISTAR}.
 
 \subsection{Motivation}
 The single overarching advantage of simulating global illumination in graphics applications is the added realism which leads to a host of benefits. An obvious one is the greater immersion achieved in movies and video games, but also architectural and e-commerce visualization applications can provide better assistance to its users through more realistic renderings. For instance, in architectural visualization, the colors of the furniture, carpets, decoration etc.\ are influencing the overall tone of the scene, e.\,g., by coloring the walls slightly, leading to a better basis for real-world design decisions.
@@ -88,9 +84,7 @@ The reflected radiance can be defined as
 \label{eq:render}
 \end{equation}
 %
-where $\Omega$ is the hemisphere located at point $x$ and oriented towards the surface normal $\surfaceNormal$ at point $x$, $\brdf$ is the BRDF of the surface and $L_i$ the incident radiance.
-
-While this is the most common representation of the rendering equation, \citet{Kajiya:1986:RenderingEquation} defined the reflected radiance using an integral over all surface points, not all directions:
+where $\Omega$ is the hemisphere located at point $x$ and oriented towards the surface normal $\surfaceNormal$ at point $x$, $\brdf$ is the BRDF of the surface and $L_i$ the incident radiance. While this is the most common representation of the rendering equation, \citet{Kajiya:1986:RenderingEquation} defined the reflected radiance using an integral over all surface points, not all directions:
 %
   \begin{equation}
     \reflectedRadiance = \int\limits_{S} \brdf(x, \incidenceDir, \outgoingDir) \incidentRadiance (\incidenceDir \cdot \surfaceNormal) V(x, x') d x'\,,
@@ -150,9 +144,7 @@ As with most lighting concepts, real-time GI is often separated into diffuse and
 \section{Previous Work on Real-Time Dynamic Global Illumination}
 \label{sec:intro:gi:previousWork}
 
-This section presents previous work on global illumination while focusing on methods that work in real-time and support dynamic scenes, excluding many-light methods which are covered separately in the next section.
-
-A more comprehensive study of interactive global illumination methods is provided by \citet{Ritschel:2012:GISTAR}.
+This section presents previous work on global illumination while focusing on methods that work in real-time and support dynamic scenes, excluding many-light methods which are covered separately in the next section. A more comprehensive study of interactive global illumination methods is provided by \citet{Ritschel:2012:GISTAR}.
 
 \subsection{Point-Based Approaches}
 
@@ -265,9 +257,7 @@ This section will take the components of global illumination identified in \Cref
 \section{Previous Work on Real-Time Many-Light Methods}
 \label{sec:intro:relatedWorkManyLight}
 
-The following will present several many-light methods while concentrating on those that are applicable to real-time rendering. This section is structured roughly according to the different design decisions to be taken when applying many-light methods: VPL sampling, computing visibility, final gathering and mitigating singularities. The light transport step is not covered separately as it is often either omitted, simulating only one bounce, or integral part of the VPL sampling algorithm. The choice of receiving elements is not covered as well, as most papers in this area simply use screen-space pixels.
-
-\citet{Dachsbacher:2014:ManyLightsSTAR} provide another overview of many-light methods, including those unsuitable for real-time rendering.
+The following will present several many-light methods while concentrating on those that are applicable to real-time rendering. This section is structured roughly according to the different design decisions to be taken when applying many-light methods: VPL sampling, computing visibility, final gathering and mitigating singularities. The light transport step is not covered separately as it is often either omitted, simulating only one bounce, or integral part of the VPL sampling algorithm. The choice of receiving elements is not covered as well, as most papers in this area simply use screen-space pixels. \citet{Dachsbacher:2014:ManyLightsSTAR} provide another overview of many-light methods, including those unsuitable for real-time rendering.
 
 
 \subsection{Virtual Point Light Sampling}
