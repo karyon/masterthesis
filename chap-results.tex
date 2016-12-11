@@ -52,7 +52,7 @@ The GTX 980 has been locked to its base clock rate of 1164\,Mhz using SetStableP
 
 \Cref{tab:results:timing_breakdown_frame} gives an overview of the time needed for rendering a single frame. The Crytek Sponza scene and default settings have been used. All timings measure GPU time only, there are no noteworthy calculations done on the CPU. With a total of 8.7\,ms, the application achieves real-time framerates while leaving room for more expensive calculations, higher output resolutions or more detailed scenes.
 
-The GI, SSAO and combine pass operate in screen space and are mostly dependent on the screen size (and, of course, on light and sample count in the case of GI and SSAO, respectively). The G-Buffer and RSM generation follow the usual performance characteristics and are mainly dependent on output resolution and geometric complexity. The performance behavior of the ISM rendering heavily depends on the settings and is further detailed below. The blit phase copies a texture to the back buffer and exists for debugging purposes only.
+The GI, SSAO and combine pass operate in screen space and are mostly dependent on the screen size (and, of course, on light and sample count in the case of GI and SSAO, respectively). The G-Buffer and RSM generation follow the usual performance characteristics and are mainly dependent on output resolution and geometric complexity. The performance behavior of the ISM rendering heavily depends on the settings and is further detailed below. The blit phase copies a texture to the back buffer and serves debugging purposes only.
 
 
 \section{RSM Generation and VPL Sampling}

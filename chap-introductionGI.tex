@@ -4,7 +4,7 @@
 \label{chap:introductionGI}
 
 This chapter starts by providing a brief overview of lighting techniques in computer graphics and locate and distinguish global illumination in this vast research field.
-Subsequently, the foundation for the remainder of this work is laid by introducing the conceptual and theoretical foundations of global illumination in general and many-light methods in particular, combined with an overview of the related work in those topics.
+Subsequently, the foundation for the remainder of this work is laid by introducing the conceptual and theoretical foundations of global illumination in general and many-light methods in particular, combined with an overview of the related work on those topics.
 
 
 \section{A High-Level Overview of Lighting in Computer Graphics}
@@ -22,7 +22,7 @@ To determine how much and in what direction incoming light is reflected from sur
 
 \paragraph{Light Transport.}
 
-In order for light to interact with surfaces, it needs to be ``transported'' to them from light sources. The simplest case, light that hits only one surface before reaching the camera, is called \textbf{direct light}. To determine surfaces that are directly lit by a certain light source, shadow maps are commonly used in real-time computer graphics. Direct light usually has a single point as origin in the case of point lights, or consists of entirely parallel light rays in the case of directional lights. This structuredness makes it relatively easy to compute, in terms of both complexity and performance.
+In order for light to interact with surfaces, it needs to be ``transported'' there from light sources. The simplest case, light that hits only one surface before reaching the camera, is called \textbf{direct light}. To determine surfaces that are directly lit by a certain light source, shadow maps are commonly used in real-time computer graphics. Direct light usually has a single point as origin in the case of point lights, or consists of entirely parallel light rays in the case of directional lights. This structuredness makes it relatively easy to compute, in terms of both complexity and performance.
 
 \textbf{Indirect light} on the other hand has bounced off of at least two surfaces before reaching the camera. Since each point that is directly lit now reflects light into arbitrary directions, this process is much less structured and thus harder to compute. To manage this complexity, indirect light has been separated into small-scale and large-scale indirect light. An intermediate step for medium-scale indirect lighting has also been proposed \citep{reed:2012:mediumAO}.
 
@@ -30,7 +30,7 @@ The computation of \textbf{small-scale indirect light} has been made popular wit
 
 Small-scale indirect lighting techniques such as SSAO are important for accentuating small geometric details in objects and providing a sort of contact shadow as a visual cue for the proximity of objects to each other.
 
-In contrast, \textbf{large scale indirect lighting} provides more realistic lighting for entire scenes. While it has been computed in real-time for static scenes for a while, large-scale indirect lighting for fully dynamic scenes has yet to reach widespread use in real-time applications. More on this in the next section.
+In contrast, \textbf{large scale indirect lighting} provides more realistic lighting for entire scenes. While it has been computed in real-time for static scenes for a while, large-scale indirect lighting for fully dynamic scenes has yet to reach widespread use in real-time applications. More on this issue follows in the next section.
 \\
 \\
 The term \textit{global illumination} (GI) has been used for varying sets of lighting effects throughout the literature. In this thesis, it is used to describe the lastly mentioned aspect, i.\,e., large-scale indirect lighting.
@@ -44,7 +44,7 @@ This section introduces global illumination by outlining its advantages and desc
 \subsection{Motivation}
 The single overarching advantage of simulating global illumination in graphics applications is the added realism which leads to a host of benefits. An obvious one is the greater immersion achieved in movies and video games, but also architectural and e-commerce visualization applications can provide better assistance to its users through more realistic renderings. For instance, in architectural visualization, the colors of the furniture, carpets, decoration etc.\ are influencing the overall tone of the scene, e.\,g., by coloring the walls slightly, leading to a better basis for real-world design decisions.
 
-Real-time techniques that allow camera movements in a given scene and lighting setup on the one hand enable approximating GI in applications that are inherently real-time, e.\,g., video games. On the other hand, even applications that do not require real-time frame rates can benefit from such techniques. For instance, while the features that are covered in this thesis are basically solved for offline rendering, the film industry can benefit from real-time GI techniques during production by means of faster testing of, e.\,g., different camera angles. Archvis applications can serve more use cases by implementing interactive walkthroughs.
+Real-time techniques that allow camera movements in a given scene and lighting setup on the one hand enable approximating global illumination in applications that are inherently real-time, e.\,g., video games. On the other hand, even applications that do not require real-time frame rates can benefit from such techniques. For instance, while the features that are covered in this thesis are basically solved for offline rendering, the film industry can benefit from real-time global illumination techniques during production by means of faster testing of, e.\,g., different camera angles. Archvis applications can serve more use cases by implementing interactive walkthroughs.
 
 Allowing changing geometry provides additional benefits: Games can create new experiences with changing level geometry, e.\,g., through destruction, level designers and lighting artists can expect a more natural workflow without having to resort to workarounds like fake lights, artists in filmmaking benefit from shorter iteration cycles, and visualization tools provide immediate feedback to changes in, e.\,g., interior decoration in the case of archvis.
 
@@ -84,7 +84,7 @@ The reflected radiance can be defined as
 \label{eq:render}
 \end{equation}
 %
-where $\Omega$ is the hemisphere located at point $x$ and oriented towards the surface normal $\surfaceNormal$ at point $x$, $\brdf$ is the BRDF of the surface and $L_i$ the incident radiance. While this is the most common representation of the rendering equation, \citet{Kajiya:1986:RenderingEquation} defined the reflected radiance using an integral over all surface points, not all directions:
+where $\Omega$ is the hemisphere located at point $x$ and oriented towards the surface normal $\surfaceNormal$ at point $x$, $\brdf$ is the BRDF of the surface and $L_i$ the incident radiance. While this is the most common representation of the rendering equation, \citet{Kajiya:1986:RenderingEquation} defined the reflected radiance using an integral over all surface points, not over all directions:
 %
   \begin{equation}
     \reflectedRadiance = \int\limits_{S} \brdf(x, \incidenceDir, \outgoingDir) \incidentRadiance (\incidenceDir \cdot \surfaceNormal) V(x, x') d x'\,,
@@ -108,18 +108,18 @@ For large-scale indirect lighting, light maps have seen widespread use since the
 
 Games have used variations of \emph{precomputed radiance transfer} (PRT, \cite{sloan:2002:PRT}) to accommodate for changing lighting conditions. For instance, \citet{stefanov:2012:PRTinFarCry3} uses probes instead of the scene geometry to store the PRT results to be able to light dynamic objects. However, even though dynamic objects receive indirect lighting, they are unable to affect indirect lighting of other objects, a commonly made compromise.
 
-Besides not fully supporting dynamic objects, the long precomputation times of conventional global illumination methods are a common hindrance in the workflow of artists. Real-time dynamic global illumination, being the solution to both of these problems, has yet to reach widespread use in real-time applications due to the high performance requirements.
+Besides not fully supporting dynamic objects, the long precomputation times of conventional global illumination methods are a common hindrance in the workflow of artists. Global illumination techniques that support dynamic objects and require no expensive precomputation have yet to reach widespread use in real-time applications due to the high performance requirements.
 
 
 \subsection{Components of Real-Time Dynamic Global Illumination}
 \label{sec:intro:gi:components}
 
-Before the next section gives insight into the current research around real-time dynamic GI, this section will structure the different components that most methods consist of.
+Before the next section gives insight into the current research around real-time dynamic global illumination, this section will structure the different components that most methods consist of.
 
-Generally speaking, real-time GI consists of three steps:
+Generally speaking, real-time global illumination consists of three steps:
 
 \begin{description}
-    \item[Direct lighting or light injection.] Since light sources can be very (if not infinitely) small and can be difficult to process for some techniques, the first step of the light propagation, sometimes called ``light injection'', can be separated and used to compute areas that are directly lit by the scene lights. These areas are then used as starting point for the GI algorithm. Other techniques use this approach purely as an optimization, since the first light bounce can be easier to compute than subsequent bounces.
+    \item[Direct lighting or light injection.] Since light sources can be very (if not infinitely) small and can be difficult to process for some techniques, the first step of the light propagation, sometimes called ``light injection'', can be separated and used to compute areas that are directly lit by the scene lights. These areas are then used as starting points for the global illumination algorithm. Other techniques use this approach purely as an optimization, since the first light bounce can be easier to compute than subsequent bounces.
     \item[Light propagation.] Starting from the light source or directly lit surfaces, this step sends out the light and records where it hits scene geometry. This might be done repeatedly to simulate multiple light bounces.
     \item[Final gathering.] Several techniques perform one last step that, instead of propagating light from lit surfaces into all directions, gathers light from lit surfaces into areas that are visible to the camera. This is a common optimization that guarantees that the calculations are relevant to the currently rendered frame, whereas the light propagation step is often more unguided and oblivious to the current viewport.
 \end{description}%
@@ -137,7 +137,7 @@ There are two more essential design decisions to be made:
     Technically, the light propagation step also necessarily stores its results in some form of receiving elements, which might differ from the ones that are used during final gathering. In this thesis however, the term describes those data structures that are used to perform the actual per-pixel shading.
 \end{description}%
 %
-As with most lighting concepts, real-time GI is often separated into diffuse and specular components, since the diffuse component is both easier to simulate with plausible results due to its low-frequency nature, and more important for the visual quality compared to the specular component. For the same reasons, only the diffuse component is covered in this thesis.
+As with most lighting concepts, real-time global illumination is often separated into diffuse and specular components, since the diffuse component is both easier to simulate with plausible results due to its low-frequency nature, and more important for the visual quality compared to the specular component. For the same reasons, only the diffuse component is covered in this thesis.
 
 
 
@@ -221,7 +221,7 @@ This section will take the components of global illumination identified in \Cref
 
 \begin{description}
     \item[Direct lighting or light injection.] In theory, many-light methods do not need a light injection step since they are usually iterative processes that start with the scene lights and from there on, create new lights wherever the current light set illuminates the scene. In practice, the first bounce is often handled separately for performance reasons, and because the VPLs have different characteristics than most scene lights.
-    \item[Light propagation.] As just mentioned, many-light methods can simulate an arbitrary number of light bounces by repeating the propagation step with an expanding set of VPLs. However, many techniques (and this thesis) simulate just the first bounce, since that alone provides a large quality enhancement over simulating no GI at all, and subsequent bounces are more complex in terms of implementation and computation.
+    \item[Light propagation.] As just mentioned, many-light methods can simulate an arbitrary number of light bounces by repeating the propagation step with an expanding set of VPLs. However, many techniques (and this thesis) simulate just the first bounce, since that alone provides a large quality enhancement over simulating no global illumination at all, and subsequent bounces are more complex in terms of implementation and computation.
     \item[VPL placement.] Since the budget of VPLs is limited, it is desirable to get the maximum effect out of each VPL. Thus, much research has gone into placing VPLs where they contribute the most to the output image, while at the same time not introducing any bias. Both the light injection and light propagation step create VPLs and can take considerable amounts of computation time through complex sampling methods. Some techniques also do not distinguish between light injection and light propagation and have a unified process for placing VPLs.
     \item[Final gathering.] Most many-light methods perform final gathering per screen-space pixel. There are two main approaches commonly referred to as splatting and gathering. Both are too slow to use every light to shade every pixel, therefore optimizations and approximations are used. More on this in the next section.
     \item[Visibility testing] Many-light methods provide no means of visibility computation; these need to be solved separately. The advantage of many-light methods is that each receiving element only needs to test the (bounded) number of VPLs for visibility, not an arbitrarily high number of scene elements. In contrast to other global illumination methods, this makes it possible (although not performant) to use shadow maps for visibility testing.
@@ -257,7 +257,7 @@ This section will take the components of global illumination identified in \Cref
 \section{Previous Work on Real-Time Many-Light Methods}
 \label{sec:intro:relatedWorkManyLight}
 
-The following will present several many-light methods while concentrating on those that are applicable to real-time rendering. This section is structured roughly according to the different design decisions to be taken when applying many-light methods: VPL sampling, computing visibility, final gathering and mitigating singularities. The light transport step is not covered separately as it is often either omitted, simulating only one bounce, or integral part of the VPL sampling algorithm. The choice of receiving elements is not covered as well, as most papers in this area simply use screen-space pixels. \citet{Dachsbacher:2014:ManyLightsSTAR} provide another overview of many-light methods, including those unsuitable for real-time rendering.
+This section will present several many-light methods while concentrating on those that are applicable to real-time rendering. It is structured roughly according to the different design decisions to be taken when applying many-light methods: VPL sampling, computing visibility, final gathering and mitigating singularities. The light transport step is not covered separately as it is often either omitted, simulating only one bounce, or it is an integral part of the VPL sampling algorithm. The choice of receiving elements is not covered as well, as most papers in this area simply use screen-space pixels. \citet{Dachsbacher:2014:ManyLightsSTAR} provide another overview of many-light methods, including those unsuitable for real-time rendering.
 
 
 \subsection{Virtual Point Light Sampling}
@@ -279,7 +279,7 @@ Splatting techniques have been used to add a light's contribution to the rendere
 \subsection{Visibility Computation}
 \label{sec:intro:relatedWorkManyLight:visibility}
 
-Several approaches exist to calculate visibility between VPLs and the scene parts visible to the camera. Classic shadow maps are a fairly exact solution, but cannot be updated every frame for the several hundreds or even thousands of VPLs.
+There are several approaches to calculate visibility between VPLs and the scene parts visible to the camera. Classic shadow maps are a fairly exact solution, but cannot be updated every frame for the several hundreds or even thousands of VPLs.
 
 A popular approach are \emph{imperfect shadow maps} \citep[ISMs,][]{ritschel2008ism}, which use a precomputed set of points as scene representation to quickly render large amounts of small and inaccurate shadow maps. \citet{ritschel2011ismsViewAdaptive} extend the approach to fully dynamic scenes among other improvements. \citet{barak2013temporally} use tessellation to compute the point set, eliminating the need to keep a separate point set updated, making it inherently dynamic and providing better performance for larger point sets.
 
