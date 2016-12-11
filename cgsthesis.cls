@@ -123,10 +123,7 @@
 \RequirePackage{listings}
 \RequirePackage[capitalise,noabbrev,nameinlink]{cleveref}
 \RequirePackage[normal,labelfont=bf,textfont=it,font=small]{caption}
-\captionsetup[figure]{skip=\medskipamount,belowskip=-7pt}
-\captionsetup[table]{skip=\medskipamount,belowskip=-7pt}
-\RequirePackage[labelformat=simple,labelfont=md,textfont=it,font=scriptsize,
-                skip=\medskipamount,belowskip=0pt,justification=centering]{subcaption}
+\RequirePackage[labelformat=simple,labelfont=md,textfont=it,font=scriptsize,justification=centering]{subcaption}
 \renewcommand\thesubfigure{(\alph{subfigure})}
 \advance\textfloatsep 8pt
 \def\lst@MakeCaption#1{% #1 is `t' or `b'
