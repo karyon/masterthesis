@@ -38,16 +38,15 @@ The GTX 980 has been locked to its base clock rate of 1164\,Mhz using SetStableP
 
 
 \begin{table}[h]
-\begin{center}
+    \centering
+    \captionabove{Timing breakdown of an entire frame rendered by the presented software. Timings are in milliseconds.}
     \begin{tabulary}{0.98\textwidth}{| L | L | L | L | L | L | L || L |}
         \hline
         G-Buffer & RSM & ISM & GI & SSAO & Combine & Blit & Total \\ \hline
         0.6\,ms & 0.2\,ms & 2.7\,ms & 3.2\,ms & 1.4\,ms & 0.3\,ms & 0.3\,ms & 8.70\,ms \\
         \hline
     \end{tabulary}
-    \caption{Timing breakdown of an entire frame rendered by the presented software. Timings are in milliseconds.}
     \label{tab:results:timing_breakdown_frame}
-\end{center}
 \end{table}
 
 \Cref{tab:results:timing_breakdown_frame} gives an overview of the time needed for rendering a single frame. The Crytek Sponza scene and default settings have been used. All timings measure GPU time only, there are no noteworthy calculations done on the CPU. With a total of 8.7\,ms, the application achieves real-time framerates while leaving room for more expensive calculations, higher output resolutions or more detailed scenes.
@@ -174,16 +173,15 @@ Our implementation hides some of the inaccuracies of ISMs by using a relatively 
 \label{sec:results:ism:performance}
 
 \begin{table}[h]
-\begin{center}
+    \centering
+    \captionabove{Timings of the ISM renderers with different settings.}
     \begin{tabulary}{0.98\textwidth}{| L | L | L | L |}
         \hline
         Splat Default Settings & Single-Pixel Default Settings & Splat with Single-Pixel Settings & Single-Pixel with Splat Settings \\ \hline
         1.08\,ms & 2.74\,ms & 10.14\,ms & 2.31\,ms \\
         \hline
     \end{tabulary}
-    \caption{Timings of the ISM renderers with different settings.}
     \label{tab:results:ism_timings}
-\end{center}
 \end{table}
 
 \Cref{tab:results:ism_timings} shows the time needed for rendering the ISMs with both renderers and different settings. Note that the comparison between the two renderers with default settings is not a fair one, since the single-pixel renderer uses more points and by default clamps each point's extents to its ISM. If the splat renderer is changed to behave similarly, it takes 0.3 additional milliseconds for clamping, and 8.66 additional milliseconds for using the same technique to collect VPLs as the single-pixel renderer does.
@@ -200,29 +198,27 @@ Since the presented implementation uses no adaptivity, these numbers are indepen
 
 
 \begin{table}[h]
-\begin{center}
+    \centering
+    \captionabove{Timing breakdown of the single-pixel point renderer.}
     \begin{tabulary}{0.98\textwidth}{| L | L | L | L || L |}
         \hline
         Point Collection & Point Rendering & Pull Phase & Push Phase & Total\\ \hline
         0.83\,ms & 0.65\,ms & 0.39\,ms & 0.85\,ms & 2.72\,ms\\
         \hline
     \end{tabulary}
-    \caption{Timing breakdown of the single-pixel point renderer.}
     \label{tab:results:timing_breakdown_single_pixel}
-\end{center}
 \end{table}
 
 \begin{table}[h]
-\begin{center}
+    \centering
+    \captionabove{Timing breakdown of the pull (PL) and push (PS) phase. The numbers of the individual steps indicate to which mipmap level they write, which is why the pull phase starts with 1 and the push phase has descending numbers. All timings are in milliseconds.}
     \begin{tabulary}{0.98\textwidth}{| L | L | L | L | L | L | L | L || L | L || L |}
         \hline
         PL 1 & PL 2 & PL 3 & PL > 3 & PS > 2 & PS 2 & PS 1 & PS 0 & PL Total & PS Total & Total \\ \hline
         0.16 & 0.16 & 0.04 & 0.03   & 0.06   & 0.08 & 0.30 & 0.41 & 0.39     & 0.85     & 1.24\\
         \hline
     \end{tabulary}
-    \caption{Timing breakdown of the pull (PL) and push (PS) phase. The numbers of the individual steps indicate to which mipmap level they write, which is why the pull phase starts with 1 and the push phase has descending numbers. All timings are in milliseconds.}
     \label{tab:results:timing_breakdown_pull_push}
-\end{center}
 \end{table}
 
 
@@ -306,16 +302,15 @@ Interleaved sampling substantially reduces the number of lights that are process
 
 
 \begin{table}[h]
-    \begin{center}
-        \begin{tabulary}{0.98\textwidth}{| L | L | L | L | L |}
-            \hline
-            Without IS & With IS & Speedup & Blur Pass & Speedup with Blur\\ \hline
-            40.24\,ms & 2.61\,ms & 15.42 & 0.63\,ms & 12.42\\
-            \hline
-        \end{tabulary}
-        \caption{Timings of interleaved sampling (IS) with a block size of 4x4. Note that the blur pass is mandatory when using interleaved sampling; the middle column merely illustrates the efficiency of the presented implementation, while the last column shows the practical speedup that is achieved.}
-        \label{tab:results:timings_interleaved_shading}
-    \end{center}
+    \centering
+    \captionabove{Timings of interleaved sampling (IS) with a block size of 4x4. Note that the blur pass is mandatory when using interleaved sampling; the middle column merely illustrates the efficiency of the presented implementation, while the last column shows the practical speedup that is achieved.}
+    \begin{tabulary}{0.98\textwidth}{| L | L | L | L | L |}
+        \hline
+        Without IS & With IS & Speedup & Blur Pass & Speedup with Blur\\ \hline
+        40.24\,ms & 2.61\,ms & 15.42 & 0.63\,ms & 12.42\\
+        \hline
+    \end{tabulary}
+    \label{tab:results:timings_interleaved_shading}
 \end{table}
 
 
@@ -399,19 +394,18 @@ Going further, this technique is limited by how well the blur phase will be able
 Clustered deferred shading and tiled deferred shading reduce the number of light calculation operations by clustering fragments and culling lights against those clusters. As such, if implemented correctly, they do not affect quality at all, but are purely performance optimizations.
 
 \begin{table}[h]
-    \begin{center}
-        \begin{tabulary}{0.98\textwidth}{| L | L | L | L | L |}
-            \hline
-            Scene & Without CS/TS & With CS & With TS \\ \hline
-            Sponza 1 & 3.41\,ms & 2.80\,ms & 2.40\\
-            Sponza 2 & 3.94\,ms & 3.63\,ms & 3.09\\
-            Sponza 3 & 2.68\,ms & 1.64\,ms & 1.34\\
-            San Miguel & 4.75\,ms & 5.21\,ms & 4.43\\
-            \hline
-        \end{tabulary}
-        \caption{Timings of the final gathering stage without optimizations, with clustered shading (CS) and with tiled shading (TS). Each line is a different camera position. Note that the timing ``With CS'' includes roughly 0.06\,ms for the clustering phase and 0.13\,ms for the light list phase.}
-        \label{tab:results:timings_clustered_shading}
-    \end{center}
+    \centering
+    \captionabove{Timings of the final gathering stage without optimizations, with clustered shading (CS) and with tiled shading (TS). Each line is a different camera position. Note that the timing ``With CS'' includes roughly 0.06\,ms for the clustering phase and 0.13\,ms for the light list phase.}
+    \begin{tabulary}{0.98\textwidth}{| L | L | L | L | L |}
+        \hline
+        Scene & Without CS/TS & With CS & With TS \\ \hline
+        Sponza 1 & 3.41\,ms & 2.80\,ms & 2.40\\
+        Sponza 2 & 3.94\,ms & 3.63\,ms & 3.09\\
+        Sponza 3 & 2.68\,ms & 1.64\,ms & 1.34\\
+        San Miguel & 4.75\,ms & 5.21\,ms & 4.43\\
+        \hline
+    \end{tabulary}
+    \label{tab:results:timings_clustered_shading}
 \end{table}
 
 As visible in \Cref{tab:results:timings_clustered_shading}, both clustered shading and tiled deferred shading can improve the performance of the final gathering phase considerably, in one of the measurements 50\,\% of the computation time is saved with tiled shading.
