@@ -14,7 +14,7 @@ The implementation is tested in the Crytek Sponza and San Miguel scene, with 260
 \begin{outline}
     \1 1920x1080\,px output resolution
     \1 1024 VPLs
-    \1 2048\,px² ISM texture, i.\,e., 64\,px² per ISM
+    \1 2048²\,px ISM texture, i.\,e., 64²\,px per ISM
     \1 Single-pixel point renderer enabled, 16 VPLs considered per point, up to 4 collected
     \1 4x4 interleaving pattern
     \1 Tiled shading enabled
@@ -83,7 +83,7 @@ The GI, SSAO and combine pass operate in screen space and are mostly dependent o
 
 As explained before, the RSM generation re-uses most of the code of the G-Buffer generation; see \Cref{fig:results:RSMBuffers} for an impression on the rendered result. Accordingly, the performance characteristics are similar to the regular geometry pass of deferred renderers.
 
-Since the implemented VPL sampling distributes the samples over the entire shadow map, we simply limited the VPLs' locations to the relevant area by tuning the light's extents. As a result, an aspect ratio chosen specifically for each test scene is used. Since our implementation re-uses the RSM as shadow map for direct lighting, we chose a resolution of 512\,px² (or, in the case of the Sponza scene, 1024x256\,px), which is more than required by the naive VPL sampling. The RSM is rendered in 0.17\,ms for the Sponza scene.
+Since the implemented VPL sampling distributes the samples over the entire shadow map, we simply limited the VPLs' locations to the relevant area by tuning the light's extents. As a result, an aspect ratio chosen specifically for each test scene is used. Since our implementation re-uses the RSM as shadow map for direct lighting, we chose a resolution of 512²\,px (or, in the case of the Sponza scene, 1024x256\,px), which is more than required by the naive VPL sampling. The RSM is rendered in 0.17\,ms for the Sponza scene.
 
 The VPL sampling itself takes only several microseconds and is negligible. Bear in mind that, in order to achieve high quality levels, a more elaborate sampling algorithms needs to be implemented, which can actually take most of the available time. For instance, the implemented sampling does not take the relevance of the sampled VPLs to the current frame into account. This causes the entire system to be rather inefficient by choosing lights that might contribute little or nothing to the rendered output (\Cref{fig:results:RSMUnfavorable}. An additional downside of the naive sampling is the poor temporal stability when the scene light moves. This is due to each VPL staying at the exact same position in the light's viewport, so their positions strictly follow the light's movement, jumping over depth discontinuities along the way.
 
@@ -222,14 +222,14 @@ Since the presented implementation uses no adaptivity, these numbers are indepen
 \end{table}
 
 
-\Cref{tab:results:timing_breakdown_single_pixel} gives more detailed performance measurements of the single-pixel renderer, while \cref{tab:results:timing_breakdown_pull_push} further breaks down the individual steps of the pull and push phase. Note how the timings scale roughly as expected (PL 3 and PS 2 are taking roughly 4 times longer than PL 2 and PS 1, respectively), but not so the first and last step. This is due to the reduced input data size (or output size, respectively), as explained in \cref{sec:impl:pullPushPostprocessing}. Also note how the push phase does take roughly the time of the pull phase if it were not for the last phase, where it writes to the full 2048\,px² of miplevel zero, whereas the largest miplevel written to by the pull phase is level one with 1024\,px².
+\Cref{tab:results:timing_breakdown_single_pixel} gives more detailed performance measurements of the single-pixel renderer, while \cref{tab:results:timing_breakdown_pull_push} further breaks down the individual steps of the pull and push phase. Note how the timings scale roughly as expected (PL 3 and PS 2 are taking roughly 4 times longer than PL 2 and PS 1, respectively), but not so the first and last step. This is due to the reduced input data size (or output size, respectively), as explained in \cref{sec:impl:pullPushPostprocessing}. Also note how the push phase does take roughly the time of the pull phase if it were not for the last phase, where it writes to the full 2048²\,px of miplevel zero, whereas the largest miplevel written to by the pull phase is level one with 1024²\,px.
 
 
 
 \subsection{Memory Usage}
 \label{sec:results:ism:memory}
 
-The point splat renderer uses no more memory than the ISM texture itself requires, which is 8\,MB for a 2048\,px² 16-bit depth buffer.
+The point splat renderer uses no more memory than the ISM texture itself requires, which is 8\,MB for a 2048²\,px 16-bit depth buffer.
 
 The single-pixel renderer uses additional memory. First, it uses a buffer for storing the points. This is implemented as four-channel 32-bit float texture, with the first three channels containing the position, and the last channel containing radius (8 bit) and normal (24 bit, see \cite{Cigolle:2014:NormalPacking}). With a maximum point count of 2048 per ISM (keep in mind they are rendered into multiple ISMs later), this buffer uses 32\,MB.
 The additional textures used are the render target of the single-pixel renderer (single-channel 2048x2048\,px, 32-bit integer, uses 16\,MB), the mipmap levels used by the pull-push algorithm (four channels, 32-bit, use approx. 22\,MB) and the final ISM (same format as used by the splat renderer, uses 8MB).
