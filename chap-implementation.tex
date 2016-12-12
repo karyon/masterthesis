@@ -126,15 +126,20 @@ While the bilateral blur achieves close to perfect results on even surfaces, the
 Instead of shuffling, an interesting and more elaborate solution to make the noise easier to mask are Metalights \citep{Faure:2010:Metalights}. They sort the VPLs after their contribution to the image and pick a representative subset per pixel. While the blur is still necessary, this might provide better results for problem cases such as thin structures.
 
 
-\section{Clustered Deferred Shading}
+\section{Clustered and Tiled Deferred Shading}
 \label{sec:impl:clusteredShading}
 
-Since clustered deferred shading discards lights only if they do not contribute any light energy to a cluster of pixels, it never alters the rendered output when implemented correctly and purely affects performance. Nevertheless, there are several design choices to be made. The presented implementation uses 128 pixels as screen-space tile width and 16 depth slices. It also uses an optimization proposed by \citet{persson::2013::practical} by using a larger near cluster for better depth slice utilization.
+Since both tiled and clustered deferred shading discard lights only if they do not contribute any light energy to a cluster of pixels, they never alter the rendered output when implemented correctly and purely affect performance. Nevertheless, there are several implementation choices to be made.
+
+
+\subsection{Clustered Deferred Shading}
+
+The presented implementation of clustered deferred shading uses 128 pixels as screen-space tile size and 16 depth slices. It also uses an optimization proposed by \citet{persson::2013::practical} by using a larger near cluster for better depth slice utilization.
 
 In some situations it is advantageous to perform the light assignment step on the CPU as done py \citet{persson::2013::practical}. In their context of computer games, they have mostly small light radii, making it possible to quickly determine the clusters that are reached by a certain light. For global illumination, however, infinite light radii are preferred, resulting in a higher number of clusters that are reached by each light source. Therefore, starting with all clusters that contain fragments and iterating over all lights for each cluster becomes viable, as opposed to determining the set of reached clusters per light. The more uniform control flow of this approach makes it a reasonable choice to use GPUs for the light assignment step. Additionally, since the lights are already generated on the GPU during the RSM sampling phase, CPU-side culling would require copying light data to the CPU and culling results back; performing culling on the GPU eliminates these data transfers.
 
 
-The clustered shading technique is divided into three phases, clustering, light assignment and shading, each corresponding to one compute shader dispatch call.
+The clustered shading technique is divided into three phases: clustering, light assignment and shading. Each of these corresponds to one compute shader dispatch call.
 
 \paragraph{Clustering.}
 In this step, each work group processes one 128\,px² screen-space tile. Since the number of threads in a work group is limited, each thread in the work group iterates over several fragments. For each fragment, the corresponding depth slice is determined and marked as used in a shared array of 16 booleans. Since no thread writes False or reads from the shared array, no data races can occur and no synchronization is needed in this step.
@@ -165,7 +170,7 @@ While the partitions cannot reasonably be shrinked much, one could use estimates
 The final gathering shader processes one pixel per invocation. Without clustered shading, each invocation simply processes the subset of VPL's that should be used as determined by the interleaved sampling algorithm. With clustered shading, it will instead first determine the pixel's cluster and subsequently process the lights in this cluster's light list and in the partition corresponding to the pixel's position in its interleaving block.
 
 
-\subsection{Tiled Shading}
+\subsection{Tiled Deferred Shading}
 
 In addition to clustered deferred shading, we also implemented its predecessor tiled shading. Since tiled shading does not perform clustering in the z-dimension (or in other words, it uses only one depth slice per tile), it allows for a simpler implementation.
 
