@@ -13,14 +13,14 @@ Before examining the different lighting effects simulated in computer graphics, 
 
 In practice, simulating individual photons and atoms is obviously infeasible and unnecessary for most computer graphics applications. Instead, computer graphics researchers have examined the different real-world light phenomena and approximated them separately, using different approaches and approximations for each of them to stay within their respective performance budget.
 
-The following sections provide a brief and non-comprehensive overview of these lighting effects and locate global illumination within them. The most top-level distinction is between the interaction of light with scene surfaces, and the transport of light through empty space in the scene.
+In the following a brief and non-comprehensive overview of these lighting effects is provided and the term \textit{global illumination} is defined more precisely. The most top-level categorization of lighting effects divides them into the interaction of light with scene surfaces, and the transport of light through empty space in the scene.
 
-\paragraph{Light-Surface Interaction.}
+\subsubsection{Light-Surface Interaction}
 
 To determine how much and in what direction incoming light is reflected from surfaces, \textit{bi-directional reflectance distribution functions} (BRDFs) are used. While the recent shift to physically-based BRDFs has brought more unified models to real-time computer graphics, several materials such as transparent (e.\,g., glass) or highly translucent ones (e.\,g., skin) are still handled separately.
 
 
-\paragraph{Light Transport.}
+\subsubsection{Light Transport}
 
 In order for light to interact with surfaces, it needs to be ``transported'' there from light sources. The simplest case, light that hits only one surface before reaching the camera, is called \textbf{direct light}. To determine surfaces that are directly lit by a certain light source, shadow maps are commonly used in real-time computer graphics. Direct light usually has a single point as origin in the case of point lights, or consists of entirely parallel light rays in the case of directional lights. This structuredness makes it relatively easy to compute, in terms of both complexity and performance.
 
@@ -30,10 +30,7 @@ The computation of \textbf{small-scale indirect light} has been made popular wit
 
 Small-scale indirect lighting techniques such as SSAO are important for accentuating small geometric details in objects and providing a sort of contact shadow as a visual cue for the proximity of objects to each other.
 
-In contrast, \textbf{large scale indirect lighting} provides more realistic lighting for entire scenes. While it has been computed in real-time for static scenes for a while, large-scale indirect lighting for fully dynamic scenes has yet to reach widespread use in real-time applications. More on this issue follows in the next section.
-\\
-\\
-The term \textit{global illumination} (GI) has been used for varying sets of lighting effects throughout the literature. In this thesis, it is used to describe the lastly mentioned aspect, i.\,e., large-scale indirect lighting.
+In contrast, \textbf{large scale indirect lighting} provides more realistic lighting for entire scenes. While it has been computed in real-time for static scenes for a while, large-scale indirect lighting for fully dynamic scenes has yet to reach widespread use in real-time applications. More on this issue follows in the next section. The term \textbf{global illumination} (GI) has been used for varying sets of lighting effects throughout the literature. In this thesis, it is used to describe the lastly mentioned aspect, i.\,e., large-scale indirect lighting.
 
 
 
@@ -132,9 +129,7 @@ There are two more essential design decisions to be made:
 \begin{description}
     \item[Visibility testing.] To prevent light from incorrectly shining through objects or walls, the visibility term in \Cref{eq:renderWithVisibility} needs to be solved. Since brute-force ray casting is prohibitively slow, it requires special acceleration structures or alternative approximations, like replacing ray casts with (a moderate amount of) shadow maps. As mentioned previously, this component uses a substantial if not most of the computation time for many of the global illumination approaches presented in the next section.
     \item[Choice of receiving elements.]
-    The final gathering step collects light into areas that are visible to the camera. These areas can be represented by several forms of \textit{receiving elements}. Besides directly using pixels in screen space, other choices are texels in texture space, surfels or voxels in world or view space or other virtual objects placed in the scene, e.\,g., in the form of spherical harmonics, which are then interpolated for shading individual pixels.
-
-    Technically, the light propagation step also necessarily stores its results in some form of receiving elements, which might differ from the ones that are used during final gathering. In this thesis however, the term describes those data structures that are used to perform the actual per-pixel shading.
+    The final gathering step collects light into areas that are visible to the camera. These areas can be represented by several forms of \textit{receiving elements}. Besides directly using pixels in screen space, other choices are texels in texture space, surfels or voxels in world or view space or other virtual objects placed in the scene, e.\,g., in the form of spherical harmonics, which are then interpolated for shading individual pixels. Technically, the light propagation step also necessarily stores its results in some form of receiving elements, which might differ from the ones that are used during final gathering. In this thesis however, the term describes those data structures that are used to perform the actual per-pixel shading.
 \end{description}%
 %
 As with most lighting concepts, real-time global illumination is often separated into diffuse and specular components, since the diffuse component is both easier to simulate with plausible results due to its low-frequency nature, and more important for the visual quality compared to the specular component. For the same reasons, only the diffuse component is covered in this thesis.
@@ -289,7 +284,7 @@ Ray-tracing has been proposed to compute visibility as well \citep[e.\,g.,][]{se
 \subsection{Mitigating Singularities}
 \label{sec:intro:relatedWorkManyLight:singularities}
 
-In naive implementations of many-lights techniques, bright spots will appear near the VPL’s positions due to the light’s attenuation term approaching infinity. A common approach is to clamp the term (\Cref{fig:introGI:clamping}). This introduces bias, which can be compensated e.\,g., in screen space \citep{novak2011screen}. Singularities can also be avoided through more advanced light representations \citep{tokuyoshi2015vsgl}.
+In naive implementations of many-lights techniques, bright spots will appear near the VPL’s positions due to the light’s attenuation term approaching infinity. A common approach is to clamp the term (\Cref{fig:introGI:clamping}). This introduces bias, which can be compensated, e.\,g., in screen space \citep{novak2011screen}. Singularities can also be avoided through more advanced light representations \citep{tokuyoshi2015vsgl}.
 
 
 \cleardoublepage
