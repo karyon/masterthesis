@@ -48,7 +48,7 @@ This thesis focuses on the later stages in the presented global illumination pip
 \section{Visibility Computation with Imperfect Shadow Maps}
 \label{sec:concept:ism}
 
-The original paper \citep{ritschel2008ism} converts the scene geometry to a point set in a preprocessing step and uses the points to efficiently render hundreds of shadow maps in parallel. For performance reasons, they use only a small subset of all points per shadow map, relying on the large number of shadow maps, each using a different subset, to keep the overall error small (\Cref{fig:concept:ism_ritschel_08}). They use splatting to render the points into shadow maps and fill the resulting holes with a simplified version of the pull-push algorithm presented by \citet{Marroquim:2007:reconstruction}. The technique is also capable of multi-bounce indirect illumination.
+The original paper \citep{ritschel2008ism} converts the scene geometry to a point set in a preprocessing step and uses the points to efficiently render hundreds of shadow maps in parallel. For performance reasons, they render only a small subset of all points per shadow map, relying on the large number of shadow maps, each using a different subset, to keep the overall error small (\Cref{fig:concept:ism_ritschel_08}). They use splatting to render the points into shadow maps and fill the resulting holes with a simplified version of the pull-push algorithm presented by \citet{Marroquim:2007:reconstruction}. The technique is also capable of multi-bounce indirect illumination.
 
 \begin{figure}[htb]
 \centering
@@ -71,7 +71,7 @@ To convert the scene into points, all its triangles are first tessellated to mee
 
 Now a random VPL is chosen per point and backface culling is performed. Likewise, points that do not lie on the VPL's illuminated side are culled before splatting the point into the respective ISM. For performance reasons, a simple paraboloid projection is used for the ISMs in lieu of conventional cubemaps. Here, another advantage of using points comes into play: Compared to triangles, it is trivial to perform a paraboloid projection on them.
 
-As mentioned above, we do not use the pull-push postprocessing algorithm when rendering points with splatting. Instead, we simply enlarge all point splats by a constant factor, which results in similar quality but better performance.
+As mentioned above, we do not employ the pull-push postprocessing algorithm when rendering points with splatting. Instead, we simply enlarge all point splats by a constant factor, which results in similar quality but better performance.
 
 
 \subsection{Point Rendering with Pull-Push Postprocessing}

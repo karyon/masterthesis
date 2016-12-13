@@ -4,7 +4,7 @@
 \chapter{Conclusion and Future Work}
 \label{chap:conclusion}
 
-In this thesis we have presented a rendering system that simulates global illumination at real-time framerates. It uses only a few milliseconds for computing indirect lighting, making it suitable for use in real-time applications on today's hardware.
+In this thesis we have presented a rendering system that simulates global illumination at real-time framerates. It takes only a few milliseconds for computing indirect lighting, making it suitable for use in real-time applications on today's hardware.
 
 Imperfect shadow maps have been implemented and extended by a high-quality postprocessing. They show improved results compared to conventional point splatting, but the resulting quality is limited by the input data, a sparse set of points representing the scene. Using compute shaders for rendering single-pixel points into multiple shadow maps is a clear efficiency gain compared to using geometry shaders.
 

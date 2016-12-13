@@ -103,7 +103,7 @@ In interactive 3D graphics applications, global illumination has been ignored fo
 
 For large-scale indirect lighting, light maps have seen widespread use since they have been introduced in the video game Quake \citep{Abrash:1997:BlackBook}. This technique is inherently static since the texturing of scene surfaces is an offline preprocessing step, and it is inherently large-scale since large texels are used to avoid excessive memory requirements.
 
-Games have used variations of \emph{precomputed radiance transfer} (PRT, \cite{sloan:2002:PRT}) to accommodate for changing lighting conditions. For instance, \citet{stefanov:2012:PRTinFarCry3} uses probes instead of the scene geometry to store the PRT results to be able to light dynamic objects. However, even though dynamic objects receive indirect lighting, they are unable to affect indirect lighting of other objects, a commonly made compromise.
+Games have employed variations of \emph{precomputed radiance transfer} (PRT, \cite{sloan:2002:PRT}) to accommodate for changing lighting conditions. For instance, \citet{stefanov:2012:PRTinFarCry3} uses probes instead of the scene geometry to store the PRT results to be able to light dynamic objects. However, even though dynamic objects receive indirect lighting, they are unable to affect indirect lighting of other objects, a commonly made compromise.
 
 Besides not fully supporting dynamic objects, the long precomputation times of conventional global illumination methods are a common hindrance in the workflow of artists. Global illumination techniques that support dynamic objects and require no expensive precomputation have yet to reach widespread use in real-time applications due to the high performance requirements.
 
@@ -147,8 +147,8 @@ Based on the work of \citet{Bunnell:2005:AO}, point-based global illumination ha
 Despite its name, the geometry representation used to approximate the scene geometry consists of disk-shaped surface elements (\emph{surfels}).
 These surfels are then organized into the leaves of a tree structure, while the higher-level nodes are aggregate representations of all nodes they contain.
 This tree is then used to compute visibility and propagate light between the surfels.
-While \citet{Bunnell:2005:AO} uses a rough approximation for computing visibility, \citet{christensen2008point} uses ray tracing or spherical harmonics based on the distance between surfels to compute fairly accurate approximations of global illumination.
-\citet{Ritschel:2009:microrendering} achieve interactive frame rates by using the GPU to perform the final gathering step, which renders the scene into a \emph{micro-buffer} for each receiving element (in their case, screen-space pixels).
+While \citet{Bunnell:2005:AO} propose a rough approximation for computing visibility, \citet{christensen2008point} employs ray tracing or spherical harmonics based on the distance between surfels to compute fairly accurate approximations of global illumination.
+\citet{Ritschel:2009:microrendering} achieve interactive frame rates by utilizing the GPU to perform the final gathering step, which renders the scene into a \emph{micro-buffer} for each receiving element (in their case, screen-space pixels).
 Due to the large amounts of surfels required and the necessary tree structure, this technique is best suited for static or very small dynamic scenes.
 
 
@@ -258,7 +258,7 @@ This section will present several many-light methods while concentrating on thos
 \subsection{Virtual Point Light Sampling}
 \label{sec:intro:relatedWorkManyLight:vplSampling}
 
-While \citet{Keller:1997:InstantRadiosity} uses an approach similar to photon mapping to create VPLs, real-time applications are in need of something more performant. A commonly used technique are \emph{reflective shadow maps} (RSMs, \cite{Dachsbacher:2005:RSM}), which use rasterization to create first-order VPLs. While in this paper, each pixel of the RSM is considered a VPL and during gathering, a random subset of all VPLs is sampled, beginning with \citet{dachsbacher2006splatting} most papers sample the RSM to create a fixed set of VPLs which is used during shading.
+While \citet{Keller:1997:InstantRadiosity} proposes an approach similar to photon mapping to create VPLs, real-time applications are in need of something more performant. A commonly used technique are \emph{reflective shadow maps} (RSMs, \cite{Dachsbacher:2005:RSM}), which use rasterization to create first-order VPLs. While in this paper, each pixel of the RSM is considered a VPL and during gathering, a random subset of all VPLs is sampled, beginning with \citet{dachsbacher2006splatting} most papers sample the RSM to create a fixed set of VPLs which is used during shading.
 
 \citet{georgiev2010simple, ritschel2011ismsViewAdaptive} sample the RSM to create a set of VPLs with (estimated) high contributions to the final image. \citet{dong2009real, prutkin2012reflective} cluster several samples to form \emph{virtual area lights}. They observe that far fewer virtual area lights than VPLs are necessary to achieve the same quality at a minor performance expense.
 
@@ -268,7 +268,7 @@ Most of these approaches suffer from poor temporal stability. To improve on that
 \subsection{Final Gathering}
 \label{sec:intro:relatedWorkManyLight:finalGathering}
 
-Splatting techniques have been used to add a light's contribution to the rendered image \citep{dachsbacher2006splatting, Nichols:2009:splatting}, but do not utilize modern GPUs efficiently. Instead, gathering approaches are commonly used today, using interleaved sampling \citep{Keller:2001:InterleavedSampling} to reduce the number of lights processed per pixel, in combination with an edge-aware blur similar to \citet{laine2007incremental}. \citet{segovia2006non} improve the cache efficiency of interleaved sampling.
+Splatting techniques have been used to add a light's contribution to the rendered image \citep{dachsbacher2006splatting, Nichols:2009:splatting}, but do not utilize modern GPUs efficiently. Instead, gathering approaches are commonly used today, employing interleaved sampling \citep{Keller:2001:InterleavedSampling} to reduce the number of lights processed per pixel, in combination with an edge-aware blur similar to \citet{laine2007incremental}. \citet{segovia2006non} improve the cache efficiency of interleaved sampling.
 
 
 \subsection{Visibility Computation}
