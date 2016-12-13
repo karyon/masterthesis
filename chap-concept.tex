@@ -127,7 +127,7 @@ Analogous to the pull phase, the push phase reads four pixels of the coarser lev
 
 The target output location in the finer level might already contain data that was computed during the pull phase. This data is overwritten if its depth is behind the interpolated point's depth interval, i.\,e., if the original data is considered to be occluded. Otherwise, the original point is left untouched, as it is likely to be more accurate than the previously computed, interpolated point.
 
-Since the input and output pixel's location do not match the way they do during the pull phase, the weights used for interpolation during the push phase are not uniform (\Cref{fig:concept:weights_marroquim} (c) and (d)).
+In contrast to the pull phase, the output pixel is not located in the center of the input pixels during the push phase. Therefore the weights used for interpolation are not uniform (\Cref{fig:concept:weights_marroquim} (c) and (d)).
 
  \citet{Marroquim:2007:reconstruction} also use each point's normal to correctly limit the point's size, and \citet{Marroquim:2008:reconstruction2} propose Gaussian weights based on the pixel's distance to the point's location, instead of constant weights solely based on pixel locations. Both of these additions we have not implemented yet.
 

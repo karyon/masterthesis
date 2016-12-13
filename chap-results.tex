@@ -49,7 +49,7 @@ The GTX 980 has been locked to its base clock rate of 1164\,Mhz using SetStableP
     \label{tab:results:timing_breakdown_frame}
 \end{table}
 
-\Cref{tab:results:timing_breakdown_frame} gives an overview of the time needed for rendering a single frame. The Crytek Sponza scene and default settings have been used. All timings measure GPU time only, there are no noteworthy calculations done on the CPU. With a total of 8.7\,ms, the application achieves real-time framerates while leaving room for more expensive calculations, higher output resolutions or more detailed scenes.
+\Cref{tab:results:timing_breakdown_frame} gives an overview of the time needed for rendering a single frame. The Crytek Sponza scene and default settings have been used. All timings measure GPU time only; there are no noteworthy calculations done on the CPU. With a total of 8.7\,ms, the application achieves real-time framerates while leaving room for more expensive calculations, higher output resolutions or more detailed scenes.
 
 The GI, SSAO and combine pass operate in screen space and are mostly dependent on the screen size (and, of course, on light and sample count in the case of GI and SSAO, respectively). The G-Buffer and RSM generation follow the usual performance characteristics and are mainly dependent on output resolution and geometric complexity. The performance behavior of the ISM rendering heavily depends on the settings and is further detailed below. The blit phase copies a texture to the back buffer and serves debugging purposes only.
 
@@ -85,7 +85,7 @@ As explained before, the RSM generation re-uses most of the code of the G-Buffer
 
 Since the implemented VPL sampling distributes the samples over the entire shadow map, we simply limited the VPLs' locations to the relevant area by tuning the light's extents. As a result, an aspect ratio chosen specifically for each test scene is used. Since our implementation re-uses the RSM as shadow map for direct lighting, we chose a resolution of 512²\,px (or, in the case of the Sponza scene, 1024x256\,px), which is more than required by the naive VPL sampling. The RSM is rendered in 0.17\,ms for the Sponza scene.
 
-The VPL sampling itself takes only several microseconds and is negligible. Bear in mind that, in order to achieve high quality levels, a more elaborate sampling algorithms needs to be implemented, which can actually take most of the available time. For instance, the implemented sampling does not take the relevance of the sampled VPLs to the current frame into account. This causes the entire system to be rather inefficient by choosing lights that might contribute little or nothing to the rendered output (\Cref{fig:results:RSMUnfavorable}. An additional downside of the naive sampling is the poor temporal stability when the scene light moves. This is due to each VPL staying at the exact same position in the light's viewport, so their positions strictly follow the light's movement, jumping over depth discontinuities along the way.
+The VPL sampling itself takes only several microseconds and is negligible. Bear in mind that, in order to achieve high quality levels, a more elaborate sampling algorithm needs to be implemented, which can in fact take most of the available time. For instance, the implemented sampling does not take the relevance of the sampled VPLs to the current frame into account. This causes the entire system to be rather inefficient because it chooses lights that might contribute little or nothing to the rendered output (\Cref{fig:results:RSMUnfavorable}. An additional downside of the naive sampling is the poor temporal stability when the scene light moves. This is due to each VPL staying at the exact same position in the light's viewport, so their positions strictly follow the light's movement, jumping over depth discontinuities along the way.
 
 \begin{figure}[htb]
 \centering
@@ -118,7 +118,7 @@ This section presents the results for visibility testing using imperfect shadow 
   \label{fig:results:isms}
 \end{figure}
 
-\Cref{fig:results:isms} shows a few ISMs rendered with the splat and single-pixel renderer. The imperfections do show, and not only through the low resolutions. The distortion of the surface silhouettes by the splat renderer or postprocessing contribute their part, making it hard to identify which part of the Crytek Sponza is shown. However, keep in mind that the imperfections, while being noticeable in each individual ISM, are expected to partly cancel each other out and result in an acceptable average error in the final rendering.
+\Cref{fig:results:isms} shows a few ISMs rendered with the splat and single-pixel renderer. The imperfections do show, and not only through the low resolutions. The distortion of the surface silhouettes by the splat renderer or postprocessing contribute their part, making it hard to identify which part of the Crytek Sponza is rendered. However, keep in mind that the imperfections, while being noticeable in each individual ISM, are expected to partly cancel each other out and result in an acceptable average error in the final rendering.
 
 \begin{figure}[htb]
 \centering
@@ -130,9 +130,9 @@ This section presents the results for visibility testing using imperfect shadow 
   \label{fig:results:ismDarkening}
 \end{figure}
 
-Comparing the screenshots in \cref{fig:results:ismDarkening}, it becomes apparent that the splat renderer causes visible darkening in the upper part of the image. The reason is likely that the point splats are always oriented towards the camera and do not take the point's normal into account when rendering, amplifying the usual aliasing artifacts of common shadow maps. As a result, any point size larger than one pixel causes surfaces that are not directly facing the camera appear nearer than they actually are when doing shadow lookups in ISMs. A larger shadow bias could compensate for that but would introduce heavier light leaking. Another possibility is to use the normal to calculate a point's depth per fragment at a potentially high performance cost.
+Comparing the screenshots in \cref{fig:results:ismDarkening}, it becomes apparent that the splat renderer causes visible darkening in the upper part of the image. The reason is probably that the point splats are always oriented towards the camera and do not take the point's normal into account when rendering, amplifying the usual aliasing artifacts of common shadow maps. As a result, any point size larger than one pixel causes surfaces that are not directly facing the camera to appear nearer than they actually are when doing shadow lookups in ISMs. A larger shadow bias could compensate for that but would introduce heavier light leaking. Another possibility is to use the normal to calculate a point's depth per fragment at a potentially high performance cost.
 
-As the single-pixel renderer does not use splats, it does not have this problem. In a certain way it performs the per-fragment depth calculation implicitly during interpolation in the postprocessing phase.
+As the single-pixel renderer does not use splats, this problem is largely mitigated. In a certain way it performs the per-fragment depth calculation implicitly during interpolation in the postprocessing phase.
 
 
 \begin{figure}[htb]
@@ -148,7 +148,7 @@ As the single-pixel renderer does not use splats, it does not have this problem.
 \end{figure}
 
 
-\Cref{fig:results:leaks} shows a case the ISM technique has difficulties with. The image should be mostly dark or at least uniformly lit through the small gap below the curtains, instead the wall and ceiling receive a lot of light and the floor displays several artifacts. The root cause is that the VPLs are placed right behind the curtains, so the occluding geometry, i.\,e., the curtain, is very near to the light source. Due to the randomness involved when selecting point sets for rendering ISMs, it often happens that the points near to the light source are rendered into other ISMs, leaving a large hole behind. The single-pixel renderer fares a bit better than the splat renderer since it uses more points, but does not provide a satisfactory result either.
+\Cref{fig:results:leaks} shows a case which the ISM technique has difficulties with. The image should be mostly dark or at least uniformly lit through the small gap below the curtains, instead the wall and ceiling appear too bright and the floor displays several artifacts. The root cause is that the VPLs are placed right behind the curtains, so the occluding geometry, i.\,e., the curtain, is very near to the light source. Due to the randomness involved when selecting point sets for rendering ISMs, it often happens that the points near to the light source are rendered into other ISMs, leaving a large hole behind. The single-pixel renderer fares a bit better than the splat renderer since it uses more points, but does not provide a satisfactory result either.
 
 
 
@@ -160,7 +160,7 @@ As the single-pixel renderer does not use splats, it does not have this problem.
       \includegraphics[width=.48\textwidth]{screenshots/bias_splat_exposure} &
       \includegraphics[width=.48\textwidth]{screenshots/bias_single_pixel_exposure}
   \end{tabular}
-  \caption{Light leaks caused by using a relatively large shadow bias with the purpose to hide artifacts of the ISMs. The screenshots to the left use the splat renderer, the right ones the single-pixel renderer. Bottom row uses a higher exposure.}
+  \caption{Light leaks caused by using a relatively large shadow bias with the purpose to hide artifacts of the ISMs. The screenshots to the left use the splat renderer, the right ones the single-pixel renderer. The bottom row uses a higher exposure.}
   \label{fig:results:bias}
 \end{figure}
 
@@ -184,7 +184,7 @@ Our implementation hides some of the inaccuracies of ISMs by using a relatively 
     \label{tab:results:ism_timings}
 \end{table}
 
-\Cref{tab:results:ism_timings} shows the time needed for rendering the ISMs with both renderers and different settings. Note that the comparison between the two renderers with default settings is not a fair one, since the single-pixel renderer uses more points and by default clamps each point's extents to its ISM. If the splat renderer is changed to behave similarly, it takes 0.3 additional milliseconds for clamping, and 8.66 additional milliseconds for using the same technique to collect VPLs as the single-pixel renderer does.
+\Cref{tab:results:ism_timings} shows the time needed for rendering the ISMs with both renderers and different settings. Note that the comparison between the two renderers with default settings is not a fair one, since the single-pixel renderer uses more points and by default clamps each point's extents to its ISM. If the splat renderer is changed to behave similarly, it takes 0.3 additional milliseconds for clamping, and 8.66 additional milliseconds for using the same technique to collect VPLs that the single-pixel renderer uses.
 
 There are several reasons for this heavy slowdown: First, this is implemented by emitting multiple vertices in the geometry shader, which is known to have poor performance on current GPUs. Second, the additional fillrate and overdraw became an issue when using too many points, a bottleneck that is unlikely to occur when using the single-pixel renderer. And third, while the single-pixel renderer uses shared memory to load the 16 VPLs once, the geometry shader of the splat renderer has no access to shared memory and has to load all 16 VPLs per invocation, creating high register pressure.
 
@@ -211,7 +211,7 @@ Since the presented implementation uses no adaptivity, these numbers are indepen
 
 \begin{table}[h]
     \centering
-    \captionabove{Timing breakdown of the pull (PL) and push (PS) phase. The numbers of the individual steps indicate to which mipmap level they write, which is why the pull phase starts with 1 and the push phase has descending numbers. All timings are in milliseconds.}
+    \captionabove{Timing breakdown of the pull (PL) and push (PS) phase. The numbers of the individual steps indicate to which mipmap level they write, which is why the pull phase starts at 1 and the push phase has descending numbers. All timings are in milliseconds.}
     \begin{tabulary}{0.98\textwidth}{| L | L | L | L | L | L | L | L || L | L || L |}
         \hline
         PL 1 & PL 2 & PL 3 & PL > 3 & PS > 2 & PS 2 & PS 1 & PS 0 & PL Total & PS Total & Total \\ \hline
@@ -222,25 +222,23 @@ Since the presented implementation uses no adaptivity, these numbers are indepen
 \end{table}
 
 
-\Cref{tab:results:timing_breakdown_single_pixel} gives more detailed performance measurements of the single-pixel renderer, while \cref{tab:results:timing_breakdown_pull_push} further breaks down the individual steps of the pull and push phase. Note how the timings scale roughly as expected (PL 3 and PS 2 are taking roughly 4 times longer than PL 2 and PS 1, respectively), but not so the first and last step. This is due to the reduced input data size (or output size, respectively), as explained in \cref{sec:impl:pullPushPostprocessing}. Also note how the push phase does take roughly the time of the pull phase if it were not for the last phase, where it writes to the full 2048²\,px of miplevel zero, whereas the largest miplevel written to by the pull phase is level one with 1024²\,px.
+\Cref{tab:results:timing_breakdown_single_pixel} gives more detailed performance measurements of the single-pixel renderer, while \cref{tab:results:timing_breakdown_pull_push} further breaks down the individual steps of the pull and push phase. Note how the timings scale roughly as expected (PL 3 and PS 2 are taking roughly four times longer than PL 2 and PS 1, respectively), except for the first and last step. This is due to the reduced input data size (or output size, respectively), as explained in \cref{sec:impl:pullPushPostprocessing}. Also note how the push phase does take roughly the time of the pull phase if it were not for the last phase, where it writes to the full 2048²\,px of miplevel zero, whereas the largest miplevel written to by the pull phase is level one with 1024²\,px.
 
 
 
 \subsection{Memory Usage}
 \label{sec:results:ism:memory}
 
-The point splat renderer uses no more memory than the ISM texture itself requires, which is 8\,MB for a 2048²\,px 16-bit depth buffer.
-
-The single-pixel renderer uses additional memory. First, it uses a buffer for storing the points. This is implemented as four-channel 32-bit float texture, with the first three channels containing the position, and the last channel containing radius (8 bit) and normal (24 bit, see \cite{Cigolle:2014:NormalPacking}). With a maximum point count of 2048 per ISM (keep in mind they are rendered into multiple ISMs later), this buffer uses 32\,MB.
+The point splat renderer uses no more memory than the ISM texture itself requires, which is 8\,MB for a 2048²\,px 16-bit depth buffer. The single-pixel renderer uses additional memory. First, it uses a buffer for storing the points. This is implemented as four-channel 32-bit float texture, with the first three channels containing the position, and the last channel containing radius (8 bit) and normal (24 bit, see \cite{Cigolle:2014:NormalPacking}). With a maximum point count of 2048 per ISM (keep in mind they are rendered into multiple ISMs later), this buffer uses 32\,MB.
 The additional textures used are the render target of the single-pixel renderer (single-channel 2048x2048\,px, 32-bit integer, uses 16\,MB), the mipmap levels used by the pull-push algorithm (four channels, 32-bit, use approx. 22\,MB) and the final ISM (same format as used by the splat renderer, uses 8MB).
 
-Added together, the single-pixel renderer uses a total of 79\,MB. There is some room for optimization left: For instance, one channel of the mipmap levels is unused (OpenGL does not offer three-channel images), and in some places, using 16-bit floats instead of 32-bit float might be sufficient.
+Added together, the single-pixel renderer uses a total of 79\,MB. There remains some rooms for optimization: For instance, one channel of the mipmap levels is unused (OpenGL does not offer three-channel images), and for some textures, using 16-bit floats instead of 32-bit float might be sufficient.
 
 
 \subsection{Problems with High Geometric Density}
 \label{sec:results:ism:densityProblems}
 
-As a more demanding test case is the San Miguel scene with 7.9M triangles. The most apparent problem of the presented implementation is the lack of adaptivity to the current viewport in addition to the lack of LOD methods. As a result, all 7.9M triangles are used every frame to render the ISMs, with corresponding performance results: The point collection phase of the single-pixel renderer now takes 12.0\,ms, while the point rendering uses an additional 5.3\,ms. The time needed by the postprocessing is unchanged since it works on fixed resolution textures. The splat renderer uses 12.0\,ms, which is the exact same amount of time as the point collection phase of the single-pixel renderer, even though the latter does no rasterization work. This demonstrates how this process is bottlenecked by geometric complexity.
+A more demanding test case is the San Miguel scene with 7.9M triangles. The most apparent problem of the presented implementation is the lack of adaptivity to the current viewport in addition to the lack of LOD methods. As a result, all 7.9M triangles are used every frame to render the ISMs, with corresponding performance results: The point collection phase of the single-pixel renderer now takes 12.0\,ms, while the point rendering uses an additional 5.3\,ms. The time needed by the postprocessing is unchanged since it works on fixed resolution textures. The splat renderer uses 12.0\,ms, which is the exact same amount of time as the point collection phase of the single-pixel renderer, even though the latter has no rasterization to perform. This demonstrates how this process is bottlenecked by geometric complexity.
 
 
 \begin{figure}[htb]
@@ -258,19 +256,17 @@ As a more demanding test case is the San Miguel scene with 7.9M triangles. The m
     \includegraphics[width=.48\textwidth]{screenshots/san_miguel_ugly_shadow} &
     \includegraphics[width=.48\textwidth]{screenshots/san_miguel_ugly_shadow_gi_only}
   \end{tabular}
-  \caption{A particularly inaccurate shadow produced by ISMs. Right image shows only indirect light. Ideally, the shadow would be much more smooth. The low-frequency noise is caused by choosing random points per ISM, while the many edges of the shadows are caused by the basic shadow mapping algorithm, which performs a simple binary choice.}
+  \caption{A particularly inaccurate shadow produced by ISMs. The right image shows only indirect light. Ideally, the shadow would be much smoother. The low-frequency noise is caused by choosing random points per ISM, while the many edges of the shadows are caused by the basic shadow mapping algorithm, which performs a simple binary choice.}
   \label{fig:results:san_miguel_ugly_shadow}
 \end{figure}
 
-\Cref{fig:results:san_miguel_wide} shows an example screenshot of the San Miguel scene. There are several factors contributing to an overly dark region behind the pillars. First, during ISM rendering all points are rendered into at least one pixel, making them take out too much light if they are actually smaller than one pixel. This likely happens in case of the thin structures of the chairs and trees. Additionally, the implementation simulates only one bounce, making it impossible for the floor behind the pillars to be lit at all.
-
-Another problem case is shown by \Cref{fig:results:san_miguel_ugly_shadow}, where the table and chairs cast a visibly inaccurate shadow.
+\Cref{fig:results:san_miguel_wide} shows an example screenshot of the San Miguel scene. There are several factors contributing to an overly dark region behind the pillars. First, during ISM rendering all points are rendered into at least one pixel, which makes them take out too much light if they are actually smaller than one pixel. This is especially the case with the thin structures of the chairs and trees. Additionally, the implementation simulates only one bounce, making it impossible for the floor behind the pillars to be lit at all. Another problem case is shown by \Cref{fig:results:san_miguel_ugly_shadow}, where the table and chairs cast a visibly inaccurate shadow.
 
 
 \subsection{Comparison of the Splat and Single-Pixel Renderer}
 \label{sec:results:ism:comparison}
 
-The single-pixel renderer provides numerous advantages over the splat renderer: Using a compute shader to render points lifts the restrictions of the fixed-function pipeline and, e.\,g., enables rendering each point into multiple ISMs without large performance losses. Quality-wise, it can reproduce surfaces more accurately by correctly interpolating between points.
+The single-pixel renderer provides numerous advantages over the splat renderer: Using a compute shader to render points lifts the restrictions of the fixed-function pipeline and, e.\,g., allows rendering each point into multiple ISMs without large performance losses. Quality-wise, it can reproduce surfaces more accurately by correctly interpolating between points.
 
 The drawbacks obviously include the additional rendering time and memory. Besides, the added complexity should not be underestimated. Specifically, we found it hard to fine-tune the pull-push algorithm to produce satisfactory results, especially in the face of the low resolutions of ISMs and the limited data available for reconstruction after selecting a random and sparse set of points.
 
@@ -279,15 +275,15 @@ The drawbacks obviously include the additional rendering time and memory. Beside
 \subsection{Discussion}
 \label{sec:results:ism:discussion}
 
-Imperfect shadow maps have several deficits, some of which are inherent to the technique and difficult to solve, others are specific to the implementation choices and tradeoffs in the presented implementation and might be easier to overcome.
+Imperfect shadow maps have several deficits, some of which are inherent to the technique and difficult to solve, while others are specific to the implementation choices and tradeoffs in the presented implementation and might be easier to overcome.
 
 First, ISMs reduce the scene's geometry to points. At the resolution that is achievable in a real-time budget, this is already a rough approximation that loses a lot of accuracy.
 
-Second, because a sparse set of points is used for each ISM, each point must be enlarged to accommodate for the neighboring points that are likely missing in the chosen ISM. For instance, if an area is represented by a thousand points and only one tenth of all points is used for each ISM, each remaining point's area must be enlarged by a factor of ten to result in an equally large area in the rendered output. Of course, this approach leads to deformed geometry since points at the edges of the area get enlarged as well, growing over the borders of the original geometry.
+Second, because a sparse set of points is used for each ISM, each point must be enlarged to accommodate for the neighboring points that are likely missing in the chosen ISM. For instance, if an area is represented by a thousand points and only one tenth of all points is used for each ISM, each remaining point's area must be enlarged by a factor of ten to result in an equally large area in the rendered output. Of course, this approach leads to deformed geometry since points at the edges of the area are enlarged as well, growing over the borders of the original geometry.
 
-Third, ISMs also have numerical issues. For instance, both the splatting and postprocessing approaches ignore the distortion caused by the paraboloid projection, and thus might render even simple surfaces incorrectly. This contributes to the necessity of using a relatively large shadow bias. At the cost of additional complexity, this can likely be solved.
+Third, ISMs also have numerical issues. For instance, both the splatting and postprocessing approaches ignore the distortion caused by the paraboloid projection, and thus might render even simple surfaces incorrectly. This contributes to the necessity of using a relatively large shadow bias. At the cost of additional complexity, this can likely be solved with relative ease.
 
-Fourth, and this is in our view the most important shortcoming, ISMs handle geometry in the vicinity to VPLs badly (\Cref{fig:results:leaks}). To sufficiently approximate such surfaces when rendering ISMs, one would need to greatly increase the number of points created near VPLs, possibly in addition to stepping away from using a fully random approach for point selection and select a specific point set for each ISM depending on the VPLs location.
+Fourth, and this is in our view the most important shortcoming, ISMs handle geometry in the vicinity to VPLs badly (\Cref{fig:results:leaks}). To sufficiently approximate such surfaces when rendering ISMs, one would need to greatly increase the number of points created near VPLs, possibly in addition to stepping away from using a fully random approach for point selection and one would have to select a specific point set for each ISM depending on the VPLs location.
 
 As for most global illumination algorithms, a massive improvement would be to differentiate between large-scale scene geometry that is important for diffuse light bounces, and smaller geometry of lesser importance. While the latter can possibly be ignored altogether with only minor losses in quality, the shape of large-scale geometry is all the more important to preserve (relatively) precisely.
 
@@ -367,7 +363,7 @@ Interleaved sampling substantially reduces the number of lights that are process
         \label{fig:results:interleaved_difference_shaded}%
     \end{subfigure}%
 
-      \caption{Interleaved sampling results. Top row shows indirect light only. From left to right: (a) Result of the final gathering phase without the bilateral blur, (b) with the horizontal phase of the blur applied, (c) with both phases applied, (d) result of the final gathering phase without using interleaved sampling, (e) difference between (c) and (d). Bottom row: (f) final result after blending when using interleaved sampling, (g) whithout interleaved sampling, (h) difference between (f) and (g). Difference values are multiplied by eight.}
+      \caption{Interleaved sampling results. The top row shows indirect light only. From left to right: (a) Result of the final gathering phase without the bilateral blur, (b) with the horizontal phase of the blur applied, (c) with both phases applied, (d) result of the final gathering phase without using interleaved sampling, (e) difference between (c) and (d). Bottom row: (f) final result after blending when using interleaved sampling, (g) whithout interleaved sampling, (h) difference between (f) and (g). Difference values are multiplied by eight.}
       \label{fig:results:interleaved_quality}
 \end{figure}
 
@@ -384,7 +380,7 @@ Interleaved sampling is an obvious win for many-light global illumination method
 
 In fact, given the unnoticable quality impact (\Cref{fig:results:interleaved_quality}) of interleaved sampling when using a 4x4 block size, larger block sizes, e.\,g., 8x8 as used by \citet{hedman2016sequential} should be considered. Especially with the advent of high-resolution displays, lowering the shading frequency of global illumination effect even further might be necessary to keep the costs down to a reasonable level. However, the performance gains from lower sample counts will be offset in part by larger blur radii that come with larger block sizes.
 
-Going further, this technique is limited by how well the blur phase will be able to mask the noise in more difficult areas with lots of depth discontinuities like vegetation. To this end, one option might be to collect fragments that receive too few information during shading and blurring, and re-process them with larger sets of VPLs in a second pass (similar to \cite{Lauritzen:2010:Deferred}). Temporal reprojection methods \citep{Jimenez:2016:FilmicSMAA} that re-use information from previous frames and use different sets of VPLs per frame would be another natural extension of interleaved sampling.
+Going further, this technique is limited by how well the blur phase is able to mask the noise in more difficult areas with lots of depth discontinuities like vegetation. To this end, one option might be to collect fragments that receive too few information during shading and blurring, and re-process them with larger sets of VPLs in a second pass (similar to \cite{Lauritzen:2010:Deferred}). Temporal reprojection methods \citep{Jimenez:2016:FilmicSMAA} that re-use information from previous frames and use different sets of VPLs per frame would be another natural extension of interleaved sampling.
 
 
 
@@ -408,17 +404,17 @@ Clustered deferred shading and tiled deferred shading reduce the number of light
     \label{tab:results:timings_clustered_shading}
 \end{table}
 
-As visible in \Cref{tab:results:timings_clustered_shading}, both clustered shading and tiled deferred shading can improve the performance of the final gathering phase considerably, in one of the measurements 50\,\% of the computation time is saved with tiled shading.
+As visible in \Cref{tab:results:timings_clustered_shading}, both clustered shading and tiled deferred shading can improve the performance of the final gathering phase considerably: In one of the measurements 50\,\% of the computation time is saved with tiled shading.
 
 
 It is interesting that clustered shading, being the successor of tiled shading, performs noticeably worse in the context of many-light methods. This is true even for the San Miguel scene, in which the higher amount of depth discontinuities should be favorable to clustered shading. While these performance characteristics might be specific to the presented implementation, there are plausible reasons that they might apply generally: Due to the infinite light radii used, the percentage of culled lights is generally low. Therefore it might be the better choice to optimize for the worst case and implement a low overhead solution like tiled shading, instead of a more accurate solution like clustered shading that might improve the culling rate, but comes with more overhead.
 
 An impression of the amount of overhead introduced by clustered shading is given by the San Miguel scene, from which the last line of measurements is taken. This scene runs much slower even when only considering the final gathering phase, because most VPLs are placed on the walls and floor, pointing inwards or upwards respectively. Therefore much of the geometry lies on the illuminated side of most VPLs, resulting in very little performance gains from culling.
 
-With a low culling rate, clustered shading actually slows down the final gathering phase by 0.46\,ms. While 0.19\,ms of these are fixed costs added by the clustering and light list calculation phases, the final gathering shader itself got 0.27\,ms slower as well. This might be caused by the indirection when accessing lights, since instead of reading from the light buffer directly, the light list with indices is accessed first before reading the light buffer with a dynamic index. Another explanation might be the divergent data flow, since threads from the same work group can access different light lists and thus different light data and shadow maps, possibly hurting cache efficiency.
+With a low culling rate, clustered shading actually slows down the final gathering phase by 0.46\,ms. While 0.19\,ms of these are fixed costs added by the clustering and light list calculation phases, the final gathering shader was slowed down by 0.27\,ms as well. This might be caused by the indirection when accessing lights, since instead of reading from the light buffer directly, the light list with indices is accessed first before reading the light buffer with a dynamic index. Another explanation might be the divergent data flow, since threads from the same work group can access different light lists and thus different light data and shadow maps, possibly hurting cache efficiency.
 
 As discussed in section \Cref{sec:impl:clusteredShading}, clustered shading consumes about 2\,MB of memory. The tiled shading algorithm however, being integrated into the final gathering shader, uses no additional VRAM at all.
 
 \subsubsection{Discussion}
 
-The presented measurements make tiled shading seem like a clear winner, but as so often the situation is more complicated. The integration of tiled shading into the final gathering shader, while an efficient and easy to implement solution, is inherently less flexible than clustered shading. For instance, \citet{olsson2012clustered} propose to use normals as another dimension besides the three spatial ones, further improving culling efficiency. While this is likely easy to integrate into the more flexible approach taken with clustered shading, the integrated tiled shading is constrained by the amount of available shared memory, which makes it challenging to take additional dimensions into account.
+The presented measurements make tiled shading seem like a clear winner, but as so often the situation is more complicated. The integration of tiled shading into the final gathering shader, while an efficient and easy to implement solution, is inherently less flexible than clustered shading. For instance, \citet{olsson2012clustered} propose to use normals as another dimension besides the three spatial ones, further improving culling efficiency. While this is presumably easy to integrate into the more flexible approach taken with clustered shading, the integrated tiled shading is constrained by the amount of available shared memory, which makes it challenging to take additional dimensions into account.
