@@ -49,9 +49,9 @@ The GTX 980 has been locked to its base clock rate of 1164\,Mhz using SetStableP
     \label{tab:results:timing_breakdown_frame}
 \end{table}
 
-\Cref{tab:results:timing_breakdown_frame} gives an overview of the time needed for rendering a single frame. The Crytek Sponza scene and default settings have been used. All timings measure GPU time only; there are no noteworthy calculations done on the CPU. With a total of 8.7\,ms, the application achieves real-time framerates while leaving room for more expensive calculations, higher output resolutions or more detailed scenes.
+\Cref{tab:results:timing_breakdown_frame} gives an overview of the time needed for rendering a single frame. The Crytek Sponza scene and default settings have been used. All timings measure GPU time only; there are no noteworthy calculations done on the CPU. With a total of 8.7\,ms, the application achieves real-time framerates while leaving room for more expensive calculations, higher output resolutions, or more detailed scenes.
 
-The GI, SSAO and combine pass operate in screen space and are mostly dependent on the screen size (and, of course, on light and sample count in the case of GI and SSAO, respectively). The G-Buffer and RSM generation follow the usual performance characteristics and are mainly dependent on output resolution and geometric complexity. The performance behavior of the ISM rendering heavily depends on the settings and is further detailed below. The blit phase copies a texture to the back buffer and serves debugging purposes only.
+The GI, SSAO, and combine pass operate in screen space and are mostly dependent on the screen size (and, of course, on light and sample count in the case of GI and SSAO, respectively). The G-Buffer and RSM generation follow the usual performance characteristics and are mainly dependent on output resolution and geometric complexity. The performance behavior of the ISM rendering heavily depends on the settings and is further detailed below. The blit phase copies a texture to the back buffer and serves debugging purposes only.
 
 
 \section{RSM Generation and VPL Sampling}
@@ -76,7 +76,7 @@ The GI, SSAO and combine pass operate in screen space and are mostly dependent o
         \includegraphics[width=1.0\linewidth]{screenshots/RSM_depth}%
         \caption{}
     \end{subfigure}%
-    \caption{A reflective shadow map, with its (a) diffuse, (b) normal and (c) depth buffer.}
+    \caption{A reflective shadow map, with its (a) diffuse, (b) normal, and (c) depth buffer.}
     \label{fig:results:RSMBuffers}%
 \end{figure}%
 
@@ -102,7 +102,7 @@ The VPL sampling itself takes only several microseconds and is negligible. Bear 
 \section{ISM Rendering}
 \label{sec:results:ism}
 
-This section presents the results for visibility testing using imperfect shadow maps. The next three subsections will show the outcome in terms of quality, performance and memory usage. The technique does not handle high geometric complexity of the test scenes well; this is detailed in the fourth subsection. Afterwards, the two different ISM renderers are compared and the suitability of ISMs for global illumination in general is discussed.
+This section presents the results for visibility testing using imperfect shadow maps. The next three subsections will show the outcome in terms of quality, performance, and memory usage. The technique does not handle high geometric complexity of the test scenes well; this is detailed in the fourth subsection. Afterwards, the two different ISM renderers are compared and the suitability of ISMs for global illumination in general is discussed.
 
 
 \subsection{Quality}
@@ -114,7 +114,7 @@ This section presents the results for visibility testing using imperfect shadow 
     \includegraphics[width=.48\textwidth]{screenshots/ism_splat_cropped} &
     \includegraphics[width=.48\textwidth]{screenshots/ism_single_pixel_cropped}
   \end{tabular}
-  \caption{ISMs rendered using the splat renderer (left) and single-pixel renderer (right) with default settings. The single-pixel renderer performs interpolation between points, uses more points and does not let points bleed into neighboring ISMs, but takes more time.}
+  \caption{ISMs rendered using the splat renderer (left) and single-pixel renderer (right) with default settings. The single-pixel renderer performs interpolation between points, uses more points, and does not let points bleed into neighboring ISMs, but takes more time.}
   \label{fig:results:isms}
 \end{figure}
 
@@ -283,7 +283,7 @@ Second, because a sparse set of points is used for each ISM, each point must be 
 
 Third, ISMs also have numerical issues. For instance, both the splatting and postprocessing approaches ignore the distortion caused by the paraboloid projection, and thus might render even simple surfaces incorrectly. This contributes to the necessity of using a relatively large shadow bias. At the cost of additional complexity, this can likely be solved with relative ease.
 
-Fourth, and this is in our view the most important shortcoming, ISMs handle geometry in the vicinity to VPLs badly (\Cref{fig:results:leaks}). To sufficiently approximate such surfaces when rendering ISMs, one would need to greatly increase the number of points created near VPLs, possibly in addition to stepping away from using a fully random approach for point selection and one would have to select a specific point set for each ISM depending on the VPLs location.
+Fourth, and this is in our view the most important shortcoming, ISMs handle geometry in the vicinity to VPLs badly (\Cref{fig:results:leaks}). To sufficiently approximate such surfaces when rendering ISMs, one would need to greatly increase the number of points created near VPLs, possibly in addition to stepping away from using a fully random approach for point selection, and one would have to select a specific point set for each ISM depending on the VPLs location.
 
 As for most global illumination algorithms, a massive improvement would be to differentiate between large-scale scene geometry that is important for diffuse light bounces, and smaller geometry of lesser importance. While the latter can possibly be ignored altogether with only minor losses in quality, the shape of large-scale geometry is all the more important to preserve (relatively) precisely.
 
