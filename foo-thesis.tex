@@ -1,5 +1,5 @@
 %\documentclass[ngerman,oneside]{cgsthesis}
-\documentclass[english]{cgsthesis}
+\documentclass{cgsthesis}
 
 \usepackage{fontspec}
 
@@ -25,6 +25,7 @@
 \addbibresource{foo-thesis.bib}
 \AtEveryBibitem{\clearlist{location}}
 \AtEveryBibitem{\clearfield{address}}
+\AtEveryBibitem{\clearfield{doi}}
 
 % Code listings
 
@@ -97,7 +98,7 @@
     Daniel Limberger}
 
 \place{Potsdam}
-\date{\selectlanguage{german}\today}
+\date{\begin{otherlanguage}{ngerman} \today \end{otherlanguage}}
 
 
 \begin{document}
@@ -193,7 +194,6 @@
 
 
 \todo[inline]{brighter version for print}
-\todo[inline]{cleanup references}
 \todo[inline]{noindent after figures}
 \todo[inline]{latex warnings}
 \todo[inline]{esp. overflows}
@@ -203,6 +203,10 @@
 
 % \include{chap-examples}
 % \include{chap-moreexamples}
+
+% force line breaks inside URLs
+\setcounter{biburllcpenalty}{7000}
+\setcounter{biburlucpenalty}{8000}
 
 \printbibliography[title={Bibliography},category=cited,heading=bibintoc]
 
