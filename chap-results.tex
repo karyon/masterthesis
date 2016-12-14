@@ -24,11 +24,11 @@ The implementation is tested in the Crytek Sponza and San Miguel scene, with 260
 The hardware specification of the testing system is as follows:
 
 \begin{outline}
-    \1 Intel Xeon W3530 with four cores at 2.8\,Ghz
+    \1 Intel Xeon W3530 with four cores at 2.8\,GHz
     \1 NVIDIA GeForce GTX 980 factory-overclocked by ca. 4\%, driver version 375.57
 \end{outline}
 
-The GTX 980 has been locked to its base clock rate of 1164\,Mhz using SetStablePowerState.exe\footnote{\url{https://developer.nvidia.com/setstablepowerstateexe-\%20disabling\%20-gpu-boost-windows-10-getting-more-deterministic-timestamp-queries}}, preventing its GPU Boost feature\footnote{\url{http://www.geforce.com/hardware/technology/gpu-boost-2}} from altering the results depending on the GPUs temperature and power draw. This comes at the cost of preventing the GPU from using its maximum potential, but combined with the factory-overclocking, the results should be close to the real-world performance.
+The GTX 980 has been locked to its base clock rate of 1164\,MHz using SetStablePowerState.exe\footnote{\url{https://developer.nvidia.com/setstablepowerstateexe-\%20disabling\%20-gpu-boost-windows-10-getting-more-deterministic-timestamp-queries}}, preventing its GPU Boost feature\footnote{\url{http://www.geforce.com/hardware/technology/gpu-boost-2}} from altering the results depending on the GPUs temperature and power draw. This comes at the cost of preventing the GPU from using its maximum potential, but combined with the factory-overclocking, the results should be close to the real-world performance.
 
 \pagebreak
 
@@ -49,7 +49,7 @@ The GTX 980 has been locked to its base clock rate of 1164\,Mhz using SetStableP
     \label{tab:results:timing_breakdown_frame}
 \end{table}
 
-\Cref{tab:results:timing_breakdown_frame} gives an overview of the time needed for rendering a single frame. The Crytek Sponza scene and default settings have been used. All timings measure GPU time only; there are no noteworthy calculations done on the CPU. With a total of 8.7\,ms, the application achieves real-time framerates while leaving room for more expensive calculations, higher output resolutions, or more detailed scenes.
+\Cref{tab:results:timing_breakdown_frame} gives an overview of the time needed for rendering a single frame. The Crytek Sponza scene and default settings have been used. All timings measure GPU time only; there are no noteworthy calculations done on the CPU. With a total of 8.7\,ms, the application achieves real-time frame rates while leaving room for more expensive calculations, higher output resolutions, or more detailed scenes.
 
 The GI, SSAO, and combine pass operate in screen space and are mostly dependent on the screen size (and, of course, on light and sample count in the case of GI and SSAO, respectively). The G-Buffer and RSM generation follow the usual performance characteristics and are mainly dependent on output resolution and geometric complexity. The performance behavior of the ISM rendering heavily depends on the settings and is further detailed below. The blit phase copies a texture to the back buffer and serves debugging purposes only.
 
@@ -92,7 +92,7 @@ The VPL sampling itself takes only several microseconds and is negligible. Bear 
   \begin{tabular}{@{}c@{}}
     \includegraphics[width=1.0\textwidth]{screenshots/RSM_unfavorable} \\
   \end{tabular}
-  \caption{A visualization of inefficiently placed VPLs. Each of the brigth spots is a VPL. Here, they are all placed on the roof pointing upwards. Since there is no further geometry above them that could be illuminated, they do not contribute to the final image.}
+  \caption{A visualization of inefficiently placed VPLs. Each of the bright spots is a VPL. Here, they are all placed on the roof pointing upwards. Since there is no further geometry above them that could be illuminated, they do not contribute to the final image.}
   \label{fig:results:RSMUnfavorable}
 \end{figure}
 
@@ -275,7 +275,7 @@ The drawbacks obviously include the additional rendering time and memory. Beside
 \subsection{Discussion}
 \label{sec:results:ism:discussion}
 
-Imperfect shadow maps have several deficits, some of which are inherent to the technique and difficult to solve, while others are specific to the implementation choices and tradeoffs in the presented implementation and might be easier to overcome.
+Imperfect shadow maps have several deficits, some of which are inherent to the technique and difficult to solve, while others are specific to the implementation choices and trade-offs in the presented implementation and might be easier to overcome.
 
 First, ISMs reduce the scene's geometry to points. At the resolution that is achievable in a real-time budget, this is already a rough approximation that loses a lot of accuracy.
 
@@ -363,7 +363,7 @@ Interleaved sampling substantially reduces the number of lights that are process
         \label{fig:results:interleaved_difference_shaded}%
     \end{subfigure}%
 
-      \caption{Interleaved sampling results. The top row shows indirect light only. From left to right: (a) Result of the final gathering phase without the bilateral blur, (b) with the horizontal phase of the blur applied, (c) with both phases applied, (d) result of the final gathering phase without using interleaved sampling, (e) difference between (c) and (d). Bottom row: (f) final result after blending when using interleaved sampling, (g) whithout interleaved sampling, (h) difference between (f) and (g). Difference values are multiplied by eight.}
+      \caption{Interleaved sampling results. The top row shows indirect light only. From left to right: (a) Result of the final gathering phase without the bilateral blur, (b) with the horizontal phase of the blur applied, (c) with both phases applied, (d) result of the final gathering phase without using interleaved sampling, (e) difference between (c) and (d). Bottom row: (f) final result after blending when using interleaved sampling, (g) without interleaved sampling, (h) difference between (f) and (g). Difference values are multiplied by eight.}
       \label{fig:results:interleaved_quality}
 \end{figure}
 
@@ -378,7 +378,7 @@ This technique requires an additional buffer for storing the intermediate result
 \subsubsection{Discussion}
 Interleaved sampling is an obvious win for many-light global illumination methods. Paying the full cost of evaluating all VPLs per shading point is simply unnecessary due to the low-frequency nature of global illumination. Adapting the shading frequency to a similarly low level is the only reasonable choice for real-time applications.
 
-In fact, given the unnoticable quality impact (\Cref{fig:results:interleaved_quality}) of interleaved sampling when using a 4x4 block size, larger block sizes, e.\,g., 8x8 as used by \citet{hedman2016sequential} should be considered. Especially with the advent of high-resolution displays, lowering the shading frequency of global illumination effect even further might be necessary to keep the costs down to a reasonable level. However, the performance gains from lower sample counts will be offset in part by larger blur radii that come with larger block sizes.
+In fact, given the unnoticeable quality impact (\Cref{fig:results:interleaved_quality}) of interleaved sampling when using a 4x4 block size, larger block sizes, e.\,g., 8x8 as used by \citet{hedman2016sequential} should be considered. Especially with the advent of high-resolution displays, lowering the shading frequency of global illumination effect even further might be necessary to keep the costs down to a reasonable level. However, the performance gains from lower sample counts will be offset in part by larger blur radii that come with larger block sizes.
 
 Going further, this technique is limited by how well the blur phase is able to mask the noise in more difficult areas with lots of depth discontinuities like vegetation. To this end, one option might be to collect fragments that receive too few information during shading and blurring, and re-process them with larger sets of VPLs in a second pass (similar to \cite{Lauritzen:2010:Deferred}). Temporal reprojection methods \citep{Jimenez:2016:FilmicSMAA} that re-use information from previous frames and use different sets of VPLs per frame would be another natural extension of interleaved sampling.
 
