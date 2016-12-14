@@ -51,7 +51,7 @@
 
 \RequirePackage{scrhack}
 \RequirePackage{scrpage2}
-\RequirePackage{babel}
+\RequirePackage[english,german]{babel}
 \RequirePackage{amsmath,amsthm}
 \RequirePackage{printlen}
 
