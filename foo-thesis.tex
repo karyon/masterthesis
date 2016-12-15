@@ -142,14 +142,9 @@
 
 \todo[inline]{Lui: summaries at the end of chapters}
 
-\todo[inline]{put VPL shuffling comparison anywhere, maybe results \Cref{sec:results:ism:quality}}
-
-
-
-\subsubsection{code}
-
 \todo[inline,color=yellow]{implement some moving object. show temporal coherency when it moves. or even moving spherical light. \Cref{sec:results:ism}}
 
+\todo[inline]{put VPL shuffling comparison anywhere, maybe results \Cref{sec:results:ism:quality}}
 
 
 \subsubsection{misc}
@@ -160,7 +155,6 @@
 \todo[inline]{brighter version for print}
 \todo[inline]{noindent after figures}
 \todo[inline]{latex warnings}
-\todo[inline]{esp. overflows}
 \todo[inline]{orphans and widows, also single words on a line}
 
 
@@ -168,10 +162,13 @@
 % \include{chap-moreexamples}
 
 % force line breaks inside URLs
+\begingroup
 \setcounter{biburllcpenalty}{7000}
 \setcounter{biburlucpenalty}{8000}
+\sloppy
 
 \printbibliography[title={Bibliography},category=cited,heading=bibintoc]
+\endgroup
 
 % Further Reading
 % \citesupplementary{Alvarez.etal-1992}
