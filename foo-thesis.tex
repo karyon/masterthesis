@@ -125,18 +125,13 @@
 
 \todo[inline]{make figures nicer}
 
-\todo[inline]{implementation pipeline \ref{fig:RenderingPipelineOverview} adds little value over concept pipeline.}
-
-\todo[inline]{nicer \Cref{fig:results:RSMBuffers}, maybe only one large divided in thirds, or zoomins}
-
 \todo[inline]{Pipeline figures for all sections in implementation. e.g. create RSM, which is then sampled, and the samples are put into two buffers.}
 
 \todo[inline]{Interleaved shading algorithm figure comparing buffer splitting vs compute shaders in addition to pipeline figure \Cref{sec:impl:interleavedShading}}
 
 \todo[inline]{Temporal coherence/frame-to-frame diff when light moves figure. end of \Cref{sec:results:RsmAndVplSampling}}
 
-\todo[inline]{more debug views, debug data visualizations}
-\todo[inline]{daniel's pipeline visualizations, see emails}
+\todo[inline]{culling efficiency visualization}
 
 
 \subsubsection{content}
@@ -145,33 +140,13 @@
 
 \todo[inline]{more conclusion by adding summaries of the approaches, how did we come to these conclusions, we've been able to show...}
 
-\todo[inline]{abstract and zusammenfassung}
+\todo[inline]{some closing remarks. add some personal evaluations, broad statement about complexity}
+
+\todo[inline]{zusammenfassung}
 
 \todo[inline]{Lui: summaries at the end of chapters}
 
-\todo[inline]{Lui: replace "this chapter will ..." by introductory sentences from first section}
-
-\todo[inline]{Lui: more references on first few pages}
-
-\todo[inline]{some closing remarks. add some personal evaluations, broad statement about complexity}
-
-\todo[inline]{summarize ISM deficits in ISM discussion \Cref{sec:results:ism:discussion}}
-
-\todo[inline]{do some pseudocode}
-
 \todo[inline]{put VPL shuffling comparison anywhere, maybe results \Cref{sec:results:ism:quality}}
-
-\todo[inline]{4k tests}
-
-\todo[inline]{ISM quality: for single-pixel-renderer: maybe show one full-size shadow map to show this *can* work. \Cref{sec:results:ism:quality}}
-
-\todo[inline,color=yellow]{ISMs: point count for splat renderer and output them somehow. \Cref{sec:results:ism:quality}}
-
-\todo[inline]{ISM comparison: Add notes about scaling when i have point counts \Cref{sec:results:ism:comparison}}
-
-\todo[inline]{ISM performance: Numbers when enlarging the points / making them smaller. Discuss. Note how the single-pixel renderer is (hopefully) not affected by point size. \Cref{sec:results:ism:quality}}
-
-\todo[inline]{ISM quality / performance: Screenshots and performance numbers when doing more points. either by tessellation or by collecting more. Discuss. \Cref{sec:results:ism:quality}}
 
 
 
@@ -179,11 +154,6 @@
 
 \todo[inline,color=yellow]{implement some moving object. show temporal coherency when it moves. or even moving spherical light. \Cref{sec:results:ism}}
 
-\todo[inline,color=yellow]{investigate into interleaving via shared memory in 2x2 groups (that is, one work group reads 2x2 interleaved pixels instead of one)}
-
-\todo[inline,color=yellow]{implement ISM max quality. every point into every ISM. likely render everything once for each ISM. a checkbox: when checked, compute high-quality once and do not change. back to normal when unchecked. \Cref{sec:results:ism:quality}}
-
-\todo[inline,color=yellow]{ISM performance: Impact of packing? \Cref{sec:results:ism:performanceSinglePixelRenderer}}
 
 
 \subsubsection{misc}
