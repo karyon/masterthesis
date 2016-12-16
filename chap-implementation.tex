@@ -166,7 +166,7 @@ The light lists are stored in a 2D texture with a height of the maximum amount o
 
 \begin{figure}[h]
     \includegraphics[width=\textwidth]{graphics/light_lists}
-    \caption{Visualization of the light lists texture. Each pixel row contains the light list of one cluster. The lists are divided into 16 partitions, one for each pixel in an interleaving block. Each red pixel represents an index to an VPL, a brighter red is a higher index. White pixels contain no data. The first value in each partition is the number of lights in that partition, therefore the dark line in front of the partitions.}
+    \caption{Visualization of the light lists texture. Each pixel row contains the light list of one cluster. Each gray pixel represents an index to an VPL, a lighter gray is a higher index. White pixels contain no data. The lists are divided into 16 partitions, one for each pixel in an interleaving block. One such partition is visualized with more contrast at the bottom. The first value in each partition is the number of lights in that partition, visible as dark line in front of the partitions. Note that the indices in a partition are not necessarily continuous, as they are written by different shader invocations, whose order of execution is undefined.}
     \label{fig:impl:light_lists}
 \end{figure}
 
