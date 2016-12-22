@@ -291,7 +291,7 @@ The San Miguel scene is a good example for this: While the small detail work lik
 
 
 
-\section{Interleaved Sampling using Compute Shaders}
+\section{Interleaved Sampling Using Compute Shaders}
 \label{sec:results:interleavedShading}
 
 Interleaved sampling substantially reduces the number of lights that are processed per pixel. Using a 4x4 interleaving pattern, each pixel processes only a sixteenth of all lights, ideally speeding up the final gathering phase by a factor of 16. However, an additional blur pass is required to mask the noise that results from interleaving, which takes additional time.

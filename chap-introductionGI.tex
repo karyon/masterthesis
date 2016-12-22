@@ -119,7 +119,7 @@ In order to better understand the next section discussing the current research a
     \item[Final gathering.] Several techniques perform one last step that, instead of propagating light from lit surfaces into all directions, gathers light from lit surfaces into areas that are visible to the camera. This is a common optimization that guarantees that the calculations are relevant to the currently rendered frame, whereas the light propagation step is often more unguided and oblivious to the current viewport.
 \end{description}%
 %
-Note that not all techniques implement all of these steps. For instance, performing direct lighting and a final gathering step while omitting the light propagation step is sufficient for simulating one indirect bounce. Brute-force ray-tracing can be done by simulating only the light propagation step, and light propagation volumes (\Cref{sec:intro:gi:previousWork:lpv}) omit the final gathering step.
+Note that not all techniques implement all of these steps. For instance, performing direct lighting and a final gathering step while omitting the light propagation step is sufficient for simulating one indirect bounce. Brute-force ray tracing can be done by simulating only the light propagation step, and light propagation volumes (\Cref{sec:intro:gi:previousWork:lpv}) omit the final gathering step.
 
 \vspace{\baselineskip}
 \noindent
@@ -165,9 +165,9 @@ While the original proposal \citep{Crassin:2012:OctreeVCT} uses a sparse voxel o
 Both approaches can compute specular reflections for moderately glossy surfaces. While the voxel octree is expensive to update with dynamic objects, the clip-maps are faster in this regard, but still need relatively large amounts of VRAM for higher quality levels. Lower quality levels result in noticeable voxelization artifacts.
 
 
-\subsection{Ray-Tracing}
+\subsection{Ray Tracing}
 
-Several attempts have been made to adapt ray-tracing to be usable in real-time contexts.
+Several attempts have been made to adapt ray tracing to be usable in real-time contexts.
 \citet{Thiedemann:2011:VGI} trace rays through a voxel grid, but have to limit the ray's maximum distance for performance reasons and, similar to voxel cone tracing, suffer from high memory requirements.
 \citet{Tokuyoshi:2012:pathtracingrasterization} trace rays using rasterization, but at the cost of a severe performance impact since they render the whole scene multiple times.
 \citet{Chen:2016:Compactvoxels} use one bit per voxel to indicate whether it is opaque or not, and look up lighting information directly in an RSM during the final gather phase. They too achieve merely interactive frame rates.
@@ -277,7 +277,7 @@ There are several approaches to calculate visibility between VPLs and the scene 
 
 A popular approach are \emph{imperfect shadow maps} \citep[ISMs,][]{ritschel2008ism}, which use a precomputed set of points as scene representation to quickly render large amounts of small and inaccurate shadow maps. \citet{ritschel2011ismsViewAdaptive} extend the approach to fully dynamic scenes among other improvements. \citet{barak2013temporally} use tessellation to compute the point set, eliminating the need to keep a separate point set updated, making it inherently dynamic, and providing better performance for larger point sets.
 
-Ray-tracing has been proposed to compute visibility as well \citep[e.\,g.,][]{segovia2006bidirectional}, but suffers from the usual drawbacks of ray-tracing in a real-time context. A voxel-based scene representation has also been used to perform visibility queries for many-light techniques \citep{sun2015manylightsSVO}.
+Ray tracing has been proposed to compute visibility as well \citep[e.\,g.,][]{segovia2006bidirectional}, but suffers from the usual drawbacks of ray tracing in a real-time context. A voxel-based scene representation has also been used to perform visibility queries for many-light techniques \citep{sun2015manylightsSVO}.
 
 
 \subsection{Mitigating Singularities}

@@ -9,7 +9,7 @@ This chapter will detail the implementation of the presented techniques. The nex
 The full source code is available in the project's repository\footnote{\url{https://github.com/karyon/many-lights-gi}} under the MIT license.
 
 
-\section{Used Framework and Libraries}
+\section{Utilized Frameworks and Libraries}
 
 \begin{figure}[htbp]
   \centering
@@ -72,7 +72,7 @@ In the case of point splatting, the geometry shader itself reads the VPL with th
 
 
 
-\subsection{Single-Pixel Point Rendering with Compute Shaders}
+\subsection{Single-Pixel Point Rendering Using Compute Shaders}
 \label{sec:impl:singlePixelRendering}
 
 This alternative approach was inspired by the fact that the surface reconstruction algorithm proposed by \citet{Marroquim:2007:reconstruction} works with single-pixel ``splats''. Since in this case the hardware rasterizer is not required to achieve good performance, this allowed for more flexibility and new optimization opportunities.
@@ -113,7 +113,7 @@ Note that there is still lots of room for optimization. Especially the pull phas
 
 
 
-\section{Interleaved Sampling using Compute Shaders}
+\section{Interleaved Sampling Using Compute Shaders}
 \label{sec:impl:interleavedShading}
 
 The presented implementation performs interleaved sampling, that is, it processes only a fraction of all VPLs per pixel and uses a blur pass to mask the resulting noise. Since adjacent pixels now process different sets of VPLs, this approach results in low cache coherence. To this end, de-interleaving is employed \citep{segovia2006non}.
