@@ -277,7 +277,7 @@ The drawbacks obviously include the additional rendering time and memory. Beside
 
 Imperfect shadow maps have several deficits, some of which are inherent to the technique and difficult to solve, while others are specific to the implementation choices and trade-offs in the presented implementation and might be easier to overcome.
 
-First, ISMs reduce the scene's geometry to points. At the resolution that is achievable in a real-time budget, this is already a rough approximation that loses a lot of accuracy.
+First, ISMs reduce the scene's geometry to points. At the resolution that is achievable in a real-time budget, this is a very rough approximation that loses a lot of accuracy.
 
 Second, because a sparse set of points is used for each ISM, each point must be enlarged to accommodate for the neighboring points that are likely missing in the chosen ISM. For instance, if an area is represented by a thousand points and only one tenth of all points is used for each ISM, each remaining point's area must be enlarged by a factor of ten to result in an equally large area in the rendered output. Of course, this approach leads to deformed geometry since points at the edges of the area are enlarged as well, growing over the borders of the original geometry.
 
