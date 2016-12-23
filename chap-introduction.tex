@@ -17,13 +17,13 @@ Being both important for high-quality renderings and expensive to compute, globa
 
 In this thesis, we present an implementation of a rendering system using the many-light approach to simulate global illumination. The system requires no precomputation and needs only several milliseconds for its computations, making it suitable for real-time applications. For indirect shadowing, the software renders several hundred imperfect shadow maps \citep{ritschel2008ism} each frame. Our main contributions are:
 \begin{itemize}
-    \item the application of a high-quality postprocessing for higher-quality imperfect shadow maps
+    \item the application of a high-quality postprocessing \citep{Marroquim:2007:reconstruction} for higher-quality imperfect shadow maps
     \item an efficient algorithm for interleaved sampling \citep{Keller:2001:InterleavedSampling} using compute shaders\footnote{\url{https://www.opengl.org/wiki/Compute_Shader}}
     \item the application of clustered deferred shading \citep{olsson2012clustered} as a performance optimization to many-light methods.
 \end{itemize}
 
 \noindent
-While lights and geometry are allowed to move, the system does not provide temporal stability in this case. Furthermore, it simulates only one light bounce, i.\,e. light is reflected only once before illuminating surfaces visible to the camera. However, the approach is not inherently limited in this regard and can be extended to multiple bounces in future work.
+While lights and geometry are allowed to move, the system does not provide temporal stability in this case. Furthermore, it simulates only one light bounce, i.\,e., light is reflected only once before illuminating surfaces visible to the camera. However, the approach is not inherently limited in this regard and can be extended to multiple bounces in future work.
 
 \vspace{\baselineskip}
 \noindent

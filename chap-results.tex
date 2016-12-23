@@ -25,7 +25,7 @@ The hardware specification of the testing system is as follows:
 
 \begin{outline}
     \1 Intel Xeon W3530 with four cores at 2.8\,GHz
-    \1 NVIDIA GeForce GTX 980 factory-overclocked by ca. 4\%, driver version 375.57
+    \1 NVIDIA GeForce GTX 980 factory-overclocked by ca.\ 4\%, driver version 375.57
 \end{outline}
 
 \noindent
@@ -253,7 +253,7 @@ A more demanding test case is the San Miguel scene with 7.9M triangles. The most
     \includegraphics[width=.48\textwidth]{screenshots/san_miguel_ugly_shadow} &
     \includegraphics[width=.48\textwidth]{screenshots/san_miguel_ugly_shadow_gi_only}
   \end{tabular}
-  \caption{A particularly inaccurate shadow produced by ISMs. The right image shows only indirect light. Ideally, the shadow would be much smoother. The low-frequency noise is caused by choosing random points per ISM, while the many edges of the shadows are caused by the basic shadow mapping algorithm, which performs a simple binary choice.}
+  \caption{Particularly inaccurate shadows produced by ISMs. The right image shows indirect light only. Ideally, the shadows on the walls would be much smoother. The low-frequency noise is caused by choosing random points per ISM, while the many edges of the shadows are caused by the basic shadow mapping algorithm, which performs a simple binary choice.}
   \label{fig:results:san_miguel_ugly_shadow}
 \end{figure}
 
