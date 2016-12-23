@@ -28,6 +28,7 @@ The hardware specification of the testing system is as follows:
     \1 NVIDIA GeForce GTX 980 factory-overclocked by ca. 4\%, driver version 375.57
 \end{outline}
 
+\noindent
 The GTX 980 has been locked to its base clock rate of 1164\,MHz using SetStablePowerState.exe\footnote{\url{https://developer.nvidia.com/setstablepowerstateexe-\%20disabling\%20-gpu-boost-windows-10-getting-more-deterministic-timestamp-queries}}, preventing its GPU Boost feature\footnote{\url{http://www.geforce.com/hardware/technology/gpu-boost-2}} from altering the results depending on the GPUs temperature and power draw. This comes at the cost of preventing the GPU from using its maximum potential, but combined with the factory-overclocking, the results should be close to the real-world performance.
 
 \pagebreak
@@ -49,6 +50,7 @@ The GTX 980 has been locked to its base clock rate of 1164\,MHz using SetStableP
     \label{tab:results:timing_breakdown_frame}
 \end{table}
 
+\noindent
 \Cref{tab:results:timing_breakdown_frame} gives an overview of the time needed for rendering a single frame. The Crytek Sponza scene and default settings have been used. All timings measure GPU time only; there are no noteworthy calculations done on the CPU. With a total of 8.7\,ms, the application achieves real-time frame rates while leaving room for more expensive calculations, higher output resolutions, or more detailed scenes.
 
 The GI, SSAO, and combine pass operate in screen space and are mostly dependent on the screen size (and, of course, on light and sample count in the case of GI and SSAO, respectively). The G-Buffer and RSM generation follow the usual performance characteristics and are mainly dependent on output resolution and geometric complexity. The performance behavior of the ISM rendering heavily depends on the settings and is further detailed below. The blit phase copies a texture to the back buffer and serves debugging purposes only.
@@ -80,12 +82,12 @@ The GI, SSAO, and combine pass operate in screen space and are mostly dependent 
     \label{fig:results:RSMBuffers}%
 \end{figure}%
 
-
+\noindent
 As explained before, the RSM generation re-uses most of the code of the G-Buffer generation; see \Cref{fig:results:RSMBuffers} for an impression on the rendered result. Accordingly, the performance characteristics are similar to the regular geometry pass of deferred renderers.
 
 Since the implemented VPL sampling distributes the samples over the entire shadow map, we simply limited the VPLs' locations to the relevant area by tuning the light's extents. As a result, an aspect ratio chosen specifically for each test scene is used. Since our implementation re-uses the RSM as shadow map for direct lighting, we chose a resolution of 512²\,px (or, in the case of the Sponza scene, 1024x256\,px), which is more than required by the naive VPL sampling. The RSM is rendered in 0.17\,ms for the Sponza scene.
 
-The VPL sampling itself takes only several microseconds and is negligible. Bear in mind that, in order to achieve high quality levels, a more elaborate sampling algorithm needs to be implemented, which can in fact take most of the available time. For instance, the implemented sampling does not take the relevance of the sampled VPLs to the current frame into account. This causes the entire system to be rather inefficient because it chooses lights that might contribute little or nothing to the rendered output (\Cref{fig:results:RSMUnfavorable}. An additional downside of the naive sampling is the poor temporal stability when the scene light moves. This is due to each VPL staying at the exact same position in the light's viewport; by consequence their positions strictly follow the light's movement, jumping over depth discontinuities along the way.
+The VPL sampling itself takes only several microseconds and is negligible. Bear in mind that, in order to achieve high quality levels, a more elaborate sampling algorithm needs to be implemented, which can in fact take most of the available time. For instance, the implemented sampling does not take the relevance of the sampled VPLs to the current frame into account. This causes the entire system to be rather inefficient because it chooses lights that might contribute little or nothing to the rendered output (\Cref{fig:results:RSMUnfavorable}). An additional downside of the naive sampling is the poor temporal stability when the scene light moves. This is due to each VPL staying at the exact same position in the light's viewport; by consequence their positions strictly follow the light's movement, jumping over depth discontinuities along the way.
 
 \begin{figure}[htb]
 \centering
@@ -118,6 +120,7 @@ This section presents the results for visibility testing using imperfect shadow 
   \label{fig:results:isms}
 \end{figure}
 
+\noindent
 \Cref{fig:results:isms} shows a few ISMs rendered with the splat and single-pixel renderer. The imperfections do show, and not only through the low resolutions. The distortion of the surface silhouettes by the splat renderer or postprocessing contribute their part, making it hard to identify which part of the Crytek Sponza is rendered. However, keep in mind that the imperfections, while being noticeable in each individual ISM, are expected to partly cancel each other out and result in an acceptable average error in the final rendering.
 
 \begin{figure}[htb]
@@ -130,6 +133,7 @@ This section presents the results for visibility testing using imperfect shadow 
   \label{fig:results:ismDarkening}
 \end{figure}
 
+\noindent
 Comparing the screenshots in \cref{fig:results:ismDarkening}, it becomes apparent that the splat renderer causes visible darkening in the upper part of the image. The reason is probably that the point splats are always oriented towards the camera and do not take the point's normal into account when rendering, amplifying the usual aliasing artifacts of common shadow maps. As a result, any point size larger than one pixel causes surfaces that are not directly facing the camera to appear nearer than they actually are when doing shadow lookups in ISMs. A larger shadow bias could compensate for that but would introduce heavier light leaking. Another possibility is to use the normal to calculate a point's depth per fragment at a potentially high performance cost.
 
 As the single-pixel renderer does not use splats, this problem is largely mitigated. In a certain way it performs the per-fragment depth calculation implicitly during interpolation in the postprocessing phase.
@@ -147,7 +151,7 @@ As the single-pixel renderer does not use splats, this problem is largely mitiga
   \label{fig:results:leaks}
 \end{figure}
 
-
+\noindent
 \Cref{fig:results:leaks} shows a case which the ISM technique has difficulties with. The image should be mostly dark or at least uniformly lit through the small gap below the curtains, instead the wall and ceiling appear too bright and the floor displays several artifacts. The root cause is that the VPLs are placed right behind the curtains, because of which the occluding geometry, i.\,e., the curtain, is very near to the light source. Due to the randomness involved when selecting point sets for rendering ISMs, it often happens that the points near to the light source are rendered into other ISMs, leaving a large hole behind. The single-pixel renderer fares a bit better than the splat renderer since it uses more points, but does not provide a satisfactory result either.
 
 
@@ -184,6 +188,7 @@ Our implementation hides some of the inaccuracies of ISMs by using a relatively 
     \label{tab:results:ism_timings}
 \end{table}
 
+\noindent
 \Cref{tab:results:ism_timings} shows the time needed for rendering the ISMs with both renderers and different settings. Note that the comparison between the two renderers with default settings is not a fair one, since the single-pixel renderer renders more points and by default clamps each point's extents to its ISM. If the splat renderer is changed to behave similarly, it takes 0.3 additional milliseconds for clamping, and 8.66 additional milliseconds for using the same technique to collect VPLs that the single-pixel renderer uses.
 
 There are several reasons for this heavy slowdown: First, this is implemented by emitting multiple vertices in the geometry shader, which is known to have poor performance on current GPUs. Second, the additional fillrate and overdraw became an issue when rendering too many points, a bottleneck that is unlikely to occur when using the single-pixel renderer. And third, while the single-pixel renderer uses shared memory to load the 16 VPLs once, the geometry shader of the splat renderer has no access to shared memory and has to load all 16 VPLs per invocation, creating high register pressure.
@@ -209,6 +214,8 @@ Since the presented implementation uses no adaptivity, these numbers are indepen
     \label{tab:results:timing_breakdown_single_pixel}
 \end{table}
 
+\vspace{-5pt}
+
 \begin{table}[h]
     \centering
     \captionabove{Timing breakdown of the pull (PL) and push (PS) phase. The numbers of the individual steps indicate to which mipmap level they write, which is why the pull phase starts at 1 and the push phase has descending numbers. All timings are in milliseconds.}
@@ -221,7 +228,7 @@ Since the presented implementation uses no adaptivity, these numbers are indepen
     \label{tab:results:timing_breakdown_pull_push}
 \end{table}
 
-
+\noindent
 \Cref{tab:results:timing_breakdown_single_pixel} gives more detailed performance measurements of the single-pixel renderer, while \cref{tab:results:timing_breakdown_pull_push} further breaks down the individual steps of the pull and push phase. Note how the timings scale roughly as expected (PL 3 and PS 2 are taking roughly four times longer than PL 2 and PS 1, respectively), except for the first and last step. This is due to the reduced input data size (or output size, respectively), as explained in \cref{sec:impl:pullPushPostprocessing}. Also note how the push phase does take roughly the time of the pull phase if it were not for the last phase, where it writes to the full 2048²\,px of miplevel zero, whereas the largest miplevel written to by the pull phase is level one with 1024²\,px.
 
 
@@ -240,17 +247,7 @@ Added together, the single-pixel renderer requires a total of 79\,MB. There rema
 
 A more demanding test case is the San Miguel scene with 7.9M triangles. The most apparent problem of the presented implementation is the lack of adaptivity to the current viewport in addition to the lack of LOD methods. As a result, all 7.9M triangles are used every frame to render the ISMs, with corresponding performance results: The point collection phase of the single-pixel renderer now takes 12.0\,ms, while the point rendering takes an additional 5.3\,ms. The time needed by the postprocessing is unchanged since it works on fixed resolution textures. The splat renderer takes 12.0\,ms, which is the exact same amount of time as the point collection phase of the single-pixel renderer, even though the latter has no rasterization to perform. This demonstrates how this process is bottlenecked by geometric complexity.
 
-
-\begin{figure}[htb]
-\centering
-  \begin{tabular}{@{}c@{}}
-    \includegraphics[width=1.0\textwidth]{screenshots/san_miguel_wide} \\
-  \end{tabular}
-  \caption{A rendering of the San Miguel scene in the presented implementation. Note the unnaturally dark region behind the pillars.}
-  \label{fig:results:san_miguel_wide}
-\end{figure}
-
-\begin{figure}[htb]
+\begin{figure}[b]
 \centering
   \begin{tabular}{@{}cc@{}}
     \includegraphics[width=.48\textwidth]{screenshots/san_miguel_ugly_shadow} &
@@ -260,17 +257,33 @@ A more demanding test case is the San Miguel scene with 7.9M triangles. The most
   \label{fig:results:san_miguel_ugly_shadow}
 \end{figure}
 
-\Cref{fig:results:san_miguel_wide} shows an example screenshot of the San Miguel scene. There are several factors contributing to an overly dark region behind the pillars. First, during ISM rendering all points are rendered into at least one pixel, which makes them take out too much light if they are actually smaller than one pixel. This is especially the case with the thin structures of the chairs and trees. Additionally, the implementation simulates only one bounce, making it impossible for the floor behind the pillars to be lit at all. Another problem case is shown by \Cref{fig:results:san_miguel_ugly_shadow}, where the table and chairs cast a visibly inaccurate shadow.
+\Cref{fig:results:san_miguel_ugly_shadow} shows an example screenshot of the San Miguel scene. The reason for the exaggerated shadow is that during ISM rendering, all points are rendered into at least one pixel, which makes them take out too much light if they are actually smaller than one pixel. This is especially the case with the thin structures of the chairs and trees.
 
+
+\begin{figure}[htb]
+\centering
+  \begin{tabular}{@{}c@{}}
+    \includegraphics[width=1.0\textwidth]{screenshots/san_miguel_wide} \\
+  \end{tabular}
+  \caption{A rendering of the San Miguel scene in the presented implementation. Note the unnaturally dark region behind the pillars. \vspace{-0.25cm}}
+  \label{fig:results:san_miguel_wide}
+\end{figure}
+
+\pagebreak
+\noindent
+The overdarkening is visible in \Cref{fig:results:san_miguel_wide} as well. Here, the missing second bounce makes the situation even worse: Since most of the VPLs are placed at floor level, the floor behind the pillars is not lit at all.
+
+\vspace{5pt}
 
 \subsection{Comparison of the Splat and Single-Pixel Renderer}
 \label{sec:results:ism:comparison}
 
-The single-pixel renderer provides numerous advantages over the splat renderer: Using a compute shader to render points lifts the restrictions of the fixed-function pipeline and, e.\,g., allows rendering each point into multiple ISMs without large performance losses. Quality-wise, it can reproduce surfaces more accurately by correctly interpolating between points.
+The single-pixel renderer provides numerous advantages over the splat renderer: Using a compute shader to render points lifts the restrictions of the fixed-function pipeline and, e.\,g., allows rendering each point into multiple ISMs without large performance losses. Quality-wise, it can reproduce surfaces more accurately by correctly interpolating between points. However, reproducing the silhouettes of objects accurately is not possible for both renderers; this requires at least using a more complete set of points per ISM, and possibly returning to using triangles instead of points.
 
-The drawbacks obviously include the additional rendering time and memory. Besides, the added complexity should not be underestimated. Specifically, we found it hard to fine-tune the pull-push algorithm to produce satisfactory results, especially in the face of the low resolutions of ISMs and the limited data available for reconstruction after selecting a random and sparse set of points.
+The drawbacks obviously include the additional rendering time and memory. Although having moderate requirements in absolute terms, using the single-pixel renderer makes ISM rendering the second most time-consuming and most memory-consuming rendering phase, despite using low resolutions and an approximated scene representation. Besides, the added complexity should not be underestimated. Specifically, we found it hard to fine-tune the pull-push algorithm to produce satisfactory results, especially in the face of the low resolutions of ISMs and the limited data available for reconstruction after selecting a random and sparse set of points.
 
 
+\pagebreak
 
 \subsection{Discussion}
 \label{sec:results:ism:discussion}
@@ -297,9 +310,9 @@ The San Miguel scene is a good example for this: While the small detail work lik
 Interleaved sampling substantially reduces the number of lights that are processed per pixel. Using a 4x4 interleaving pattern, each pixel processes only a sixteenth of all lights, ideally speeding up the final gathering phase by a factor of 16. However, an additional blur pass is required to mask the noise that results from interleaving, which takes additional time.
 
 
-\begin{table}[h]
+\begin{table}[htb]
     \centering
-    \captionabove{Timings of interleaved sampling (IS) with a block size of 4x4. Note that the blur pass is mandatory when using interleaved sampling; the middle column merely illustrates the efficiency of the presented implementation, while the last column shows the practical speedup that is achieved.}
+    \captionabove{Timings of interleaved sampling (IS) with a block size of 4x4. Note that the blur pass is mandatory when using interleaved sampling; the "Speedup" column merely illustrates the efficiency of the presented implementation, while the "Speedup with Blur" column shows the practical speedup that is achieved.}
     \begin{tabulary}{0.98\textwidth}{| L | L | L | L | L |}
         \hline
         Without IS & With IS & Speedup & Blur Pass & Speedup with Blur\\ \hline
@@ -310,6 +323,24 @@ Interleaved sampling substantially reduces the number of lights that are process
 \end{table}
 
 
+\pagebreak
+\noindent
+\Cref{tab:results:timings_interleaved_shading} shows timings of the presented implementation. Most notably, the interleaved sampling technique introduces very little overhead, as indicated by the speedup of 15.42 compared to the theoretical maximum of 16. In absolute terms, a speedup of 16 would require the final gathering phase to take 2.51\,ms. As a result, the technique introduces 0.1\,ms of overhead.
+
+When considering the blur phase, the overhead adds up to 0.73\,ms and the speedup is lowered to 12.42. Of course this is still a substantial improvement, especially considering the negligible quality impact.
+
+This technique requires an additional buffer for storing the intermediate result of the blur phase, while the final result can be written into the same texture that was used for final gathering. The texture format \texttt{GL\_R11F\_G11F\_B10F} is used here, resulting in roughly 2\,MB additional storage at full HD. The presented implementation does not re-use the final gathering texture to keep the results of all stages available for debugging purposes.
+
+
+\subsubsection{Discussion}
+Interleaved sampling is an obvious win for many-light global illumination methods. Paying the full cost of evaluating all VPLs per shading point is simply unnecessary due to the low-frequency nature of global illumination. Adapting the shading frequency to a similarly low level is the only reasonable choice for real-time applications.
+
+In fact, given the unnoticeable quality impact (\Cref{fig:results:interleaved_quality}) of interleaved sampling when using a 4x4 block size, larger block sizes, e.\,g., 8x8 as used by \citet{hedman2016sequential} should be considered. Especially with the advent of high-resolution displays, lowering the shading frequency of global illumination effect even further might be necessary to keep the costs down to a reasonable level. However, the performance gains from lower sample counts will be offset in part by larger blur radii that come with larger block sizes.
+
+
+Going further, this technique is limited by how well the blur phase is able to mask the noise in more difficult areas with lots of depth discontinuities like vegetation. To this end, one option might be to collect fragments that receive too few information during shading and blurring, and re-process them with larger sets of VPLs in a second pass (similar to \cite{Lauritzen:2010:Deferred}). Temporal reprojection methods \citep{Jimenez:2016:FilmicSMAA} that re-use information from previous frames and use different sets of VPLs per frame would be another natural extension of interleaved sampling.
+
+\pagebreak
 
 \begin{figure}[htb]
     \centering
@@ -362,34 +393,20 @@ Interleaved sampling substantially reduces the number of lights that are process
         \caption{}
         \label{fig:results:interleaved_difference_shaded}%
     \end{subfigure}%
-
+\vspace{-5pt}
       \caption{Interleaved sampling results. The top row shows indirect light only. From left to right: (a) Result of the final gathering phase without the bilateral blur, (b) with the horizontal phase of the blur applied, (c) with both phases applied, (d) result of the final gathering phase without using interleaved sampling, (e) difference between (c) and (d). Bottom row: (f) final result after blending when using interleaved sampling, (g) without interleaved sampling, (h) difference between (f) and (g). Difference values are multiplied by eight.}
       \label{fig:results:interleaved_quality}
 \end{figure}
 
 
-\Cref{tab:results:timings_interleaved_shading} shows timings of the presented implementation. Most notably, the interleaved sampling technique introduces very little overhead, as indicated by the speedup of 15.42 compared to the theoretical maximum of 16. In absolute terms, a speedup of 16 would require the final gathering phase to take 2.51\,ms. As a result, the technique introduces 0.1\,ms of overhead.
-
-When considering the blur phase, the overhead adds up to 0.73\,ms and the speedup is lowered to 12.42. Of course this is still a substantial improvement, especially considering the negligible quality impact.
-
-This technique requires an additional buffer for storing the intermediate result of the blur phase, while the final result can be written into the same texture that was used for final gathering. The texture format \texttt{GL\_R11F\_G11F\_B10F} is used here, resulting in roughly 2\,MB additional storage at full HD. The presented implementation does not re-use the final gathering texture to keep the results of all stages available for debugging purposes.
-
-
-\subsubsection{Discussion}
-Interleaved sampling is an obvious win for many-light global illumination methods. Paying the full cost of evaluating all VPLs per shading point is simply unnecessary due to the low-frequency nature of global illumination. Adapting the shading frequency to a similarly low level is the only reasonable choice for real-time applications.
-
-In fact, given the unnoticeable quality impact (\Cref{fig:results:interleaved_quality}) of interleaved sampling when using a 4x4 block size, larger block sizes, e.\,g., 8x8 as used by \citet{hedman2016sequential} should be considered. Especially with the advent of high-resolution displays, lowering the shading frequency of global illumination effect even further might be necessary to keep the costs down to a reasonable level. However, the performance gains from lower sample counts will be offset in part by larger blur radii that come with larger block sizes.
-
-Going further, this technique is limited by how well the blur phase is able to mask the noise in more difficult areas with lots of depth discontinuities like vegetation. To this end, one option might be to collect fragments that receive too few information during shading and blurring, and re-process them with larger sets of VPLs in a second pass (similar to \cite{Lauritzen:2010:Deferred}). Temporal reprojection methods \citep{Jimenez:2016:FilmicSMAA} that re-use information from previous frames and use different sets of VPLs per frame would be another natural extension of interleaved sampling.
-
-
+\vspace{-10pt}
 
 \section{Clustered and Tiled Deferred Shading}
 \label{sec:results:clusteredShading}
 
-Clustered deferred shading and tiled deferred shading reduce the number of light calculation operations by clustering fragments and culling lights against those clusters. As such, if implemented correctly, they do not affect quality at all, but are purely performance optimizations.
+Clustered deferred shading and tiled deferred shading reduce the number of lighting computations by clustering fragments and culling lights against those clusters. As such, if implemented correctly, they affect only the performance and do not alter the output.
 
-\begin{table}[h]
+\begin{table}[htb]
     \centering
     \captionabove{Timings of the final gathering stage without optimizations, with clustered shading (CS) and with tiled shading (TS). Each line is a different camera position. Note that the timing ``With CS'' includes roughly 0.06\,ms for the clustering phase and 0.13\,ms for the light list phase.}
     \begin{tabulary}{0.98\textwidth}{| L | L | L | L | L |}
@@ -402,7 +419,9 @@ Clustered deferred shading and tiled deferred shading reduce the number of light
         \hline
     \end{tabulary}
     \label{tab:results:timings_clustered_shading}
+    \vspace{-10pt}
 \end{table}
+
 
 As visible in \Cref{tab:results:timings_clustered_shading}, both clustered shading and tiled deferred shading can improve the performance of the final gathering phase considerably: In one of the measurements 50\,\% of the computation time is saved with tiled shading.
 

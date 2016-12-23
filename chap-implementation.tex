@@ -11,12 +11,20 @@ The full source code is available in the project's repository\footnote{\url{http
 
 \section{Utilized Frameworks and Libraries}
 
+\newdimen\origiwspc
+\origiwspc=\fontdimen2\font
+
 \begin{figure}[htbp]
   \centering
   \includegraphics{graphics/dependencies}
-  \caption{An overview of the frameworks, libraries and APIs the presented software depends upon.}
+  \caption{
+      \fontdimen2\font=0.65ex
+      An overview of the frameworks, libraries and APIs the presented software depends on.
+      \fontdimen2\font=\origiwspc
+  }
 \end{figure}
 
+\noindent
 The implementation was built with C++ and OpenGL. It uses \textit{gloperate}\footnote{\url{https://github.com/cginternals/gloperate}} as framework, which provides some basic functionality like navigation and resource handling. \textit{gloperate} in turn is based on \textit{Qt}\footnote{\url{https://www.qt.io/}}, which is used for creating an OpenGL context and the UI. \textit{libzeug}\footnote{\url{https://github.com/cginternals/libzeug}} is used to provide GUI widgets for quick manipulation of the rendering parameters. \textit{globjects}\footnote{\url{https://github.com/cginternals/globjects}} provides a convenience abstraction layer around the OpenGL API, which is in some places directly accessed through \textit{glbinding}\footnote{\url{https://github.com/cginternals/glbinding}}. For math functions and interaction with \textit{globjects}, \textit{glm}\footnote{\url{http://glm.g-truc.net}} is used. Additionally, \textit{assimp}\footnote{\url{http://www.assimp.org/}} is used to load the test scenes.
 
 
@@ -28,6 +36,7 @@ The implementation was built with C++ and OpenGL. It uses \textit{gloperate}\foo
     \label{fig:RenderingPipelineOverview}
 \end{figure}
 
+\noindent
 To provide some context, \Cref{fig:RenderingPipelineOverview} visualizes the complete rendering pipeline of the implemented application. It follows a standard deferred shading approach as it first renders geometry buffers with depth, normal and albedo information and uses these buffers to perform shading in a later stage. In the presented implementation, this stage is simply called ``combine pass'' and computes direct lighting, blends in the results of the SSAO postprocessing, and performs tone mapping that is necessary for HDR rendering. The result of the global illumination is a texture that contains indirect lighting, which is added to the direct lighting in the combine pass.
 
 Most algorithms in this thesis are implemented using OpenGL compute shaders, while the G-Buffer, RSM, and the first stages of the ISM rendering use the regular fixed-function pipeline. The blur pass, SSAO and the combine pass utilize traditional screen-aligned triangles, since compute shaders would provide little benefit for their tasks. Due to the extensive use of compute shaders, OpenGL 4.3 is required to run the application.
@@ -54,6 +63,7 @@ Following the RSM generation, a compute shader samples the RSM in a regular patt
   \label{fig:impl:ismRenderingPipeline}
 \end{figure}
 
+\noindent
 Rendering imperfect shadow maps consists of several sub-stages; an overview is provided by \Cref{fig:impl:ismRenderingPipeline}. First, a set of points is generated from the scene geometry. This process is detailed in the next subsection. Subsequently, for each imperfect shadow map a random subset of points is chosen and rendered using a paraboloid projection. To this end, two different approaches, the splat and single-pixel renderer, have been presented in the previous chapter. Their implementation is described in \Cref{sec:impl:splatting,sec:impl:singlePixelRendering}. Subsequently, the pull-push postprocessing required by the single-pixel renderer is detailed.
 
 \subsection{Point Generation}
@@ -118,7 +128,7 @@ Note that there is still lots of room for optimization. Especially the pull phas
 
 The presented implementation performs interleaved sampling, that is, it processes only a fraction of all VPLs per pixel and uses a blur pass to mask the resulting noise. Since adjacent pixels now process different sets of VPLs, this approach results in low cache coherence. To this end, de-interleaving is employed \citep{segovia2006non}.
 
-Often, de-interleaving is implemented by splitting the G-buffer into several smaller buffers, each containing all pixels with the same sample set. Each buffer is processed with its respective sample set, and then the buffers are re-interleaved into a large G-Buffer again.
+Often, de-interleaving is implemented by splitting the G-buffer into several smaller buffers, each containing all pixels with the same sample set. Each buffer is processed with its respective sample set, and then the buffers are re-interleaved into a large G-Buffer.
 
 We propose to perform de-interleaving, sample processing, and re-interleaving in a single pass using compute shaders. Just like the original method, this approach allows for cache-efficient processing since each work group processes a set of pixels that have the same set of VPLs assigned. However, instead of splitting the G-Buffer and then re-interleaving it to perform coherent reads and writes, we propose to let the compute shader read and write directly to the respective pixels in the G-Buffer.
 
@@ -127,7 +137,6 @@ There are several reasons for this approach: First, implementation complexity is
 A potential downside is that this technique performs one scattered read of the G-Buffers, compared to several coherent reads performed by the buffer splitting method. However, the bottleneck of the final gathering phase lies within the loop over the VPLs, therefore an initial one-time scattered read is likely to not have any impact but to be swallowed by latency-covering techniques of the GPU. Theoretically, the work groups could be distributed over the GPU's processor clusters (Streaming Multiprocessors on NVIDIA, Compute Units on AMD) in a way that adjacent pixels are still processed on the same cluster, but unfortunately, application developers have no control over this.
 
 Since only a subset of all samples is processed per pixel and this subset repeats every few pixels, interleaved sampling results in structured noise. To this end, a bilateral blur similar to \citet{laine2007incremental} is often used. The blur filter is bilateral, i.\,e. it takes depth and normal discontinuities into account, to prevent light from bleeding over geometry edges. Although bilateral filters are in fact not separable, they are commonly implemented in a separated fashion. This trades a negligible quality impact for large performance benefits, and the presented implementation follows this approach.
-
 
 While the bilateral blur achieves close to perfect results on even surfaces, the structured noise is harder to mask along geometry edges due to missing information. This problem becomes even more apparent when using regular VPL sampling, which makes each pixel process VPLs that are near each other. For example, this might result in the first pixel inside a 4x4 block processing VPLs that are near the pixel's location, while the second pixel processes VPLs that are all farther away, causing the differences between the pixels to be amplified. To this end, the order of the VPLs in the VPL buffer created during the VPL sampling phase is simply shuffled, using a fixed permutation precomputed on the CPU. See \Cref{sec:results:interleavedShading} for the effects of this small optimization.
 
@@ -164,7 +173,7 @@ With a new dispatch call, each thread now performs culling for one light and one
 
 The light lists are stored in a 2D texture with a height of the maximum amount of clusters and a width of the number of VPLs. The $n$th row in that texture contains the light list of the cluster at index $n$ in the global list of used clusters created in the previous step. Additionally, each light list is divided into 16 partitions, one partition for each pixel in an interleaving block. See \Cref{fig:impl:light_lists} for a visualization of this texture. The partitioning not only simplifies the light list lookup during shading, it also guarantees that each light is processed exactly once in an interleaving block.
 
-\begin{figure}[h]
+\begin{figure}[htb]
     \includegraphics[width=\textwidth]{graphics/light_lists}
     \caption{Visualization of the light lists texture. Each pixel row contains the light list of one cluster. Each gray pixel represents an index to an VPL, a lighter gray is a higher index. White pixels contain no data. The lists are divided into 16 partitions, one for each pixel in an interleaving block. One such partition is visualized with more contrast at the bottom. The first value in each partition is the number of lights in that partition, visible as dark line in front of the partitions. Note that the indices in a partition are not necessarily continuous, as they are written by different shader invocations, whose order of execution is undefined.}
     \label{fig:impl:light_lists}

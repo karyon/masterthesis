@@ -133,7 +133,7 @@ There are two more essential design decisions to be made:
 %
 As with most lighting concepts, real-time global illumination is often separated into diffuse and specular components, since the diffuse component is both easier to simulate with plausible results due to its low-frequency nature, and more important for the visual quality compared to the specular component. For the same reasons, only the diffuse component is covered in this thesis.
 
-
+\vspace{0.3cm}
 
 \section{Previous Work on Real-Time Dynamic Global Illumination}
 \label{sec:intro:gi:previousWork}
@@ -146,9 +146,10 @@ Based on the work of \citet{Bunnell:2005:AO}, point-based global illumination ha
 Despite its name, the geometry representation used to approximate the scene geometry consists of disk-shaped surface elements (\emph{surfels}).
 These surfels are then organized into the leaves of a tree structure, while the higher-level nodes are aggregate representations of all nodes they contain.
 This tree is then used to compute visibility and propagate light between the surfels.
+
 While \citet{Bunnell:2005:AO} propose a rough approximation for computing visibility, \citet{christensen2008point} employs ray tracing or spherical harmonics based on the distance between surfels to compute fairly accurate approximations of global illumination.
 \citet{Ritschel:2009:microrendering} achieve interactive frame rates by utilizing the GPU to perform the final gathering step, which renders the scene into a \emph{micro-buffer} for each receiving element (in their case, screen-space pixels).
-Due to the large amounts of surfels required and the necessary tree structure, this technique is best suited for static or very small dynamic scenes.
+Due to the large amounts of surfels required and because the tree structure can be expensive to update when geometry moves, this technique is best suited for static or very small dynamic scenes.
 
 
 
@@ -204,6 +205,7 @@ Many-light methods as another means to compute global illumination originate in 
   \label{fig:intro:many_lights_visualization}
 \end{figure}
 
+\noindent
 The use of many-light methods is intriguing since they are a natural and intuitive model of real-world light interactions. In addition the concept is highly scalable: Many-light methods have been used for real-time applications with up to a few thousand lights to offline rendering with millions of lights. Given a sufficient number of lights, the concept is capable of accurately simulating advanced effects like subsurface scattering and participating media. \citet{Dachsbacher:2014:ManyLightsSTAR} gives an overview of the higher-end spectrum of many-light methods.
 
 When applied to real-time applications, the available performance budget enforces the use of a limited number of lights. With a few thousand lights at most, many effects are not possible to reasonably approximate anymore. However, the low-frequency nature of diffuse reflections enables several approximations and optimizations that make a convincing global illumination effect feasible to create. Using more or less conventional point light sources has another advantage, at least in the context of real-time applications: Many techniques from classical real-time rendering are applicable, such as point light rendering including conventional shadow maps for visibility testing. This allows for simple implementations of the basic concepts, even though more advanced techniques are necessary to achieve high performance and quality levels.
@@ -222,6 +224,8 @@ This section will take the components of global illumination identified in \Cref
     \item[Choice of receiving elements.] As mentioned before, screen-space pixels are most commonly used, albeit often downscaled or combined with interleaved sampling (\Cref{sec:intro:relatedWorkManyLight:finalGathering}). The other options listed in \Cref{sec:intro:gi:components} are technically possible as well, but haven't been combined with many-light methods yet.
     \item[Mitigating singularities.] Since the entire energy of the indirect light bounces is concentrated into a few infinitely small light sources, the areas near these light sources receive too much light. This effect is distinctly visible as bright spots around the VPL's location (\Cref{fig:introGI:clamping}), making it necessary for many-light methods to alleviate this artifact.
 \end{description}
+
+\vspace{-5pt}
 
 \begin{figure}[htb]
     \centering
@@ -246,7 +250,7 @@ This section will take the components of global illumination identified in \Cref
     \label{fig:introGI:clamping}%
 \end{figure}%
 
-
+\vspace{-10pt}
 
 \section{Previous Work on Real-Time Many-Light Methods}
 \label{sec:intro:relatedWorkManyLight}

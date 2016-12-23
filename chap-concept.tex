@@ -16,7 +16,7 @@ In this chapter, the presented global illumination system is explained on a conc
     \label{fig:GIPipelineConcept}
 \end{figure}
 
-
+\noindent
 \Cref{fig:GIPipelineConcept} provides an overview of the global illumination pipeline presented in this thesis.
 Rendering the reflective shadow map and the subsequent VPL sampling (center row left in the diagram) will be covered in the following section.
 \Cref{sec:concept:ism} describes the rendering process for imperfect shadow maps (lower row) in detail.
@@ -41,7 +41,7 @@ Just like conventional shadow maps, RSMs render the scene from the viewpoint of 
   \label{fig:concept:rsm_dachsbacher}
 \end{figure}
 
-
+\noindent
 This thesis focuses on the later stages in the presented global illumination pipeline, therefore we use a rather basic approach for VPL sampling by creating an RSM and sampling it with a regular pattern. More advanced approaches are available (\Cref{sec:intro:relatedWorkManyLight:vplSampling}), some of which do not use RSMs (e.\,g., \cite{hedman2016sequential})
 
 
@@ -57,19 +57,23 @@ The original paper \citep{ritschel2008ism} converts the scene geometry to a poin
   \label{fig:concept:ism_ritschel_08}
 \end{figure}
 
+\pagebreak
+\noindent
 \citet{ritschel2011ismsViewAdaptive} build on this approach by converting the scene into a triangle texture dynamically, and by sampling the points from that texture. Instead of computing a triangle texture, \citet{barak2013temporally} use the tessellation units of recent GPUs to dynamically convert triangles into points.
 We follow this approach since it integrates well into conventional rendering pipelines and by design supports dynamic geometry.
 
-In contrast to \citet{ritschel2008ism}, we have found the pull-push postprocessing to be of little benefit when using regular point splatting. Instead, we demonstrate that it produces better results when used on single-pixel ``splats'' as proposed in the original paper. Additionally, rendering points as single pixels opens interesting optimization opportunities.
+In contrast to \citet{ritschel2008ism}, we have found the pull-push postprocessing to be of little benefit when using regular point splatting. Instead, we demonstrate that it produces better results when applied to single-pixel ``splats'' as proposed in the original paper. Additionally, rendering points as single pixels opens interesting optimization opportunities.
 
-The following subsections describe the regular point splat rendering process and subsequently detail the pull-push algorithm that is used when rendering single-pixel points.
+The following subsections describe the regular point rendering process using splatting and subsequently detail the pull-push algorithm that is applied when rendering single-pixel points.
 
 
 \subsection{Point Rendering with Splatting}
 
 To convert the scene into points, all its triangles are first tessellated to meet a certain maximum size in order for the point conversion to not introduce extreme inaccuracies. Of the smaller tessellated triangles, the center and area are calculated and a point with matching center and area is created. While it might be more performant to create points just on the vertices of the triangles, at the same time it would be more inaccurate since this approach would enlarge the rendered area considerably over the triangle's extents.
 
-Now a random VPL is chosen per point and backface culling is performed. Likewise, points that do not lie on the VPL's illuminated side are culled before splatting the point into the respective ISM. For performance reasons, a simple paraboloid projection is used for the ISMs in lieu of conventional cubemaps. Here, another advantage of using points comes into play: Compared to triangles, it is trivial to perform a paraboloid projection on them.
+\pagebreak
+
+Now a random VPL is chosen per point and backface culling is performed. Likewise, points that do not lie on the VPL's illuminated side are culled before splatting the point into the respective ISM. For performance reasons, the ISMs use a simple paraboloid projection in lieu of conventional cubemaps. Here, another advantage of using points comes into play: Compared to triangles, it is trivial to perform a paraboloid projection on them.
 
 As mentioned above, we do not employ the pull-push postprocessing algorithm when rendering points with splatting. Instead, we simply enlarge all point splats by a constant factor, which results in similar quality but better performance.
 
@@ -86,8 +90,8 @@ As an alternative to point splat rendering, this subsection proposes a second ap
   \label{fig:concept:pull_push_dataflow_marroquim}
 \end{figure}
 
-
-To provide a rough overview, the pull-push algorithm proposed by \citet{Marroquim:2007:reconstruction} is a ``pyramid-method'' (\cite{Strengert:2006:Pyramid}) that uses the mipmap levels of a texture to first condense and then spread the data in the texture, in this case the sparse point set representing the scene. During the pull phase, it aggregates the information from four pixels of a finer level to one pixel of a coarser level. The subsequent push phase aggregates four pixels of a coarser level to one pixel of a finer level, but only if the pixel of the finer level contains no data or is determined to belong to an occluded surface. This way, closed surfaces are derived from single-pixel points.
+\noindent
+To provide a rough overview, the pull-push algorithm proposed by \citet{Marroquim:2007:reconstruction} is a ``pyramid method'' (\cite{Strengert:2006:Pyramid}) that uses the mipmap levels of a texture to first condense and then spread the data in the texture, in this case the sparse point set representing the scene. During the pull phase, it aggregates the information from four pixels of a finer level to one pixel of a coarser level. The subsequent push phase aggregates four pixels of a coarser level to one pixel of a finer level, but only if the pixel of the finer level contains no data or is determined to belong to an occluded surface. This way, closed surfaces are derived from single-pixel points.
 
 
 \subsubsection{Pull Phase}
@@ -119,7 +123,7 @@ To calculate the attributes for a new point, the depth and radius of the parent 
   \label{fig:concept:weights_marroquim}
 \end{figure}
 
-
+\vspace{-0.25cm}
 
 \subsubsection{Push Phase}
 
@@ -129,7 +133,7 @@ The target output location in the finer level might already contain data that wa
 
 In contrast to the pull phase, the output pixel is not located in the center of the input pixels during the push phase. Therefore the weights used for interpolation are not uniform (\Cref{fig:concept:weights_marroquim} (c) and (d)).
 
- \citet{Marroquim:2007:reconstruction} also use each point's normal to correctly limit the point's size, and \citet{Marroquim:2008:reconstruction2} propose Gaussian weights based on the pixel's distance to the point's location, instead of constant weights solely based on pixel locations. Both of these additions we have not implemented yet.
+\citet{Marroquim:2007:reconstruction} also use each point's normal to correctly limit the point's size, and \citet{Marroquim:2008:reconstruction2} propose Gaussian weights based on the pixel's distance to the point's location, instead of constant weights solely based on pixel locations. Both of these additions we have not implemented yet.
 
 
 
@@ -195,6 +199,7 @@ In contrast to the pull phase, the output pixel is not located in the center of 
 In real-time graphics applications, primarily video games, a technique called \textit{clustered shading} \citep{olsson2012clustered}, has seen increased usage. Its goal is to increase the efficiency of lighting a scene with multiple light sources.
 The effectiveness of clustered shading in the context of many-light global illumination has not been studied so far to our knowledge, and this thesis aims to contribute several data points to this end.
 
+\noindent
 The clustered shading technique works as follows: First, the view frustum is divided into a fixed number of three-dimensional clusters. For each fragment, the respective cluster is determined with the purpose of ignoring all clusters with no fragments in them. Subsequently, each cluster is ``assigned'' a list of all lights that potentially illuminate fragments in that cluster, i.\,e., whose illuminated region is intersecting with a bounding volume of the cluster (\Cref{fig:concept:clustered_olsson}). All lights not intersecting a cluster are culled, i.\,e., not added to the cluster's light list.
 
 \begin{figure}[htb]
